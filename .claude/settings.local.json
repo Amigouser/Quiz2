@@ -1,7 +1,22 @@
 {
   "permissions": {
     "allow": [
-      "Bash(rtk git *)"
+      "Bash(rtk git *)",
+      "Bash(npm install *)",
+      "Bash(curl -s -c /tmp/cook.txt -X POST http://localhost:3001/api/auth/login -H \"Content-Type: application/json\" -d '{\"name\":\"admin\"}')",
+      "Bash(curl -s -b /tmp/cook.txt http://localhost:3001/api/tests)",
+      "Bash(curl -s -b /tmp/cook.txt http://localhost:3001/api/admin/tests)",
+      "Bash(curl -s -b /tmp/cook.txt http://localhost:3001/api/tests/1)",
+      "Bash(python -m json.tool)",
+      "Bash(netstat -ano)",
+      "Bash(findstr \":3001\")",
+      "Bash(findstr \"LISTENING\")",
+      "Bash(taskkill /PID 19692 /F)",
+      "Bash(cmd /c \"taskkill /PID 19692 /F\")",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(git check-ignore *)"
     ]
   }
 }
