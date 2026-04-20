@@ -1,0 +1,14 @@
+{
+  "name": "zhivaya-kletka-server",
+  "version": "1.0.0",
+  "type": "commonjs",
+  "scripts": {
+    "dev": "node --watch index.js",
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "express-session": "^1.17.3",
+    "zhivaya-kletka": "file:.."
+  }
+}
