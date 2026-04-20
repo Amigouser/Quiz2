@@ -1,0 +1,2638 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Живая клетка · Design</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT@0,9..144,300..700,0..100;1,9..144,300..700,0..100&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+/* ─────────────────────────────────────────────
+   Биология · Design Tokens
+   Вдохновлено: ботанические гравюры, учебник,
+   спокойная природная палитра
+   ───────────────────────────────────────────── */
+
+:root {
+  /* ── Greens (primary biology palette) ── */
+  --green-950: #0f2a1e;
+  --green-900: #1b3d2a;
+  --green-800: #2d6a4f;   /* primary */
+  --green-700: #3d8765;
+  --green-600: #52b788;   /* secondary */
+  --green-500: #74c69d;
+  --green-400: #95d5b2;
+  --green-300: #b7e4c7;
+  --green-200: #d8f3dc;   /* pale */
+  --green-100: #ebf7ef;
+  --green-50:  #f5faf6;
+
+  /* ── Warm parchment neutrals (cream of an old textbook) ── */
+  --cream-50:  #fbfaf5;
+  --cream-100: #f7f4ea;
+  --cream-200: #efeadd;
+  --cream-300: #e3dcc9;
+  --ink-900:   #1a1f1b;
+  --ink-700:   #3a4238;
+  --ink-600:   #5a6358;
+  --ink-500:   #7a8378;
+  --ink-400:   #9ba39a;
+  --ink-300:   #c4ccc2;
+
+  /* ── Accents (toggled via data-accent on body) ── */
+  --amber:   #f4a261;
+  --amber-soft: #fbe4ca;
+  --coral:   #e07a5f;
+  --coral-soft: #f7d7cd;
+  --ochre:   #c89b3c;
+  --ochre-soft: #f0dfb3;
+
+  /* Semantic feedback */
+  --correct: #2d6a4f;
+  --correct-bg: #d8f3dc;
+  --wrong:   #c1523b;
+  --wrong-bg: #fadbd3;
+
+  /* ── Active accent (overridden by [data-accent]) ── */
+  --accent:      var(--amber);
+  --accent-soft: var(--amber-soft);
+
+  /* ── Surfaces (overridden by [data-theme]) ── */
+  --bg:           var(--cream-50);
+  --bg-elev:      #ffffff;
+  --bg-muted:     var(--cream-100);
+  --surface:      #ffffff;
+  --surface-2:    var(--cream-100);
+  --border:       var(--cream-300);
+  --border-soft:  var(--cream-200);
+  --text:         var(--ink-900);
+  --text-soft:    var(--ink-600);
+  --text-muted:   var(--ink-500);
+
+  /* ── Type ── */
+  --f-serif: "Fraunces", "Newsreader", ui-serif, Georgia, serif;
+  --f-sans:  "Manrope", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono:  "JetBrains Mono", ui-monospace, Menlo, monospace;
+
+  /* Fluid type scale — textbook-ish */
+  --t-display: clamp(40px, 5vw, 68px);
+  --t-h1: clamp(30px, 3.2vw, 44px);
+  --t-h2: clamp(22px, 2.2vw, 30px);
+  --t-h3: 20px;
+  --t-body: 16px;
+  --t-small: 14px;
+  --t-caption: 12px;
+
+  /* ── Spacing (density token rewritten by [data-density]) ── */
+  --d: 1;          /* density multiplier */
+  --s1: calc(4px  * var(--d));
+  --s2: calc(8px  * var(--d));
+  --s3: calc(12px * var(--d));
+  --s4: calc(16px * var(--d));
+  --s5: calc(24px * var(--d));
+  --s6: calc(32px * var(--d));
+  --s7: calc(48px * var(--d));
+  --s8: calc(64px * var(--d));
+
+  /* ── Radii ── */
+  --r-xs: 4px;
+  --r-sm: 8px;
+  --r-md: 14px;
+  --r-lg: 20px;
+  --r-xl: 28px;
+  --r-full: 999px;
+
+  /* ── Shadows (organic, soft) ── */
+  --sh-sm: 0 1px 2px rgba(26, 52, 36, 0.06), 0 1px 1px rgba(26, 52, 36, 0.04);
+  --sh-md: 0 4px 14px rgba(26, 52, 36, 0.08), 0 1px 2px rgba(26, 52, 36, 0.05);
+  --sh-lg: 0 14px 40px rgba(26, 52, 36, 0.12), 0 4px 10px rgba(26, 52, 36, 0.06);
+  --sh-inset: inset 0 1px 0 rgba(255,255,255,0.5);
+
+  /* Card style toggles via [data-cards] */
+  --card-shadow: var(--sh-md);
+  --card-border: 1px solid var(--border-soft);
+  --card-bg:     var(--surface);
+
+  /* Motion */
+  --ease: cubic-bezier(0.22, 0.8, 0.32, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --dur-fast: 140ms;
+  --dur: 240ms;
+  --dur-slow: 420ms;
+}
+
+/* ── Accent toggles ── */
+[data-accent="amber"]  { --accent: var(--amber);  --accent-soft: var(--amber-soft); }
+[data-accent="coral"]  { --accent: var(--coral);  --accent-soft: var(--coral-soft); }
+[data-accent="ochre"]  { --accent: var(--ochre);  --accent-soft: var(--ochre-soft); }
+
+/* ── Theme toggles ── */
+[data-theme="light"] {
+  --bg: var(--cream-50);
+  --bg-elev: #ffffff;
+  --bg-muted: var(--cream-100);
+  --surface: #ffffff;
+  --surface-2: var(--cream-100);
+  --border: var(--cream-300);
+  --border-soft: var(--cream-200);
+  --text: var(--ink-900);
+  --text-soft: var(--ink-600);
+  --text-muted: var(--ink-500);
+}
+[data-theme="sepia"] {
+  --bg: #f2e9d8;
+  --bg-elev: #f8f1e0;
+  --bg-muted: #ebe1cb;
+  --surface: #f8f1e0;
+  --surface-2: #ebe1cb;
+  --border: #d9c9a5;
+  --border-soft: #e4d7b8;
+  --text: #3a2e1a;
+  --text-soft: #6b5a3b;
+  --text-muted: #8b7a5b;
+}
+[data-theme="dark"] {
+  --bg: #0f1a13;
+  --bg-elev: #15241b;
+  --bg-muted: #132019;
+  --surface: #172b1f;
+  --surface-2: #1e3426;
+  --border: #2a4532;
+  --border-soft: #203a28;
+  --text: #e9f3ec;
+  --text-soft: #b9c9be;
+  --text-muted: #8a9c90;
+  --green-800: #52b788;
+  --green-700: #74c69d;
+  --green-200: #203a28;
+  --green-100: #1a2f20;
+  --correct-bg: #1f3a2a;
+  --wrong-bg: #3a2019;
+  --card-shadow: 0 4px 14px rgba(0,0,0,0.4);
+}
+
+/* ── Density ── */
+[data-density="compact"]  { --d: 0.78; }
+[data-density="cozy"]     { --d: 1;    }
+[data-density="spacious"] { --d: 1.22; }
+
+/* ── Card style ── */
+[data-cards="flat"]    { --card-shadow: none; --card-border: 1px solid var(--border); }
+[data-cards="shadow"]  { --card-shadow: var(--sh-md); --card-border: 1px solid var(--border-soft); }
+[data-cards="outline"] { --card-shadow: none; --card-border: 1.5px solid var(--green-800); }
+
+/* ── Base ── */
+* { box-sizing: border-box; }
+html, body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--f-sans);
+  font-size: var(--t-body);
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+body { transition: background var(--dur) var(--ease), color var(--dur) var(--ease); }
+
+h1,h2,h3,h4,h5 {
+  font-family: var(--f-serif);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: var(--text);
+  margin: 0;
+  font-variation-settings: "opsz" 24, "SOFT" 30;
+}
+p { margin: 0; }
+
+button { font-family: inherit; }
+input, textarea, select { font-family: inherit; color: inherit; }
+
+/* Selection */
+::selection { background: var(--green-200); color: var(--green-900); }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: var(--ink-400); }
+
+/* ─────────────────────────────────────────────
+   Компоненты
+   ───────────────────────────────────────────── */
+
+/* ── Buttons ── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+  padding: var(--s3) var(--s5);
+  font-family: var(--f-sans);
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: -0.01em;
+  border-radius: var(--r-full);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: transform var(--dur-fast) var(--ease),
+              background var(--dur) var(--ease),
+              box-shadow var(--dur) var(--ease),
+              color var(--dur) var(--ease);
+  user-select: none;
+  white-space: nowrap;
+}
+.btn:active { transform: translateY(1px) scale(0.99); }
+.btn:focus-visible { outline: 3px solid var(--accent-soft); outline-offset: 2px; }
+
+.btn-primary {
+  background: var(--green-800);
+  color: #fff;
+  box-shadow: 0 1px 0 rgba(0,0,0,0.05), inset 0 1px 0 rgba(255,255,255,0.15);
+}
+.btn-primary:hover { background: var(--green-900); transform: translateY(-1px); box-shadow: var(--sh-md); }
+
+.btn-accent {
+  background: var(--accent);
+  color: #1a1005;
+  box-shadow: 0 1px 0 rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.3);
+}
+.btn-accent:hover { filter: brightness(0.97); transform: translateY(-1px); box-shadow: var(--sh-md); }
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text);
+  border-color: var(--border);
+}
+.btn-ghost:hover { background: var(--bg-muted); border-color: var(--ink-400); }
+
+.btn-soft {
+  background: var(--green-200);
+  color: var(--green-900);
+}
+.btn-soft:hover { background: var(--green-300); }
+
+.btn-sm { padding: var(--s2) var(--s4); font-size: 13px; }
+.btn-lg { padding: var(--s4) var(--s6); font-size: 16px; }
+
+/* ── Card ── */
+.card {
+  background: var(--card-bg, var(--surface));
+  border: var(--card-border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--card-shadow);
+  padding: var(--s5);
+  transition: transform var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
+  position: relative;
+  overflow: hidden;
+}
+.card:hover { transform: translateY(-2px); box-shadow: var(--sh-lg); }
+
+/* ── Pill / Badge ── */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: var(--r-full);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  background: var(--green-200);
+  color: var(--green-900);
+  white-space: nowrap;
+}
+.pill-muted { background: var(--bg-muted); color: var(--text-soft); }
+.pill-accent { background: var(--accent-soft); color: #5a3a10; }
+.pill-dot::before { content: ""; width: 6px; height: 6px; border-radius: 999px; background: currentColor; display: inline-block; }
+
+/* ── Input ── */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+}
+.field label { font-size: 13px; font-weight: 600; color: var(--text-soft); letter-spacing: 0.02em; }
+.input {
+  width: 100%;
+  padding: var(--s3) var(--s4);
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-md);
+  color: var(--text);
+  font-size: 16px;
+  transition: border-color var(--dur-fast) var(--ease), box-shadow var(--dur) var(--ease);
+  outline: none;
+}
+.input:hover { border-color: var(--ink-400); }
+.input:focus { border-color: var(--green-700); box-shadow: 0 0 0 4px var(--green-100); }
+.input::placeholder { color: var(--text-muted); }
+
+.input-lg { padding: var(--s4) var(--s5); font-size: 18px; border-radius: var(--r-lg); }
+
+/* ── Progress ── */
+.progress {
+  position: relative;
+  width: 100%;
+  height: 6px;
+  background: var(--bg-muted);
+  border-radius: var(--r-full);
+  overflow: hidden;
+}
+.progress-fill {
+  position: absolute; inset: 0 auto 0 0;
+  background: linear-gradient(90deg, var(--green-600), var(--green-800));
+  border-radius: var(--r-full);
+  transition: width var(--dur-slow) var(--ease-spring);
+}
+
+/* ── Divider ── */
+.hr { height: 1px; background: var(--border-soft); border: 0; margin: var(--s5) 0; }
+
+/* ── Tag chips (subjects) ── */
+.chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 12px;
+  font-size: 13px; font-weight: 500;
+  background: var(--bg-muted); color: var(--text-soft);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--r-full);
+  cursor: pointer;
+  transition: all var(--dur-fast) var(--ease);
+}
+.chip:hover { background: var(--green-100); color: var(--green-900); border-color: var(--green-300); }
+.chip.active { background: var(--green-800); color: #fff; border-color: var(--green-800); }
+
+/* ── Labels in textbook style (small caps w/ botanical rule) ── */
+.eyebrow {
+  display: inline-flex; align-items: center; gap: 10px;
+  font-family: var(--f-sans);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--green-800);
+}
+.eyebrow::before {
+  content: "";
+  width: 22px; height: 1px; background: currentColor;
+}
+
+/* ── Quiz answer options ── */
+.answer {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--s4);
+  padding: var(--s4) var(--s5);
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-md);
+  cursor: pointer;
+  transition: all var(--dur-fast) var(--ease);
+  font-size: 16px;
+}
+.answer:hover { border-color: var(--green-600); background: var(--green-50); transform: translateX(4px); }
+.answer .letter {
+  flex: 0 0 36px; height: 36px;
+  border-radius: 50%;
+  background: var(--bg-muted);
+  color: var(--text-soft);
+  display: grid; place-items: center;
+  font-family: var(--f-serif);
+  font-weight: 600;
+  font-size: 15px;
+  transition: all var(--dur) var(--ease);
+}
+.answer:hover .letter { background: var(--green-200); color: var(--green-900); }
+.answer.selected { border-color: var(--green-800); background: var(--green-100); }
+.answer.selected .letter { background: var(--green-800); color: #fff; }
+.answer.correct { border-color: var(--correct); background: var(--correct-bg); }
+.answer.correct .letter { background: var(--correct); color: #fff; }
+.answer.wrong { border-color: var(--wrong); background: var(--wrong-bg); }
+.answer.wrong .letter { background: var(--wrong); color: #fff; }
+.answer.locked { pointer-events: none; }
+
+/* ── Sidebar (admin) ── */
+.sidebar {
+  width: 240px;
+  background: var(--surface);
+  border-right: 1px solid var(--border-soft);
+  padding: var(--s5) var(--s4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+}
+.nav-item {
+  display: flex; align-items: center; gap: var(--s3);
+  padding: var(--s3) var(--s4);
+  border-radius: var(--r-md);
+  color: var(--text-soft);
+  font-weight: 500;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all var(--dur-fast) var(--ease);
+}
+.nav-item:hover { background: var(--green-100); color: var(--green-900); }
+.nav-item.active { background: var(--green-800); color: #fff; }
+.nav-item.active .nav-ico { color: #fff; }
+
+/* ── Utility ── */
+.stack { display: flex; flex-direction: column; }
+.row { display: flex; align-items: center; }
+.grow { flex: 1; }
+
+/* ── Leaf decorations ── */
+.leaf-bg {
+  position: absolute; inset: 0; pointer-events: none;
+  opacity: 0.5;
+  z-index: 0;
+}
+
+/* ── Confetti / leaf burst ── */
+@keyframes leaf-fall {
+  0%   { transform: translate(0, -20px) rotate(0deg); opacity: 0; }
+  10%  { opacity: 1; }
+  100% { transform: translate(var(--dx, 80px), 120vh) rotate(var(--dr, 540deg)); opacity: 0; }
+}
+
+/* ── Gentle float ── */
+@keyframes float-soft {
+  0%, 100% { transform: translateY(0) rotate(var(--r, 0deg)); }
+  50%      { transform: translateY(-10px) rotate(calc(var(--r, 0deg) + 4deg)); }
+}
+
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" data-presets="react">
+
+// DesignCanvas.jsx — Figma-ish design canvas wrapper
+// Warm gray grid bg + Sections + Artboards + PostIt notes.
+// No assets, no deps.
+
+const DC = {
+  bg: '#f0eee9',
+  grid: 'rgba(0,0,0,0.06)',
+  label: 'rgba(60,50,40,0.7)',
+  title: 'rgba(40,30,20,0.85)',
+  subtitle: 'rgba(60,50,40,0.6)',
+  postitBg: '#fef4a8',
+  postitText: '#5a4a2a',
+  font: '-apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif',
+};
+
+// ─────────────────────────────────────────────────────────────
+// Main canvas — transform-based pan/zoom viewport
+//
+// Input mapping (Figma-style):
+//   • trackpad pinch  → zoom   (ctrlKey wheel; Safari gesture* events)
+//   • trackpad scroll → pan    (two-finger)
+//   • mouse wheel     → zoom   (notched; distinguished from trackpad scroll)
+//   • middle-drag / primary-drag-on-bg → pan
+//
+// Transform state lives in a ref and is written straight to the DOM
+// (translate3d + will-change) so wheel ticks don't go through React —
+// keeps pans at 60fps on dense canvases.
+// ─────────────────────────────────────────────────────────────
+function DesignCanvas({ children, minScale = 0.1, maxScale = 8, style = {} }) {
+  const vpRef = React.useRef(null);
+  const worldRef = React.useRef(null);
+  const tf = React.useRef({ x: 0, y: 0, scale: 1 });
+
+  const apply = React.useCallback(() => {
+    const { x, y, scale } = tf.current;
+    const el = worldRef.current;
+    if (el) el.style.transform = `translate3d(${x}px, ${y}px, 0) scale(${scale})`;
+  }, []);
+
+  React.useEffect(() => {
+    const vp = vpRef.current;
+    if (!vp) return;
+
+    const zoomAt = (cx, cy, factor) => {
+      const r = vp.getBoundingClientRect();
+      const px = cx - r.left, py = cy - r.top;
+      const t = tf.current;
+      const next = Math.min(maxScale, Math.max(minScale, t.scale * factor));
+      const k = next / t.scale;
+      // keep the world point under the cursor fixed
+      t.x = px - (px - t.x) * k;
+      t.y = py - (py - t.y) * k;
+      t.scale = next;
+      apply();
+    };
+
+    // Mouse-wheel vs trackpad-scroll heuristic. A physical wheel sends
+    // line-mode deltas (Firefox) or large integer pixel deltas with no X
+    // component (Chrome/Safari, typically multiples of 100/120). Trackpad
+    // two-finger scroll sends small/fractional pixel deltas, often with
+    // non-zero deltaX. ctrlKey is set by the browser for trackpad pinch.
+    const isMouseWheel = (e) =>
+      e.deltaMode !== 0 ||
+      (e.deltaX === 0 && Number.isInteger(e.deltaY) && Math.abs(e.deltaY) >= 40);
+
+    const onWheel = (e) => {
+      e.preventDefault();
+      if (isGesturing) return; // Safari: gesture* owns the pinch — discard concurrent wheels
+      if (e.ctrlKey) {
+        // trackpad pinch (or explicit ctrl+wheel)
+        zoomAt(e.clientX, e.clientY, Math.exp(-e.deltaY * 0.01));
+      } else if (isMouseWheel(e)) {
+        // notched mouse wheel — fixed-ratio step per click
+        zoomAt(e.clientX, e.clientY, Math.exp(-Math.sign(e.deltaY) * 0.18));
+      } else {
+        // trackpad two-finger scroll — pan
+        tf.current.x -= e.deltaX;
+        tf.current.y -= e.deltaY;
+        apply();
+      }
+    };
+
+    // Safari sends native gesture* events for trackpad pinch with a smooth
+    // e.scale; preferring these over the ctrl+wheel fallback gives a much
+    // better feel there. No-ops on other browsers. Safari also fires
+    // ctrlKey wheel events during the same pinch — isGesturing makes
+    // onWheel drop those entirely so they neither zoom nor pan.
+    let gsBase = 1;
+    let isGesturing = false;
+    const onGestureStart = (e) => { e.preventDefault(); isGesturing = true; gsBase = tf.current.scale; };
+    const onGestureChange = (e) => {
+      e.preventDefault();
+      zoomAt(e.clientX, e.clientY, (gsBase * e.scale) / tf.current.scale);
+    };
+    const onGestureEnd = (e) => { e.preventDefault(); isGesturing = false; };
+
+    // Drag-pan: middle button anywhere, or primary button starting on the
+    // canvas background (not inside an artboard).
+    let drag = null;
+    const onPointerDown = (e) => {
+      const onBg = e.target === vp || e.target === worldRef.current;
+      if (!(e.button === 1 || (e.button === 0 && onBg))) return;
+      e.preventDefault();
+      vp.setPointerCapture(e.pointerId);
+      drag = { id: e.pointerId, lx: e.clientX, ly: e.clientY };
+      vp.style.cursor = 'grabbing';
+    };
+    const onPointerMove = (e) => {
+      if (!drag || e.pointerId !== drag.id) return;
+      tf.current.x += e.clientX - drag.lx;
+      tf.current.y += e.clientY - drag.ly;
+      drag.lx = e.clientX; drag.ly = e.clientY;
+      apply();
+    };
+    const onPointerUp = (e) => {
+      if (!drag || e.pointerId !== drag.id) return;
+      vp.releasePointerCapture(e.pointerId);
+      drag = null;
+      vp.style.cursor = '';
+    };
+
+    vp.addEventListener('wheel', onWheel, { passive: false });
+    vp.addEventListener('gesturestart', onGestureStart, { passive: false });
+    vp.addEventListener('gesturechange', onGestureChange, { passive: false });
+    vp.addEventListener('gestureend', onGestureEnd, { passive: false });
+    vp.addEventListener('pointerdown', onPointerDown);
+    vp.addEventListener('pointermove', onPointerMove);
+    vp.addEventListener('pointerup', onPointerUp);
+    vp.addEventListener('pointercancel', onPointerUp);
+    return () => {
+      vp.removeEventListener('wheel', onWheel);
+      vp.removeEventListener('gesturestart', onGestureStart);
+      vp.removeEventListener('gesturechange', onGestureChange);
+      vp.removeEventListener('gestureend', onGestureEnd);
+      vp.removeEventListener('pointerdown', onPointerDown);
+      vp.removeEventListener('pointermove', onPointerMove);
+      vp.removeEventListener('pointerup', onPointerUp);
+      vp.removeEventListener('pointercancel', onPointerUp);
+    };
+  }, [apply, minScale, maxScale]);
+
+  const gridSvg = `url("data:image/svg+xml,%3Csvg width='120' height='120' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M120 0H0v120' fill='none' stroke='${encodeURIComponent(DC.grid)}' stroke-width='1'/%3E%3C/svg%3E")`;
+  return (
+    <div
+      ref={vpRef}
+      className="design-canvas"
+      style={{
+        height: '100vh', width: '100vw',
+        background: DC.bg,
+        overflow: 'hidden',
+        overscrollBehavior: 'none',
+        touchAction: 'none',
+        position: 'relative',
+        fontFamily: DC.font,
+        boxSizing: 'border-box',
+        ...style,
+      }}
+    >
+      <div
+        ref={worldRef}
+        style={{
+          position: 'absolute', top: 0, left: 0,
+          transformOrigin: '0 0',
+          willChange: 'transform',
+          width: 'max-content', minWidth: '100%',
+          minHeight: '100%',
+          padding: '60px 0 80px',
+          backgroundImage: gridSvg,
+          backgroundSize: '120px 120px',
+        }}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// Section — title + subtitle + h-stack of artboards (no wrap)
+// ─────────────────────────────────────────────────────────────
+function DCSection({ title, subtitle, children, gap = 48 }) {
+  return (
+    <div style={{ marginBottom: 80, position: 'relative' }}>
+      <div style={{ padding: '0 60px 36px' }}>
+        <div style={{
+          fontSize: 22, fontWeight: 600, color: DC.title,
+          letterSpacing: -0.3, marginBottom: 4,
+        }}>{title}</div>
+        {subtitle && (
+          <div style={{
+            fontSize: 14, fontWeight: 400, color: DC.subtitle,
+          }}>{subtitle}</div>
+        )}
+      </div>
+      {/* h-stack — clips offscreen, never wraps */}
+      <div style={{
+        display: 'flex', gap, padding: '0 60px',
+        alignItems: 'flex-start', width: 'max-content',
+      }}>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// Artboard — labeled card
+// ─────────────────────────────────────────────────────────────
+function DCArtboard({ label, children, width, height, style = {} }) {
+  return (
+    <div style={{ position: 'relative', flexShrink: 0 }}>
+      {label && (
+        <div style={{
+          position: 'absolute', bottom: '100%', left: 0,
+          paddingBottom: 8,
+          fontSize: 12, fontWeight: 500, color: DC.label,
+          whiteSpace: 'nowrap',
+        }}>{label}</div>
+      )}
+      <div style={{
+        borderRadius: 2,
+        boxShadow: '0 1px 3px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.06)',
+        overflow: 'hidden',
+        width, height,
+        background: '#fff',
+        ...style,
+      }}>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// Post-it — absolute-positioned sticky note
+// ─────────────────────────────────────────────────────────────
+function DCPostIt({ children, top, left, right, bottom, rotate = -2, width = 180 }) {
+  return (
+    <div style={{
+      position: 'absolute', top, left, right, bottom, width,
+      background: DC.postitBg, padding: '14px 16px',
+      fontFamily: '"Comic Sans MS", "Marker Felt", "Segoe Print", cursive',
+      fontSize: 14, lineHeight: 1.4, color: DC.postitText,
+      boxShadow: '0 2px 8px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.08)',
+      transform: `rotate(${rotate}deg)`,
+      zIndex: 5,
+    }}>{children}</div>
+  );
+}
+
+Object.assign(window, { DesignCanvas, DCSection, DCArtboard, DCPostIt });
+
+
+</script>
+<script type="text/babel" data-presets="react">
+// Botanical SVG decorations — used across screens.
+// Thin-line vintage-engraving feel. All use currentColor.
+
+const Leaf = ({ size = 64, style = {}, stroke = 1.2 }) => (
+  <svg width={size} height={size * 1.4} viewBox="0 0 64 90" fill="none" style={style}>
+    <path d="M32 4 C 10 20, 6 55, 32 86 C 58 55, 54 20, 32 4 Z"
+      stroke="currentColor" strokeWidth={stroke} />
+    <path d="M32 4 L 32 86" stroke="currentColor" strokeWidth={stroke * 0.8} />
+    {[14, 26, 38, 50, 62, 74].map((y, i) => {
+      const reach = 16 - Math.abs(i - 2.5) * 2;
+      return <g key={i}>
+        <path d={`M32 ${y} Q ${32 - reach * 0.6} ${y + 4}, ${32 - reach} ${y + 8}`} stroke="currentColor" strokeWidth={stroke * 0.6} />
+        <path d={`M32 ${y} Q ${32 + reach * 0.6} ${y + 4}, ${32 + reach} ${y + 8}`} stroke="currentColor" strokeWidth={stroke * 0.6} />
+      </g>;
+    })}
+  </svg>
+);
+
+const Fern = ({ size = 120, style = {}, stroke = 1 }) => (
+  <svg width={size} height={size * 1.6} viewBox="0 0 100 160" fill="none" style={style}>
+    <path d="M50 155 Q 48 80, 50 10" stroke="currentColor" strokeWidth={stroke} />
+    {Array.from({ length: 12 }).map((_, i) => {
+      const y = 150 - i * 12;
+      const len = 8 + i * 2.5 - (i > 8 ? (i - 8) * 6 : 0);
+      return <g key={i}>
+        <path d={`M50 ${y} Q ${50 - len * 0.4} ${y - 2}, ${50 - len} ${y - 6}`} stroke="currentColor" strokeWidth={stroke * 0.7} />
+        <path d={`M50 ${y} Q ${50 + len * 0.4} ${y - 2}, ${50 + len} ${y - 6}`} stroke="currentColor" strokeWidth={stroke * 0.7} />
+      </g>;
+    })}
+  </svg>
+);
+
+const Sprig = ({ size = 80, style = {}, stroke = 1 }) => (
+  <svg width={size} height={size} viewBox="0 0 80 80" fill="none" style={style}>
+    <path d="M12 68 Q 30 50, 56 22" stroke="currentColor" strokeWidth={stroke} />
+    <ellipse cx="22" cy="58" rx="5" ry="9" transform="rotate(-50 22 58)" stroke="currentColor" strokeWidth={stroke * 0.7} />
+    <ellipse cx="34" cy="46" rx="5" ry="9" transform="rotate(-50 34 46)" stroke="currentColor" strokeWidth={stroke * 0.7} />
+    <ellipse cx="46" cy="34" rx="5" ry="9" transform="rotate(-50 46 34)" stroke="currentColor" strokeWidth={stroke * 0.7} />
+    <ellipse cx="58" cy="22" rx="5" ry="9" transform="rotate(-50 58 22)" stroke="currentColor" strokeWidth={stroke * 0.7} />
+  </svg>
+);
+
+const Cell = ({ size = 120, style = {}, stroke = 1 }) => (
+  <svg width={size} height={size} viewBox="0 0 120 120" fill="none" style={style}>
+    <circle cx="60" cy="60" r="54" stroke="currentColor" strokeWidth={stroke} strokeDasharray="2 3" />
+    <circle cx="60" cy="60" r="42" stroke="currentColor" strokeWidth={stroke * 0.8} />
+    <circle cx="58" cy="56" r="14" stroke="currentColor" strokeWidth={stroke * 0.8} />
+    <circle cx="58" cy="56" r="5" fill="currentColor" opacity="0.35" />
+    {[[42, 76], [74, 72], [48, 40], [80, 50], [36, 60]].map(([x,y], i) => (
+      <ellipse key={i} cx={x} cy={y} rx="4" ry="2" stroke="currentColor" strokeWidth={stroke * 0.6} transform={`rotate(${i*30} ${x} ${y})`} />
+    ))}
+  </svg>
+);
+
+const Helix = ({ size = 80, style = {}, stroke = 1 }) => (
+  <svg width={size} height={size * 1.8} viewBox="0 0 80 144" fill="none" style={style}>
+    {Array.from({ length: 7 }).map((_, i) => {
+      const y = 10 + i * 20;
+      return <path key={i} d={`M10 ${y} Q 40 ${y - 10}, 70 ${y}`} stroke="currentColor" strokeWidth={stroke * 0.6} />;
+    })}
+    <path d="M10 10 Q 40 80, 10 134" stroke="currentColor" strokeWidth={stroke} />
+    <path d="M70 10 Q 40 80, 70 134" stroke="currentColor" strokeWidth={stroke} />
+  </svg>
+);
+
+// Decorative placeholder illustration — textbook plate
+const PlatePlaceholder = ({ label = "Plantae — Ficus", style = {} }) => (
+  <div style={{
+    position: "relative",
+    background: "var(--cream-100)",
+    border: "1px solid var(--border-soft)",
+    borderRadius: "var(--r-md)",
+    aspectRatio: "4/5",
+    display: "grid",
+    placeItems: "center",
+    color: "var(--green-800)",
+    overflow: "hidden",
+    ...style,
+  }}>
+    <Leaf size={120} stroke={0.9} />
+    <div style={{
+      position: "absolute",
+      bottom: 10, left: 0, right: 0,
+      textAlign: "center",
+      fontFamily: "var(--f-serif)",
+      fontStyle: "italic",
+      fontSize: 12,
+      color: "var(--text-muted)",
+      letterSpacing: "0.08em",
+    }}>
+      Fig. — {label}
+    </div>
+  </div>
+);
+
+// Background with faint fern + cells pattern
+const BotanicalBg = ({ intensity = 1, pattern = "mix" }) => (
+  <div style={{
+    position: "absolute", inset: 0, pointerEvents: "none",
+    opacity: 0.08 * intensity,
+    color: "var(--green-900)",
+    overflow: "hidden",
+  }}>
+    {pattern !== "cells" && <Fern size={220} style={{ position: "absolute", top: -30, right: -60 }} />}
+    {pattern !== "cells" && <Sprig size={140} style={{ position: "absolute", bottom: 40, left: 20, transform: "rotate(-20deg)" }} />}
+    {pattern !== "ferns" && <Cell size={160} style={{ position: "absolute", bottom: -30, right: 60 }} />}
+    {pattern !== "ferns" && <Cell size={100} style={{ position: "absolute", top: 80, left: 100 }} />}
+  </div>
+);
+
+// Leaf fall burst used after correct answer / at results
+const LeafBurst = ({ count = 28, go = false }) => {
+  const leaves = React.useMemo(() => Array.from({ length: count }).map((_, i) => ({
+    id: i,
+    left: Math.random() * 100,
+    delay: Math.random() * 600,
+    dx: (Math.random() - 0.5) * 400,
+    dr: 180 + Math.random() * 540,
+    dur: 1400 + Math.random() * 1600,
+    size: 14 + Math.random() * 22,
+    color: ["var(--green-500)","var(--green-600)","var(--green-400)","var(--accent)"][i % 4],
+  })), [count]);
+  if (!go) return null;
+  return (
+    <div style={{ position: "fixed", inset: 0, pointerEvents: "none", zIndex: 9999, overflow: "hidden" }}>
+      {leaves.map(l => (
+        <div key={l.id} style={{
+          position: "absolute",
+          top: -30,
+          left: `${l.left}%`,
+          width: l.size, height: l.size * 1.4,
+          color: l.color,
+          animation: `leaf-fall ${l.dur}ms ${l.delay}ms cubic-bezier(.2,.7,.3,1) forwards`,
+          "--dx": `${l.dx}px`,
+          "--dr": `${l.dr}deg`,
+        }}>
+          <svg viewBox="0 0 64 90" style={{ width: "100%", height: "100%" }}>
+            <path d="M32 4 C 10 20, 6 55, 32 86 C 58 55, 54 20, 32 4 Z" fill="currentColor" />
+            <path d="M32 4 L 32 86" stroke="rgba(0,0,0,0.2)" strokeWidth="1" />
+          </svg>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+Object.assign(window, { Leaf, Fern, Sprig, Cell, Helix, PlatePlaceholder, BotanicalBg, LeafBurst });
+
+</script>
+<script type="text/babel" data-presets="react">
+// Design system overview — tokens, type, colors, components displayed as a style guide
+
+const DesignSystemSheet = () => {
+  return (
+    <div style={{
+      width: 1100,
+      background: "var(--bg)",
+      padding: "48px 56px",
+      position: "relative",
+      overflow: "hidden",
+    }}>
+      <BotanicalBg intensity={0.35} pattern="mix" />
+
+      {/* Header */}
+      <div style={{ position: "relative", marginBottom: 48, display: "flex", alignItems: "flex-end", justifyContent: "space-between" }}>
+        <div>
+          <div className="eyebrow" style={{ marginBottom: 14 }}>Система · v0.1</div>
+          <h1 style={{ fontFamily: "var(--f-serif)", fontSize: 64, lineHeight: 1, letterSpacing: "-0.03em", marginBottom: 10 }}>
+            Живая <em style={{ color: "var(--green-800)" }}>клетка</em>
+          </h1>
+          <p style={{ color: "var(--text-soft)", fontSize: 16, maxWidth: 520 }}>
+            Дизайн-система для образовательной платформы репетитора по биологии. Книжный, природный, спокойный — как страница из современного учебника.
+          </p>
+        </div>
+        <div style={{ color: "var(--green-700)", opacity: 0.8 }}>
+          <Cell size={120} />
+        </div>
+      </div>
+
+      {/* Principles */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 20, marginBottom: 48 }}>
+        {[
+          { t: "Книжный", d: "Тёплые кремовые фоны, серифный заголовочный шрифт, научные подписи курсивом." },
+          { t: "Живой", d: "Мягкие анимации hover, падающие листья при правильном ответе, органические формы." },
+          { t: "Чистый", d: "Много воздуха, одна акцентная единица в кадре, минимум декора на рабочих поверхностях." },
+        ].map((p, i) => (
+          <div key={i} className="card" style={{ padding: 22 }}>
+            <div style={{ color: "var(--green-800)", marginBottom: 14 }}>
+              {[<Leaf size={28} stroke={1.6}/>, <Sprig size={40}/>, <Cell size={40}/>][i]}
+            </div>
+            <div style={{ fontFamily: "var(--f-serif)", fontSize: 20, marginBottom: 6 }}>{p.t}</div>
+            <div style={{ fontSize: 13, color: "var(--text-soft)", lineHeight: 1.5 }}>{p.d}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Colors */}
+      <SectionHeader n="01" title="Палитра" sub="Зелёные оттенки листвы, кремовая бумага, янтарный акцент" />
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(8, 1fr)", gap: 10, marginBottom: 16 }}>
+        {[
+          ["green-900", "#1b3d2a"], ["green-800", "#2d6a4f"], ["green-700", "#3d8765"], ["green-600", "#52b788"],
+          ["green-500", "#74c69d"], ["green-400", "#95d5b2"], ["green-300", "#b7e4c7"], ["green-200", "#d8f3dc"],
+        ].map(([n, v]) => (
+          <div key={n}>
+            <div style={{ background: v, borderRadius: 10, height: 72, border: "1px solid var(--border-soft)" }}/>
+            <div style={{ fontFamily: "var(--f-mono)", fontSize: 11, marginTop: 6, color: "var(--text-soft)" }}>{v}</div>
+            <div style={{ fontSize: 10, color: "var(--text-muted)" }}>{n}</div>
+          </div>
+        ))}
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(8, 1fr)", gap: 10, marginBottom: 48 }}>
+        {[
+          ["cream-50", "#fbfaf5"], ["cream-100", "#f7f4ea"], ["cream-200", "#efeadd"], ["cream-300", "#e3dcc9"],
+          ["amber", "#f4a261"], ["coral", "#e07a5f"], ["ochre", "#c89b3c"], ["ink-900", "#1a1f1b"],
+        ].map(([n, v]) => (
+          <div key={n}>
+            <div style={{ background: v, borderRadius: 10, height: 72, border: "1px solid var(--border-soft)" }}/>
+            <div style={{ fontFamily: "var(--f-mono)", fontSize: 11, marginTop: 6, color: "var(--text-soft)" }}>{v}</div>
+            <div style={{ fontSize: 10, color: "var(--text-muted)" }}>{n}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Typography */}
+      <SectionHeader n="02" title="Типографика" sub="Fraunces — заголовки и научные подписи · Manrope — интерфейс и тело" />
+      <div className="card" style={{ padding: 32, marginBottom: 48 }}>
+        <div style={{ fontFamily: "var(--f-serif)", fontSize: 72, lineHeight: 1, letterSpacing: "-0.03em", marginBottom: 6 }}>
+          Фотосинтез
+        </div>
+        <div style={{ fontSize: 11, color: "var(--text-muted)", fontFamily: "var(--f-mono)", marginBottom: 28 }}>
+          Fraunces · 400 · 72/72 · tracking −3%
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24, alignItems: "start" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            <TypeRow size={44} weight={400} label="Display · Fraunces 44" font="var(--f-serif)">Живая клетка</TypeRow>
+            <TypeRow size={32} weight={500} label="H1 · Fraunces 32" font="var(--f-serif)">Строение клетки</TypeRow>
+            <TypeRow size={22} weight={500} label="H2 · Fraunces 22" font="var(--f-serif)">Органоиды клетки</TypeRow>
+            <TypeRow size={18} weight={500} label="H3 · Fraunces 18 italic" font="var(--f-serif)" italic>Fig. 1 — Cellula</TypeRow>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            <TypeRow size={16} weight={400} label="Body · Manrope 16/1.55">
+              Хлоропласты — органоиды, осуществляющие фотосинтез. Содержат хлорофилл и другие пигменты.
+            </TypeRow>
+            <TypeRow size={14} weight={500} label="Small · Manrope 14/1.5">
+              Подпись к карточке · кнопка · мета-информация
+            </TypeRow>
+            <TypeRow size={11} weight={700} label="Eyebrow · 11/uppercase/0.18em" mono>
+              УРОК № 24 · 20 АПРЕЛЯ
+            </TypeRow>
+            <TypeRow size={12} weight={400} label="Mono · JetBrains 12" font="var(--f-mono)">
+              #2d6a4f / oklch(0.42 0.08 155)
+            </TypeRow>
+          </div>
+        </div>
+      </div>
+
+      {/* Components */}
+      <SectionHeader n="03" title="Компоненты" sub="Кнопки, поля, карточки, пилюли, прогресс" />
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, marginBottom: 24 }}>
+        <div className="card" style={{ padding: 24 }}>
+          <div style={{ fontSize: 11, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 14 }}>Кнопки</div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginBottom: 14 }}>
+            <button className="btn btn-primary">Primary</button>
+            <button className="btn btn-accent">Accent</button>
+            <button className="btn btn-soft">Soft</button>
+            <button className="btn btn-ghost">Ghost</button>
+          </div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+            <button className="btn btn-primary btn-sm">Small</button>
+            <button className="btn btn-primary">Default</button>
+            <button className="btn btn-primary btn-lg">Large</button>
+          </div>
+        </div>
+
+        <div className="card" style={{ padding: 24 }}>
+          <div style={{ fontSize: 11, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 14 }}>Пилюли</div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 14 }}>
+            <span className="pill">Пройден</span>
+            <span className="pill pill-accent">В процессе</span>
+            <span className="pill pill-muted">Новый</span>
+            <span className="pill pill-dot" style={{ background: "var(--correct-bg)", color: "var(--correct)" }}>Верно</span>
+            <span className="pill pill-dot" style={{ background: "var(--wrong-bg)", color: "var(--wrong)" }}>Ошибка</span>
+          </div>
+          <div style={{ fontSize: 11, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.08em", margin: "14px 0 10px" }}>Чипы</div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+            <span className="chip active">Ботаника</span>
+            <span className="chip">Зоология</span>
+            <span className="chip">Генетика</span>
+          </div>
+        </div>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, marginBottom: 48 }}>
+        <div className="card" style={{ padding: 24 }}>
+          <div style={{ fontSize: 11, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 14 }}>Поля</div>
+          <div className="field" style={{ marginBottom: 14 }}>
+            <label>Имя ученика</label>
+            <input className="input" placeholder="Например, Аня"/>
+          </div>
+          <div className="field">
+            <label>Название теста</label>
+            <input className="input input-lg" defaultValue="Фотосинтез"/>
+          </div>
+        </div>
+
+        <div className="card" style={{ padding: 24 }}>
+          <div style={{ fontSize: 11, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 14 }}>Прогресс</div>
+          <div style={{ marginBottom: 10 }}><div className="progress"><div className="progress-fill" style={{ width: "25%" }}/></div></div>
+          <div style={{ marginBottom: 10 }}><div className="progress"><div className="progress-fill" style={{ width: "66%" }}/></div></div>
+          <div style={{ marginBottom: 18 }}><div className="progress"><div className="progress-fill" style={{ width: "92%" }}/></div></div>
+          <div style={{ fontSize: 11, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10 }}>Варианты ответа</div>
+          <div className="answer" style={{ marginBottom: 6 }}>
+            <div className="letter">A</div>
+            <div>Нейтральное состояние</div>
+          </div>
+          <div className="answer correct locked">
+            <div className="letter">B</div>
+            <div>Правильный ответ</div>
+            <span>🌱</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Icons */}
+      <SectionHeader n="04" title="Иконография" sub="Тонкие ботанические гравюры, все используют currentColor" />
+      <div className="card" style={{ padding: 32, color: "var(--green-800)", display: "flex", gap: 32, alignItems: "center", justifyContent: "space-around" }}>
+        <IconPreview label="Leaf"><Leaf size={48} stroke={1.2}/></IconPreview>
+        <IconPreview label="Fern"><Fern size={64} stroke={1}/></IconPreview>
+        <IconPreview label="Sprig"><Sprig size={60} stroke={1}/></IconPreview>
+        <IconPreview label="Cell"><Cell size={64}/></IconPreview>
+        <IconPreview label="Helix"><Helix size={48}/></IconPreview>
+      </div>
+    </div>
+  );
+};
+
+const SectionHeader = ({ n, title, sub }) => (
+  <div style={{ marginBottom: 20, display: "flex", alignItems: "flex-end", gap: 16 }}>
+    <div style={{ fontFamily: "var(--f-serif)", fontStyle: "italic", fontSize: 32, color: "var(--green-700)", letterSpacing: "-0.02em" }}>{n}</div>
+    <div style={{ flex: 1, borderBottom: "1px solid var(--border)" }}/>
+    <div style={{ fontFamily: "var(--f-serif)", fontSize: 22 }}>{title}</div>
+    <div style={{ fontSize: 12, color: "var(--text-muted)", maxWidth: 320, textAlign: "right" }}>{sub}</div>
+  </div>
+);
+
+const TypeRow = ({ size, weight, label, font, italic, mono, children }) => (
+  <div>
+    <div style={{
+      fontFamily: font || (mono ? "var(--f-mono)" : "var(--f-sans)"),
+      fontSize: size, fontWeight: weight,
+      fontStyle: italic ? "italic" : "normal",
+      lineHeight: size > 32 ? 1.1 : 1.5,
+      letterSpacing: size > 32 ? "-0.02em" : size < 14 ? "0.06em" : "-0.005em",
+      textTransform: mono && size <= 12 ? "uppercase" : "none",
+      color: "var(--text)",
+      marginBottom: 4,
+    }}>{children}</div>
+    <div style={{ fontFamily: "var(--f-mono)", fontSize: 10, color: "var(--text-muted)", letterSpacing: "0.04em" }}>{label}</div>
+  </div>
+);
+
+const IconPreview = ({ label, children }) => (
+  <div style={{ textAlign: "center", color: "inherit" }}>
+    {children}
+    <div style={{ fontFamily: "var(--f-mono)", fontSize: 10, color: "var(--text-muted)", marginTop: 6 }}>{label}</div>
+  </div>
+);
+
+Object.assign(window, { DesignSystemSheet });
+
+</script>
+<script type="text/babel" data-presets="react">
+// Login screen — 2 variants
+
+const LoginClassic = ({ onEnter }) => {
+  const [name, setName] = React.useState("");
+  return (
+    <div style={{
+      position: "relative",
+      width: "100%", minHeight: 640,
+      background: "var(--bg)",
+      display: "grid",
+      gridTemplateColumns: "1.1fr 1fr",
+      overflow: "hidden",
+    }}>
+      <BotanicalBg intensity={1} pattern="ferns" />
+
+      {/* Left pane — greeting */}
+      <div style={{
+        position: "relative", zIndex: 1,
+        padding: "72px 72px 64px",
+        display: "flex", flexDirection: "column",
+        justifyContent: "space-between",
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{
+            width: 44, height: 44, borderRadius: 12,
+            background: "var(--green-800)", color: "#fff",
+            display: "grid", placeItems: "center",
+          }}>
+            <Leaf size={24} stroke={1.6} style={{ color: "#fff" }} />
+          </div>
+          <div>
+            <div style={{ fontFamily: "var(--f-serif)", fontSize: 18, fontWeight: 600 }}>Живая клетка</div>
+            <div style={{ fontSize: 12, color: "var(--text-muted)", letterSpacing: "0.04em" }}>репетитор · биология</div>
+          </div>
+        </div>
+
+        <div>
+          <div className="eyebrow" style={{ marginBottom: 16 }}>Урок № 24 · 20 апреля</div>
+          <h1 style={{
+            fontFamily: "var(--f-serif)",
+            fontSize: 56, fontWeight: 400,
+            lineHeight: 1.05,
+            letterSpacing: "-0.02em",
+            marginBottom: 20,
+          }}>
+            Добро&nbsp;пожаловать<br/>
+            <em style={{ fontStyle: "italic", color: "var(--green-800)" }}>на урок.</em>
+          </h1>
+          <p style={{ color: "var(--text-soft)", fontSize: 17, maxWidth: 440, lineHeight: 1.6 }}>
+            Сегодня изучаем строение растительной клетки, фотосинтез и немного — ботаническую классификацию. Готов?
+          </p>
+        </div>
+
+        <form onSubmit={(e) => { e.preventDefault(); name.trim() && onEnter?.(name.trim()); }}
+          style={{ maxWidth: 420, display: "flex", flexDirection: "column", gap: 16 }}>
+          <div className="field">
+            <label>Как тебя зовут?</label>
+            <input className="input input-lg" placeholder="Например, Аня"
+              value={name} onChange={e => setName(e.target.value)} autoFocus />
+          </div>
+          <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+            <button type="submit" className="btn btn-primary btn-lg" disabled={!name.trim()}
+              style={{ opacity: name.trim() ? 1 : 0.5 }}>
+              Войти на урок
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8 H13 M9 4 L 13 8 L 9 12" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            </button>
+            <span style={{ color: "var(--text-muted)", fontSize: 13 }}>
+              без пароля — по имени
+            </span>
+          </div>
+        </form>
+      </div>
+
+      {/* Right pane — plate */}
+      <div style={{
+        position: "relative",
+        background: "linear-gradient(160deg, var(--green-100), var(--green-200) 60%, var(--green-300))",
+        borderLeft: "1px solid var(--border-soft)",
+        overflow: "hidden",
+      }}>
+        <div style={{ position: "absolute", inset: 0, color: "var(--green-900)", opacity: 0.15 }}>
+          <Fern size={320} style={{ position: "absolute", top: -40, left: -60 }} />
+          <Fern size={200} style={{ position: "absolute", bottom: -20, right: -20, transform: "scaleX(-1)" }} />
+        </div>
+        <div style={{
+          position: "absolute", top: "50%", left: "50%",
+          transform: "translate(-50%, -50%)",
+          width: 320,
+          textAlign: "center",
+          color: "var(--green-900)",
+        }}>
+          <div style={{ color: "var(--green-800)" }}>
+            <Cell size={280} stroke={1.2} />
+          </div>
+          <div style={{ fontFamily: "var(--f-serif)", fontStyle: "italic", fontSize: 15, marginTop: 18, color: "var(--green-900)" }}>
+            Fig. 1 — Cellula vegetalis
+          </div>
+          <div style={{ fontSize: 12, letterSpacing: "0.14em", textTransform: "uppercase", marginTop: 6, color: "var(--green-700)" }}>
+            строение · ядро · мембрана
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const LoginCompact = ({ onEnter }) => {
+  const [name, setName] = React.useState("");
+  return (
+    <div style={{
+      position: "relative",
+      minHeight: 640,
+      background: "radial-gradient(ellipse at top, var(--green-100), var(--bg) 70%)",
+      display: "grid", placeItems: "center",
+      padding: "48px 24px",
+      overflow: "hidden",
+    }}>
+      <BotanicalBg intensity={1.5} pattern="mix" />
+      <div style={{ color: "var(--green-700)", position: "absolute", top: 40, left: 40, opacity: 0.25 }}>
+        <Sprig size={140} />
+      </div>
+      <div style={{ color: "var(--green-700)", position: "absolute", bottom: 40, right: 40, opacity: 0.25, transform: "rotate(160deg)" }}>
+        <Sprig size={180} />
+      </div>
+
+      <div className="card" style={{
+        width: "min(460px, 100%)",
+        padding: 40,
+        zIndex: 1,
+        textAlign: "center",
+      }}>
+        {/* Tutor avatar */}
+        <div style={{
+          width: 88, height: 88, borderRadius: "50%",
+          background: "var(--green-200)",
+          margin: "0 auto 20px",
+          display: "grid", placeItems: "center",
+          color: "var(--green-800)",
+          position: "relative",
+          border: "2px solid var(--green-300)",
+        }}>
+          <svg width="44" height="44" viewBox="0 0 44 44" fill="none">
+            <circle cx="22" cy="18" r="8" stroke="currentColor" strokeWidth="1.6"/>
+            <path d="M6 40 Q 22 26, 38 40" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
+          </svg>
+          <div style={{
+            position: "absolute", bottom: -4, right: -4,
+            background: "var(--accent)", color: "#1a1005",
+            fontSize: 10, fontWeight: 700, padding: "3px 8px",
+            borderRadius: 999, border: "2px solid var(--surface)",
+            letterSpacing: "0.06em",
+          }}>ONLINE</div>
+        </div>
+
+        <div className="eyebrow" style={{ justifyContent: "center", marginBottom: 12 }}>Елена Ивановна</div>
+        <h1 style={{ fontFamily: "var(--f-serif)", fontSize: 34, lineHeight: 1.1, marginBottom: 8 }}>
+          Рада видеть тебя <br/>
+          <em style={{ color: "var(--green-800)" }}>снова</em>
+        </h1>
+        <p style={{ color: "var(--text-soft)", fontSize: 14, marginBottom: 28 }}>
+          Введи своё имя — и начнём урок.
+        </p>
+
+        <form onSubmit={(e) => { e.preventDefault(); name.trim() && onEnter?.(name.trim()); }}
+          style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <input className="input input-lg" placeholder="Твоё имя"
+            value={name} onChange={e => setName(e.target.value)}
+            style={{ textAlign: "center" }} autoFocus />
+          <button type="submit" className="btn btn-primary btn-lg" disabled={!name.trim()}
+            style={{ opacity: name.trim() ? 1 : 0.5, justifyContent: "center" }}>
+            Продолжить 🌱
+          </button>
+        </form>
+
+        <div style={{ marginTop: 24, paddingTop: 20, borderTop: "1px dashed var(--border)", fontSize: 12, color: "var(--text-muted)" }}>
+          Впервые тут? Имя станет твоим профилем автоматически.
+        </div>
+      </div>
+    </div>
+  );
+};
+
+Object.assign(window, { LoginClassic, LoginCompact });
+
+</script>
+<script type="text/babel" data-presets="react">
+// Student dashboard — list of available quizzes + recent results
+
+const DASHBOARD_QUIZZES = [
+  { id: 1, topic: "Ботаника", title: "Строение растительной клетки", questions: 12, est: "8 мин", status: "done", score: 11 },
+  { id: 2, topic: "Ботаника", title: "Фотосинтез: световая фаза", questions: 10, est: "7 мин", status: "inprogress", progress: 40 },
+  { id: 3, topic: "Зоология", title: "Хордовые: общая характеристика", questions: 15, est: "12 мин", status: "new" },
+  { id: 4, topic: "Генетика", title: "Законы Менделя", questions: 8, est: "6 мин", status: "new" },
+  { id: 5, topic: "Анатомия", title: "Сердце и круги кровообращения", questions: 14, est: "10 мин", status: "done", score: 9 },
+  { id: 6, topic: "Экология", title: "Биоценоз и цепи питания", questions: 11, est: "9 мин", status: "new" },
+];
+
+const QuizCard = ({ q, onStart }) => {
+  const scorePct = q.score ? Math.round((q.score / q.questions) * 100) : null;
+  const statusLabel = {
+    done: `Пройден · ${q.score}/${q.questions}`,
+    inprogress: "В процессе",
+    new: "Новый",
+  }[q.status];
+  const statusColor = {
+    done: { bg: "var(--green-200)", fg: "var(--green-900)" },
+    inprogress: { bg: "var(--accent-soft)", fg: "#5a3a10" },
+    new: { bg: "var(--bg-muted)", fg: "var(--text-soft)" },
+  }[q.status];
+
+  return (
+    <div className="card" style={{ padding: 0, cursor: "pointer" }} onClick={onStart}>
+      {/* Illustration strip */}
+      <div style={{
+        height: 120,
+        background: "linear-gradient(135deg, var(--green-100), var(--green-200))",
+        position: "relative", overflow: "hidden",
+      }}>
+        <div style={{ position: "absolute", inset: 0, color: "var(--green-800)", opacity: 0.4 }}>
+          {q.topic === "Ботаника" && <Fern size={160} style={{ position: "absolute", top: -20, right: -20 }} />}
+          {q.topic === "Зоология" && <Helix size={120} style={{ position: "absolute", top: -10, right: 20 }} />}
+          {q.topic === "Генетика" && <Helix size={140} style={{ position: "absolute", top: -20, right: -10 }} />}
+          {q.topic === "Анатомия" && <Cell size={160} style={{ position: "absolute", top: -30, right: -20 }} />}
+          {q.topic === "Экология" && <Sprig size={140} style={{ position: "absolute", top: 0, right: 0, transform: "rotate(20deg)" }} />}
+        </div>
+        <div style={{ position: "absolute", top: 14, left: 16 }}>
+          <span className="pill pill-muted" style={{ background: "rgba(255,255,255,0.7)", backdropFilter: "blur(8px)" }}>
+            {q.topic}
+          </span>
+        </div>
+      </div>
+
+      <div style={{ padding: "18px 20px 20px" }}>
+        <h3 style={{ fontFamily: "var(--f-serif)", fontSize: 20, fontWeight: 500, marginBottom: 10, lineHeight: 1.25 }}>
+          {q.title}
+        </h3>
+        <div style={{ display: "flex", alignItems: "center", gap: 14, fontSize: 13, color: "var(--text-soft)", marginBottom: 14 }}>
+          <span>· {q.questions} вопросов</span>
+          <span>· {q.est}</span>
+        </div>
+
+        {q.status === "inprogress" && (
+          <div style={{ marginBottom: 14 }}>
+            <div className="progress"><div className="progress-fill" style={{ width: `${q.progress}%` }}/></div>
+            <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 6 }}>Пройдено {q.progress}%</div>
+          </div>
+        )}
+        {q.status === "done" && (
+          <div style={{ marginBottom: 14 }}>
+            <div className="progress"><div className="progress-fill" style={{ width: `${scorePct}%` }}/></div>
+            <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 6 }}>Результат {scorePct}%</div>
+          </div>
+        )}
+
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <span className="pill" style={{ background: statusColor.bg, color: statusColor.fg }}>
+            {statusLabel}
+          </span>
+          <button className="btn btn-soft btn-sm" onClick={(e) => { e.stopPropagation(); onStart?.(); }}>
+            {q.status === "done" ? "Повторить" : q.status === "inprogress" ? "Продолжить" : "Начать"}
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 6h6 M7 3 l 3 3 l-3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const StudentDashboard = ({ name = "Аня", onOpenQuiz }) => {
+  const [tab, setTab] = React.useState("Все");
+  const topics = ["Все", "Ботаника", "Зоология", "Генетика", "Анатомия", "Экология"];
+  const filtered = tab === "Все" ? DASHBOARD_QUIZZES : DASHBOARD_QUIZZES.filter(q => q.topic === tab);
+
+  const stats = {
+    done: DASHBOARD_QUIZZES.filter(q => q.status === "done").length,
+    total: DASHBOARD_QUIZZES.length,
+    avg: Math.round(
+      DASHBOARD_QUIZZES.filter(q => q.score).reduce((a, q) => a + q.score / q.questions, 0) /
+      Math.max(1, DASHBOARD_QUIZZES.filter(q => q.score).length) * 100
+    ),
+  };
+
+  return (
+    <div style={{ minHeight: 800, background: "var(--bg)", paddingBottom: 80 }}>
+      {/* Top bar */}
+      <div style={{
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        padding: "20px 48px",
+        borderBottom: "1px solid var(--border-soft)",
+        background: "var(--surface)",
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{
+            width: 36, height: 36, borderRadius: 10, background: "var(--green-800)",
+            color: "#fff", display: "grid", placeItems: "center",
+          }}>
+            <Leaf size={18} stroke={1.8} />
+          </div>
+          <div style={{ fontFamily: "var(--f-serif)", fontWeight: 600, fontSize: 17 }}>Живая клетка</div>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
+          <button className="btn btn-ghost btn-sm">История</button>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div style={{
+              width: 34, height: 34, borderRadius: "50%", background: "var(--green-200)",
+              display: "grid", placeItems: "center", color: "var(--green-900)",
+              fontFamily: "var(--f-serif)", fontWeight: 600,
+            }}>{name[0]?.toUpperCase()}</div>
+            <span style={{ fontSize: 14, fontWeight: 500 }}>{name}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Hero */}
+      <div style={{ padding: "40px 48px 28px", position: "relative", overflow: "hidden" }}>
+        <BotanicalBg intensity={0.6} pattern="ferns" />
+        <div style={{ position: "relative" }}>
+          <div className="eyebrow" style={{ marginBottom: 14 }}>Понедельник · 20 апреля</div>
+          <h1 style={{ fontFamily: "var(--f-serif)", fontSize: 44, lineHeight: 1.05, letterSpacing: "-0.02em", marginBottom: 8 }}>
+            Привет, {name}. <em style={{ color: "var(--green-800)" }}>Продолжим?</em>
+          </h1>
+          <p style={{ color: "var(--text-soft)", fontSize: 16, maxWidth: 560 }}>
+            У тебя один начатый тест и четыре новых. Елена Ивановна оставила заметку к теме «Фотосинтез» — посмотри, когда будешь готов.
+          </p>
+        </div>
+
+        {/* Stat strip */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, marginTop: 32, maxWidth: 720 }}>
+          {[
+            { v: `${stats.done}/${stats.total}`, l: "пройдено тестов" },
+            { v: `${stats.avg}%`, l: "средний результат" },
+            { v: "3 дня", l: "серия без перерыва", accent: true },
+          ].map((s, i) => (
+            <div key={i} className="card" style={{ padding: "18px 20px" }}>
+              <div style={{
+                fontFamily: "var(--f-serif)", fontSize: 28, fontWeight: 500, letterSpacing: "-0.01em",
+                color: s.accent ? "var(--accent)" : "var(--text)",
+              }}>{s.v}</div>
+              <div style={{ fontSize: 12, color: "var(--text-muted)", letterSpacing: "0.04em", textTransform: "uppercase", marginTop: 4 }}>
+                {s.l}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Filters */}
+      <div style={{ padding: "0 48px 20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          {topics.map(t => (
+            <div key={t} className={`chip ${tab === t ? "active" : ""}`} onClick={() => setTab(t)}>
+              {t}
+            </div>
+          ))}
+        </div>
+        <div style={{ fontSize: 13, color: "var(--text-muted)" }}>Показано {filtered.length} из {DASHBOARD_QUIZZES.length}</div>
+      </div>
+
+      {/* Quizzes grid */}
+      <div style={{ padding: "0 48px", display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 20 }}>
+        {filtered.map(q => <QuizCard key={q.id} q={q} onStart={() => onOpenQuiz?.(q)} />)}
+      </div>
+
+      {/* Recent attempts */}
+      <div style={{ padding: "56px 48px 0" }}>
+        <div className="eyebrow" style={{ marginBottom: 14 }}>Последние попытки</div>
+        <div className="card" style={{ padding: 0, overflow: "hidden" }}>
+          {[
+            { t: "Строение растительной клетки", date: "вчера, 19:40", score: "11/12", pct: 92, ok: true },
+            { t: "Сердце и круги кровообращения", date: "18 апр, 17:05", score: "9/14", pct: 64, ok: false },
+            { t: "Классификация животных", date: "12 апр, 15:22", score: "10/10", pct: 100, ok: true },
+          ].map((r, i, arr) => (
+            <div key={i} style={{
+              display: "grid", gridTemplateColumns: "1fr 140px 120px 90px",
+              alignItems: "center", gap: 16,
+              padding: "16px 22px",
+              borderBottom: i < arr.length - 1 ? "1px solid var(--border-soft)" : "none",
+            }}>
+              <div>
+                <div style={{ fontWeight: 500 }}>{r.t}</div>
+                <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>{r.date}</div>
+              </div>
+              <div className="progress"><div className="progress-fill" style={{ width: `${r.pct}%`, background: r.ok ? "linear-gradient(90deg, var(--green-600), var(--green-800))" : "linear-gradient(90deg, var(--accent), #c57a3a)" }}/></div>
+              <div style={{ fontFamily: "var(--f-serif)", fontSize: 20, fontWeight: 500 }}>{r.score}</div>
+              <button className="btn btn-ghost btn-sm">Разбор</button>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+Object.assign(window, { StudentDashboard });
+
+</script>
+<script type="text/babel" data-presets="react">
+// Quiz flow — 2 variants: classic stepper + immersive full-bleed
+
+const SAMPLE_QUIZ = {
+  title: "Строение растительной клетки",
+  topic: "Ботаника",
+  questions: [
+    {
+      q: "Какая структура отличает растительную клетку от животной?",
+      note: "Подсказка: отвечает за фотосинтез.",
+      options: [
+        "Митохондрия",
+        "Хлоропласт",
+        "Рибосома",
+        "Аппарат Гольджи",
+      ],
+      correct: 1,
+      explain: "Хлоропласты содержат хлорофилл и осуществляют фотосинтез. Их нет в животных клетках.",
+    },
+    {
+      q: "Какую функцию выполняет клеточная стенка у растений?",
+      options: [
+        "Обеспечивает движение клетки",
+        "Хранит генетическую информацию",
+        "Придаёт клетке форму и защиту",
+        "Синтезирует белки",
+      ],
+      correct: 2,
+      explain: "Клеточная стенка из целлюлозы — жёсткий каркас, защищающий клетку и задающий форму.",
+    },
+    {
+      q: "Что находится в центральной вакуоли зрелой растительной клетки?",
+      options: [
+        "Клеточный сок",
+        "ДНК",
+        "Ферменты пищеварения",
+        "Хлорофилл",
+      ],
+      correct: 0,
+      explain: "Крупная центральная вакуоль заполнена клеточным соком — раствором сахаров, солей и пигментов.",
+    },
+    {
+      q: "Где в клетке синтезируется АТФ?",
+      options: [
+        "В ядре",
+        "В рибосомах",
+        "В митохондриях",
+        "В лизосомах",
+      ],
+      correct: 2,
+      explain: "Митохондрии — «энергетические станции» клетки, в них идёт клеточное дыхание и синтез АТФ.",
+    },
+  ],
+};
+
+// ── Variant A: textbook-style stepper ──
+const QuizClassic = ({ quiz = SAMPLE_QUIZ, onFinish }) => {
+  const [idx, setIdx] = React.useState(0);
+  const [selected, setSelected] = React.useState(null);
+  const [locked, setLocked] = React.useState(false);
+  const [burst, setBurst] = React.useState(false);
+  const [answers, setAnswers] = React.useState([]);
+
+  const q = quiz.questions[idx];
+  const isLast = idx === quiz.questions.length - 1;
+
+  const pick = (i) => {
+    if (locked) return;
+    setSelected(i);
+    setLocked(true);
+    const correct = i === q.correct;
+    setAnswers(a => [...a, { picked: i, correct }]);
+    if (correct) setTimeout(() => setBurst(true), 120);
+  };
+  React.useEffect(() => { if (burst) { const t = setTimeout(() => setBurst(false), 2500); return () => clearTimeout(t); } }, [burst]);
+
+  const next = () => {
+    if (isLast) { onFinish?.(answers); return; }
+    setIdx(i => i + 1); setSelected(null); setLocked(false);
+  };
+
+  const pct = ((idx + (locked ? 1 : 0)) / quiz.questions.length) * 100;
+
+  return (
+    <div style={{ minHeight: 800, background: "var(--bg)", position: "relative", overflow: "hidden" }}>
+      <LeafBurst go={burst} />
+      <BotanicalBg intensity={0.4} pattern="mix" />
+
+      {/* Top */}
+      <div style={{ position: "relative", padding: "20px 48px", borderBottom: "1px solid var(--border-soft)", display: "flex", alignItems: "center", gap: 24 }}>
+        <button className="btn btn-ghost btn-sm">← Выйти</button>
+        <div style={{ flex: 1 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "var(--text-muted)", marginBottom: 6 }}>
+            <span style={{ fontWeight: 600, color: "var(--text-soft)", letterSpacing: "0.06em", textTransform: "uppercase" }}>
+              {quiz.topic} · {quiz.title}
+            </span>
+            <span>Вопрос {idx + 1} из {quiz.questions.length}</span>
+          </div>
+          <div className="progress"><div className="progress-fill" style={{ width: `${pct}%` }}/></div>
+        </div>
+      </div>
+
+      {/* Question body */}
+      <div style={{ position: "relative", maxWidth: 760, margin: "0 auto", padding: "56px 40px 80px" }}>
+        <div className="eyebrow" style={{ marginBottom: 14 }}>Вопрос {String(idx + 1).padStart(2, "0")}</div>
+        <h2 style={{ fontFamily: "var(--f-serif)", fontSize: 34, lineHeight: 1.2, marginBottom: 10, letterSpacing: "-0.01em" }}>
+          {q.q}
+        </h2>
+        {q.note && <p style={{ color: "var(--text-muted)", fontSize: 14, fontStyle: "italic", marginBottom: 28 }}>{q.note}</p>}
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 28 }}>
+          {q.options.map((opt, i) => {
+            const letter = String.fromCharCode(65 + i);
+            let cls = "answer";
+            if (locked) {
+              if (i === q.correct) cls += " correct";
+              else if (i === selected) cls += " wrong";
+              cls += " locked";
+            } else if (i === selected) cls += " selected";
+            return (
+              <div key={i} className={cls} onClick={() => pick(i)}>
+                <div className="letter">{letter}</div>
+                <div style={{ flex: 1 }}>{opt}</div>
+                {locked && i === q.correct && <span style={{ fontSize: 20 }}>🌱</span>}
+                {locked && i === selected && i !== q.correct && <span style={{ fontSize: 18, color: "var(--wrong)" }}>✕</span>}
+              </div>
+            );
+          })}
+        </div>
+
+        {locked && (
+          <div style={{
+            marginTop: 24, padding: "16px 20px",
+            background: selected === q.correct ? "var(--correct-bg)" : "var(--wrong-bg)",
+            border: `1px solid ${selected === q.correct ? "var(--correct)" : "var(--wrong)"}`,
+            borderRadius: "var(--r-md)",
+            display: "flex", gap: 14, alignItems: "flex-start",
+          }}>
+            <div style={{ fontSize: 24, lineHeight: 1 }}>{selected === q.correct ? "🌱" : "🍂"}</div>
+            <div>
+              <div style={{ fontWeight: 600, marginBottom: 4, color: selected === q.correct ? "var(--correct)" : "var(--wrong)" }}>
+                {selected === q.correct ? "Отлично!" : "Не совсем так."}
+              </div>
+              <div style={{ fontSize: 14, color: "var(--text-soft)", lineHeight: 1.55 }}>{q.explain}</div>
+            </div>
+          </div>
+        )}
+
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 40 }}>
+          <span style={{ fontSize: 13, color: "var(--text-muted)" }}>
+            {locked ? "Продолжай — следующий вопрос готов" : "Выбери один ответ"}
+          </span>
+          <button className="btn btn-primary btn-lg" onClick={next} disabled={!locked} style={{ opacity: locked ? 1 : 0.4 }}>
+            {isLast ? "Посмотреть результат" : "Следующий вопрос"}
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8 H13 M9 4 L 13 8 L 9 12" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ── Variant B: focused split — plate on left, question on right ──
+const QuizFocused = ({ quiz = SAMPLE_QUIZ, onFinish }) => {
+  const [idx, setIdx] = React.useState(0);
+  const [selected, setSelected] = React.useState(null);
+  const [locked, setLocked] = React.useState(false);
+  const [burst, setBurst] = React.useState(false);
+  const q = quiz.questions[idx];
+  const isLast = idx === quiz.questions.length - 1;
+  const pct = ((idx + (locked ? 1 : 0)) / quiz.questions.length) * 100;
+
+  const pick = (i) => {
+    if (locked) return;
+    setSelected(i); setLocked(true);
+    if (i === q.correct) setTimeout(() => setBurst(true), 100);
+  };
+  React.useEffect(() => { if (burst) { const t = setTimeout(() => setBurst(false), 2500); return () => clearTimeout(t); } }, [burst]);
+
+  const next = () => { if (isLast) onFinish?.(); else { setIdx(i=>i+1); setSelected(null); setLocked(false); } };
+
+  return (
+    <div style={{ minHeight: 800, background: "var(--bg)", display: "grid", gridTemplateColumns: "420px 1fr", overflow: "hidden", position: "relative" }}>
+      <LeafBurst go={burst} />
+
+      {/* Left plate */}
+      <div style={{
+        position: "relative",
+        background: "linear-gradient(180deg, var(--green-800), var(--green-900))",
+        color: "#fff",
+        padding: "32px 32px 40px",
+        display: "flex", flexDirection: "column", justifyContent: "space-between",
+        overflow: "hidden",
+      }}>
+        <div style={{ position: "absolute", inset: 0, color: "#fff", opacity: 0.07 }}>
+          <Fern size={280} style={{ position: "absolute", top: -40, left: -60 }} />
+          <Cell size={240} style={{ position: "absolute", bottom: -40, right: -50 }} />
+        </div>
+        <div style={{ position: "relative" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 40 }}>
+            <Leaf size={20} stroke={1.8} style={{ color: "var(--green-400)" }}/>
+            <div style={{ fontFamily: "var(--f-serif)", fontSize: 14 }}>Живая клетка</div>
+          </div>
+          <div style={{ fontSize: 11, letterSpacing: "0.2em", textTransform: "uppercase", opacity: 0.7, marginBottom: 10 }}>
+            {quiz.topic}
+          </div>
+          <h2 style={{ fontFamily: "var(--f-serif)", fontSize: 28, lineHeight: 1.2, color: "#fff", marginBottom: 20 }}>
+            {quiz.title}
+          </h2>
+          <div style={{ display: "flex", gap: 4, marginTop: 20 }}>
+            {quiz.questions.map((_, i) => (
+              <div key={i} style={{
+                flex: 1, height: 3, borderRadius: 999,
+                background: i < idx ? "var(--green-400)" : i === idx ? "#fff" : "rgba(255,255,255,0.2)",
+                transition: "all 300ms",
+              }}/>
+            ))}
+          </div>
+          <div style={{ fontSize: 12, opacity: 0.7, marginTop: 10 }}>
+            {idx + 1} / {quiz.questions.length} · {Math.round(pct)}% пройдено
+          </div>
+        </div>
+
+        <div style={{ position: "relative" }}>
+          <PlatePlaceholder label={`Fig. ${idx + 1} — ${quiz.topic}`} style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)", color: "var(--green-300)" }}/>
+        </div>
+      </div>
+
+      {/* Right — question */}
+      <div style={{ padding: "48px 56px", position: "relative", overflow: "hidden" }}>
+        <BotanicalBg intensity={0.3} pattern="ferns" />
+        <div style={{ position: "relative", maxWidth: 640 }}>
+          <div className="eyebrow" style={{ marginBottom: 16 }}>Вопрос {String(idx + 1).padStart(2, "0")}</div>
+          <h2 style={{ fontFamily: "var(--f-serif)", fontSize: 36, lineHeight: 1.15, marginBottom: 14, letterSpacing: "-0.015em" }}>
+            {q.q}
+          </h2>
+          {q.note && <p style={{ color: "var(--text-muted)", fontSize: 14, fontStyle: "italic", marginBottom: 24 }}>{q.note}</p>}
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 28 }}>
+            {q.options.map((opt, i) => {
+              const letter = String.fromCharCode(65 + i);
+              let cls = "answer";
+              if (locked) {
+                if (i === q.correct) cls += " correct";
+                else if (i === selected) cls += " wrong";
+                cls += " locked";
+              } else if (i === selected) cls += " selected";
+              return (
+                <div key={i} className={cls} onClick={() => pick(i)} style={{ padding: "18px 18px" }}>
+                  <div className="letter">{letter}</div>
+                  <div style={{ flex: 1, fontSize: 15 }}>{opt}</div>
+                </div>
+              );
+            })}
+          </div>
+
+          {locked && (
+            <div style={{
+              marginTop: 24, padding: "18px 20px",
+              background: selected === q.correct ? "var(--correct-bg)" : "var(--wrong-bg)",
+              borderLeft: `3px solid ${selected === q.correct ? "var(--correct)" : "var(--wrong)"}`,
+              borderRadius: 8,
+            }}>
+              <div style={{ fontFamily: "var(--f-serif)", fontStyle: "italic", fontSize: 14, marginBottom: 6, color: selected === q.correct ? "var(--correct)" : "var(--wrong)" }}>
+                {selected === q.correct ? "🌱 Верно" : "🍂 Почти"}
+              </div>
+              <div style={{ fontSize: 14, color: "var(--text-soft)", lineHeight: 1.55 }}>{q.explain}</div>
+            </div>
+          )}
+
+          <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 36 }}>
+            <button className="btn btn-accent btn-lg" onClick={next} disabled={!locked} style={{ opacity: locked ? 1 : 0.4 }}>
+              {isLast ? "Завершить" : "Дальше"}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ── Results screen ──
+const QuizResults = ({ total = 12, correct = 10, onRetry, onHome }) => {
+  const [burst, setBurst] = React.useState(false);
+  React.useEffect(() => { const t = setTimeout(() => setBurst(true), 300); return () => clearTimeout(t); }, []);
+
+  const pct = Math.round((correct / total) * 100);
+  const grade = pct >= 90 ? "Ботаник года" : pct >= 75 ? "Отлично" : pct >= 60 ? "Хорошо" : "Нужно повторить";
+  const message = pct >= 90 ? "Материал усвоен блестяще — можно двигаться дальше." :
+    pct >= 75 ? "Большинство ответов верные. Внимательно разбери ошибки." :
+    pct >= 60 ? "Достойно. Перечитай раздел про клеточную стенку и попробуй ещё." :
+    "Давай вернёмся к теории — это нормально, биология требует времени.";
+
+  const breakdown = [
+    { label: "Строение клетки", correct: 4, total: 4 },
+    { label: "Фотосинтез", correct: 3, total: 4 },
+    { label: "Клеточное дыхание", correct: 3, total: 4 },
+  ];
+
+  return (
+    <div style={{ minHeight: 800, background: "var(--bg)", padding: "48px 48px 80px", position: "relative", overflow: "hidden" }}>
+      <LeafBurst go={burst} count={40} />
+      <BotanicalBg intensity={0.4} pattern="mix" />
+
+      <div style={{ maxWidth: 920, margin: "0 auto", position: "relative" }}>
+        <div className="eyebrow" style={{ marginBottom: 14 }}>Результат теста</div>
+        <h1 style={{ fontFamily: "var(--f-serif)", fontSize: 52, lineHeight: 1.05, letterSpacing: "-0.02em", marginBottom: 10 }}>
+          {grade}, <em style={{ color: "var(--green-800)" }}>Аня</em>
+        </h1>
+        <p style={{ color: "var(--text-soft)", fontSize: 17, maxWidth: 560, marginBottom: 36 }}>{message}</p>
+
+        <div style={{ display: "grid", gridTemplateColumns: "1.1fr 1fr", gap: 24 }}>
+          {/* Big score card */}
+          <div className="card" style={{ padding: 36, display: "flex", flexDirection: "column", gap: 28, position: "relative", overflow: "hidden" }}>
+            <div style={{ position: "absolute", top: -30, right: -30, color: "var(--green-200)" }}>
+              <Cell size={200} />
+            </div>
+            <div style={{ position: "relative" }}>
+              <div style={{ display: "flex", alignItems: "baseline", gap: 12 }}>
+                <div style={{ fontFamily: "var(--f-serif)", fontSize: 96, fontWeight: 400, lineHeight: 1, color: "var(--green-800)", letterSpacing: "-0.03em" }}>
+                  {correct}
+                </div>
+                <div style={{ fontFamily: "var(--f-serif)", fontSize: 36, color: "var(--text-muted)" }}>/ {total}</div>
+              </div>
+              <div style={{ fontSize: 13, color: "var(--text-muted)", letterSpacing: "0.04em", marginTop: 6 }}>
+                {pct}% правильных ответов · на 3 минуты быстрее среднего
+              </div>
+            </div>
+
+            <div>
+              <div style={{ fontSize: 12, color: "var(--text-muted)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 10 }}>По темам</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {breakdown.map((b, i) => (
+                  <div key={i}>
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginBottom: 4 }}>
+                      <span>{b.label}</span>
+                      <span style={{ color: "var(--text-muted)" }}>{b.correct}/{b.total}</span>
+                    </div>
+                    <div className="progress" style={{ height: 4 }}>
+                      <div className="progress-fill" style={{ width: `${(b.correct / b.total) * 100}%` }}/>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ display: "flex", gap: 10 }}>
+              <button className="btn btn-primary" onClick={onRetry}>Пройти ещё раз</button>
+              <button className="btn btn-ghost" onClick={onHome}>К списку тестов</button>
+            </div>
+          </div>
+
+          {/* Insights */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <div className="card" style={{ padding: 24 }}>
+              <div className="eyebrow" style={{ marginBottom: 10 }}>Разбор ошибок</div>
+              <div style={{ fontFamily: "var(--f-serif)", fontSize: 17, lineHeight: 1.35, marginBottom: 12 }}>
+                «Какую роль играет строма хлоропласта?»
+              </div>
+              <div style={{ fontSize: 13, color: "var(--text-soft)", padding: "10px 12px", background: "var(--wrong-bg)", borderRadius: 8, marginBottom: 10 }}>
+                Твой ответ: «Поглощает свет» · неверно
+              </div>
+              <div style={{ fontSize: 13, color: "var(--text-soft)", padding: "10px 12px", background: "var(--correct-bg)", borderRadius: 8 }}>
+                Правильно: «Место темновой фазы фотосинтеза»
+              </div>
+            </div>
+
+            <div className="card" style={{ padding: 24, background: "var(--green-800)", color: "#fff", border: "none" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+                <Sprig size={32} stroke={1.4} style={{ color: "var(--green-300)" }} />
+                <div style={{ fontSize: 11, letterSpacing: "0.16em", textTransform: "uppercase", color: "var(--green-300)" }}>
+                  Следующий шаг
+                </div>
+              </div>
+              <div style={{ fontFamily: "var(--f-serif)", fontSize: 22, lineHeight: 1.25, marginBottom: 14, color: "#fff" }}>
+                Фотосинтез: тёмная фаза
+              </div>
+              <div style={{ fontSize: 13, opacity: 0.85, marginBottom: 16 }}>
+                10 вопросов · 7 минут · закроет пробелы по строме и циклу Кальвина.
+              </div>
+              <button className="btn btn-accent">Открыть тест</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+Object.assign(window, { QuizClassic, QuizFocused, QuizResults });
+
+</script>
+<script type="text/babel" data-presets="react">
+// Admin panel — tests list, create test, students results
+
+const ADMIN_TESTS = [
+  { id: 1, title: "Строение растительной клетки", topic: "Ботаника", questions: 12, assigned: 8, avg: 82, updated: "18 апр" },
+  { id: 2, title: "Фотосинтез: световая фаза", topic: "Ботаника", questions: 10, assigned: 12, avg: 71, updated: "15 апр" },
+  { id: 3, title: "Хордовые: общая характеристика", topic: "Зоология", questions: 15, assigned: 6, avg: 68, updated: "11 апр" },
+  { id: 4, title: "Законы Менделя", topic: "Генетика", questions: 8, assigned: 14, avg: 77, updated: "09 апр", draft: true },
+  { id: 5, title: "Сердце и круги кровообращения", topic: "Анатомия", questions: 14, assigned: 10, avg: 65, updated: "02 апр" },
+];
+
+const ADMIN_STUDENTS = [
+  { name: "Аня Соколова", grade: "9 класс", tests: 12, avg: 88, streak: 5, last: "сегодня" },
+  { name: "Миша Петров", grade: "10 класс", tests: 10, avg: 74, streak: 0, last: "вчера" },
+  { name: "Лена Воронцова", grade: "11 класс", tests: 14, avg: 92, streak: 12, last: "сегодня" },
+  { name: "Кирилл Ефимов", grade: "9 класс", tests: 6, avg: 61, streak: 0, last: "3 дня назад" },
+  { name: "Дана Гаршина", grade: "10 класс", tests: 9, avg: 80, streak: 2, last: "вчера" },
+  { name: "Саша Белов", grade: "11 класс", tests: 11, avg: 85, streak: 4, last: "сегодня" },
+];
+
+const AdminSidebar = ({ active, onTab }) => {
+  const items = [
+    { id: "tests", label: "Тесты", icon: "📚" },
+    { id: "create", label: "Создать тест", icon: "✎" },
+    { id: "students", label: "Ученики", icon: "👥" },
+    { id: "results", label: "Результаты", icon: "📈" },
+    { id: "library", label: "Библиотека", icon: "🌱" },
+  ];
+  return (
+    <div className="sidebar" style={{ minHeight: "100%" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 12px 20px" }}>
+        <div style={{ width: 36, height: 36, borderRadius: 10, background: "var(--green-800)", color: "#fff", display: "grid", placeItems: "center" }}>
+          <Leaf size={18} stroke={1.8} />
+        </div>
+        <div>
+          <div style={{ fontFamily: "var(--f-serif)", fontWeight: 600, fontSize: 15 }}>Живая клетка</div>
+          <div style={{ fontSize: 11, color: "var(--text-muted)" }}>панель репетитора</div>
+        </div>
+      </div>
+      <div style={{ fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--text-muted)", padding: "8px 14px 4px" }}>Обучение</div>
+      {items.map(it => (
+        <div key={it.id} className={`nav-item ${active === it.id ? "active" : ""}`} onClick={() => onTab?.(it.id)}>
+          <span className="nav-ico" style={{ width: 18, textAlign: "center", color: "var(--text-muted)" }}>{it.icon}</span>
+          {it.label}
+        </div>
+      ))}
+      <div style={{ marginTop: "auto", padding: 12, background: "var(--green-100)", borderRadius: 14, border: "1px solid var(--green-200)" }}>
+        <div style={{ fontFamily: "var(--f-serif)", fontSize: 14, color: "var(--green-900)", marginBottom: 4 }}>Елена Ивановна</div>
+        <div style={{ fontSize: 11, color: "var(--green-800)" }}>репетитор · 36 учеников</div>
+      </div>
+    </div>
+  );
+};
+
+const AdminTestsList = () => (
+  <div style={{ padding: "32px 40px", flex: 1 }}>
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 28 }}>
+      <div>
+        <div className="eyebrow" style={{ marginBottom: 12 }}>Тесты</div>
+        <h1 style={{ fontFamily: "var(--f-serif)", fontSize: 36, letterSpacing: "-0.01em" }}>Библиотека заданий</h1>
+        <p style={{ color: "var(--text-soft)", marginTop: 6 }}>Собранные тесты по биологии. Назначай ученикам, редактируй, смотри статистику.</p>
+      </div>
+      <button className="btn btn-primary">+ Новый тест</button>
+    </div>
+
+    <div style={{ display: "flex", gap: 10, marginBottom: 20, alignItems: "center" }}>
+      <div className="chip active">Все</div>
+      <div className="chip">Ботаника</div>
+      <div className="chip">Зоология</div>
+      <div className="chip">Генетика</div>
+      <div className="chip">Анатомия</div>
+      <div style={{ flex: 1 }}/>
+      <input className="input" placeholder="Поиск по названию…" style={{ maxWidth: 260, padding: "10px 14px" }} />
+    </div>
+
+    <div className="card" style={{ padding: 0, overflow: "hidden" }}>
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: "2fr 1fr 90px 110px 120px 110px",
+        padding: "12px 20px",
+        borderBottom: "1px solid var(--border-soft)",
+        background: "var(--bg-muted)",
+        fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-muted)", fontWeight: 600,
+      }}>
+        <div>Тест</div><div>Тема</div><div>Вопр.</div><div>Назначен</div><div>Средний балл</div><div style={{ textAlign: "right" }}>Действия</div>
+      </div>
+      {ADMIN_TESTS.map((t, i) => (
+        <div key={t.id} style={{
+          display: "grid", gridTemplateColumns: "2fr 1fr 90px 110px 120px 110px",
+          padding: "16px 20px", alignItems: "center",
+          borderBottom: i < ADMIN_TESTS.length - 1 ? "1px solid var(--border-soft)" : "none",
+        }}>
+          <div>
+            <div style={{ fontWeight: 500, display: "flex", alignItems: "center", gap: 8 }}>
+              {t.title}
+              {t.draft && <span className="pill pill-accent" style={{ fontSize: 10 }}>черновик</span>}
+            </div>
+            <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>обновлён {t.updated}</div>
+          </div>
+          <div><span className="pill" style={{ background: "var(--green-100)" }}>{t.topic}</span></div>
+          <div style={{ fontFamily: "var(--f-serif)", fontSize: 18 }}>{t.questions}</div>
+          <div style={{ color: "var(--text-soft)" }}>{t.assigned} учеников</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <div style={{ flex: 1 }}><div className="progress" style={{ height: 4 }}><div className="progress-fill" style={{ width: `${t.avg}%` }}/></div></div>
+            <span style={{ fontFamily: "var(--f-serif)", fontSize: 14 }}>{t.avg}%</span>
+          </div>
+          <div style={{ display: "flex", gap: 4, justifyContent: "flex-end" }}>
+            <button className="btn btn-ghost btn-sm">Открыть</button>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
+const AdminCreateTest = () => {
+  const [questions, setQuestions] = React.useState([
+    { id: 1, q: "Какая структура отличает растительную клетку от животной?",
+      options: ["Митохондрия", "Хлоропласт", "Рибосома", "Аппарат Гольджи"],
+      correct: 1, expand: true },
+    { id: 2, q: "Где в клетке синтезируется АТФ?",
+      options: ["В ядре", "В рибосомах", "В митохондриях", "В лизосомах"],
+      correct: 2, expand: false },
+  ]);
+
+  return (
+    <div style={{ padding: "32px 40px", flex: 1, display: "grid", gridTemplateColumns: "1fr 320px", gap: 32 }}>
+      <div>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13, color: "var(--text-muted)", marginBottom: 12 }}>
+          <span>Тесты</span><span>›</span><span style={{ color: "var(--text)" }}>Новый тест</span>
+        </div>
+        <h1 style={{ fontFamily: "var(--f-serif)", fontSize: 32, marginBottom: 6 }}>Создание теста</h1>
+        <p style={{ color: "var(--text-soft)", marginBottom: 28 }}>Назови тест, добавь вопросы и варианты ответа. Не забудь отметить правильный.</p>
+
+        <div className="card" style={{ padding: 24, marginBottom: 20 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 16, marginBottom: 16 }}>
+            <div className="field">
+              <label>Название теста</label>
+              <input className="input input-lg" defaultValue="Фотосинтез: тёмная фаза" />
+            </div>
+            <div className="field">
+              <label>Тема</label>
+              <select className="input input-lg" style={{ cursor: "pointer" }}>
+                <option>Ботаника</option><option>Зоология</option><option>Генетика</option>
+              </select>
+            </div>
+          </div>
+          <div className="field">
+            <label>Краткое описание (необязательно)</label>
+            <textarea className="input" rows={2} defaultValue="Проверяем понимание цикла Кальвина и роли стромы." style={{ resize: "vertical", fontFamily: "var(--f-sans)" }}/>
+          </div>
+        </div>
+
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+          <div className="eyebrow">Вопросы · {questions.length}</div>
+          <button className="btn btn-ghost btn-sm">+ Добавить вопрос</button>
+        </div>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          {questions.map((q, qi) => (
+            <div key={q.id} className="card" style={{ padding: 0, overflow: "hidden" }}>
+              <div style={{ padding: "16px 20px", display: "flex", alignItems: "center", gap: 14, background: q.expand ? "var(--green-100)" : "transparent", borderBottom: q.expand ? "1px solid var(--green-200)" : "none" }}>
+                <div style={{ width: 30, height: 30, borderRadius: "50%", background: "var(--green-800)", color: "#fff", fontFamily: "var(--f-serif)", display: "grid", placeItems: "center", fontSize: 14 }}>
+                  {qi + 1}
+                </div>
+                <div style={{ flex: 1, fontWeight: 500 }}>{q.q}</div>
+                <span className="pill pill-muted">{q.options.length} варианта</span>
+                <button className="btn btn-ghost btn-sm">{q.expand ? "Свернуть" : "Править"}</button>
+              </div>
+              {q.expand && (
+                <div style={{ padding: "20px 24px", display: "flex", flexDirection: "column", gap: 14 }}>
+                  <div className="field">
+                    <label>Текст вопроса</label>
+                    <input className="input" defaultValue={q.q} />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-soft)", letterSpacing: "0.02em", marginBottom: 10 }}>
+                      Варианты ответа · отметь правильный
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                      {q.options.map((o, oi) => (
+                        <label key={oi} style={{
+                          display: "flex", alignItems: "center", gap: 12,
+                          padding: "12px 14px",
+                          background: oi === q.correct ? "var(--correct-bg)" : "var(--bg-muted)",
+                          border: `1.5px solid ${oi === q.correct ? "var(--correct)" : "transparent"}`,
+                          borderRadius: "var(--r-md)",
+                          cursor: "pointer",
+                        }}>
+                          <input type="radio" name={`q-${q.id}`} defaultChecked={oi === q.correct} style={{ accentColor: "var(--green-800)", width: 18, height: 18 }}/>
+                          <input defaultValue={o} style={{ flex: 1, background: "transparent", border: "none", outline: "none", fontSize: 15 }}/>
+                          {oi === q.correct && <span className="pill" style={{ background: "var(--green-800)", color: "#fff" }}>верный</span>}
+                          <button className="btn btn-ghost btn-sm" style={{ padding: "4px 8px" }}>✕</button>
+                        </label>
+                      ))}
+                    </div>
+                    <button className="btn btn-ghost btn-sm" style={{ marginTop: 10 }}>+ Добавить вариант</button>
+                  </div>
+                  <div className="field">
+                    <label>Пояснение к правильному ответу (видно после выбора)</label>
+                    <textarea className="input" rows={2} placeholder="Объясни, почему этот ответ правильный…" style={{ resize: "vertical", fontFamily: "var(--f-sans)" }}/>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+
+          <button className="btn btn-soft" style={{ justifyContent: "center" }}>
+            + Добавить ещё один вопрос
+          </button>
+        </div>
+      </div>
+
+      {/* Right — preview + publish */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 16, position: "sticky", top: 32, alignSelf: "flex-start" }}>
+        <div className="card" style={{ padding: 20 }}>
+          <div className="eyebrow" style={{ marginBottom: 12 }}>Предпросмотр</div>
+          <div style={{ border: "1px solid var(--border-soft)", borderRadius: 12, padding: 16, background: "var(--bg-muted)" }}>
+            <div style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 6 }}>Вопрос 01</div>
+            <div style={{ fontFamily: "var(--f-serif)", fontSize: 15, lineHeight: 1.35, marginBottom: 12 }}>
+              Какая структура отличает растительную клетку от животной?
+            </div>
+            {["Митохондрия","Хлоропласт","Рибосома","Аппарат Гольджи"].map((o, i) => (
+              <div key={i} style={{
+                display: "flex", alignItems: "center", gap: 10,
+                padding: "8px 10px", marginBottom: 6,
+                background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 8,
+                fontSize: 12,
+              }}>
+                <div style={{ width: 20, height: 20, borderRadius: "50%", background: "var(--bg-muted)", display: "grid", placeItems: "center", fontSize: 10 }}>
+                  {String.fromCharCode(65 + i)}
+                </div>
+                {o}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="card" style={{ padding: 20 }}>
+          <div className="eyebrow" style={{ marginBottom: 12 }}>Назначение</div>
+          <div style={{ fontSize: 13, color: "var(--text-soft)", marginBottom: 10 }}>Выбери учеников, которым отправить тест:</div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+            {["9 класс", "10 класс", "11 класс", "Аня С.", "Миша П."].map((g, i) => (
+              <span key={i} className={`chip ${i < 2 ? "active" : ""}`}>{g}</span>
+            ))}
+          </div>
+        </div>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          <button className="btn btn-primary btn-lg" style={{ justifyContent: "center" }}>Опубликовать тест</button>
+          <button className="btn btn-ghost" style={{ justifyContent: "center" }}>Сохранить как черновик</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const AdminStudents = () => (
+  <div style={{ padding: "32px 40px", flex: 1 }}>
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 28 }}>
+      <div>
+        <div className="eyebrow" style={{ marginBottom: 12 }}>Ученики</div>
+        <h1 style={{ fontFamily: "var(--f-serif)", fontSize: 36 }}>Твой класс</h1>
+        <p style={{ color: "var(--text-soft)", marginTop: 6 }}>6 активных учеников. Кликни на строку, чтобы увидеть детальные результаты.</p>
+      </div>
+      <div style={{ display: "flex", gap: 10 }}>
+        <button className="btn btn-ghost">Экспорт CSV</button>
+        <button className="btn btn-primary">+ Пригласить</button>
+      </div>
+    </div>
+
+    {/* Summary cards */}
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 28 }}>
+      {[
+        { v: "6", l: "учеников", sub: "все активны" },
+        { v: "62", l: "попыток за неделю", sub: "+12 vs прошлая" },
+        { v: "80%", l: "средний балл класса", sub: "стабильно" },
+        { v: "Лена В.", l: "лидер недели", sub: "12 дней подряд", accent: true },
+      ].map((s, i) => (
+        <div key={i} className="card" style={{ padding: 20 }}>
+          <div style={{ fontFamily: "var(--f-serif)", fontSize: 26, fontWeight: 500, color: s.accent ? "var(--accent)" : "var(--text)" }}>{s.v}</div>
+          <div style={{ fontSize: 12, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.04em", marginTop: 2 }}>{s.l}</div>
+          <div style={{ fontSize: 12, color: "var(--text-soft)", marginTop: 8 }}>{s.sub}</div>
+        </div>
+      ))}
+    </div>
+
+    <div className="card" style={{ padding: 0, overflow: "hidden" }}>
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: "2fr 100px 90px 1.3fr 100px 120px 100px",
+        padding: "12px 20px", borderBottom: "1px solid var(--border-soft)",
+        background: "var(--bg-muted)",
+        fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-muted)", fontWeight: 600,
+      }}>
+        <div>Ученик</div><div>Класс</div><div>Тестов</div><div>Средний балл</div><div>Серия</div><div>Последний вход</div><div style={{ textAlign: "right" }}></div>
+      </div>
+      {ADMIN_STUDENTS.map((s, i) => (
+        <div key={i} style={{
+          display: "grid",
+          gridTemplateColumns: "2fr 100px 90px 1.3fr 100px 120px 100px",
+          padding: "14px 20px", alignItems: "center",
+          borderBottom: i < ADMIN_STUDENTS.length - 1 ? "1px solid var(--border-soft)" : "none",
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div style={{
+              width: 34, height: 34, borderRadius: "50%",
+              background: ["var(--green-200)","var(--accent-soft)","var(--green-300)"][i % 3],
+              color: "var(--green-900)",
+              display: "grid", placeItems: "center",
+              fontFamily: "var(--f-serif)", fontWeight: 600, fontSize: 13,
+            }}>{s.name.split(" ").map(w => w[0]).join("")}</div>
+            <div style={{ fontWeight: 500 }}>{s.name}</div>
+          </div>
+          <div style={{ fontSize: 13, color: "var(--text-soft)" }}>{s.grade}</div>
+          <div style={{ fontFamily: "var(--f-serif)", fontSize: 16 }}>{s.tests}</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div style={{ flex: 1, maxWidth: 160 }}>
+              <div className="progress" style={{ height: 4 }}>
+                <div className="progress-fill" style={{
+                  width: `${s.avg}%`,
+                  background: s.avg >= 80 ? "linear-gradient(90deg, var(--green-600), var(--green-800))"
+                    : s.avg >= 65 ? "linear-gradient(90deg, var(--accent), #c57a3a)"
+                    : "linear-gradient(90deg, var(--wrong), #8a2e1c)",
+                }}/>
+              </div>
+            </div>
+            <span style={{ fontFamily: "var(--f-serif)", fontSize: 14 }}>{s.avg}%</span>
+          </div>
+          <div>
+            {s.streak > 0 ? <span className="pill pill-accent">🔥 {s.streak} дн.</span> : <span className="pill pill-muted">—</span>}
+          </div>
+          <div style={{ fontSize: 13, color: "var(--text-soft)" }}>{s.last}</div>
+          <div style={{ textAlign: "right" }}><button className="btn btn-ghost btn-sm">Детали</button></div>
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
+const AdminPanel = ({ initialTab = "tests" }) => {
+  const [tab, setTab] = React.useState(initialTab);
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: "240px 1fr", minHeight: 800, background: "var(--bg)" }}>
+      <AdminSidebar active={tab} onTab={setTab} />
+      {tab === "tests" && <AdminTestsList />}
+      {tab === "create" && <AdminCreateTest />}
+      {tab === "students" && <AdminStudents />}
+      {tab === "results" && <AdminStudents />}
+      {tab === "library" && <AdminTestsList />}
+    </div>
+  );
+};
+
+Object.assign(window, { AdminPanel, AdminTestsList, AdminCreateTest, AdminStudents });
+
+</script>
+<script type="text/babel" data-presets="react">
+// Mobile versions — login + quiz + dashboard condensed for phone frames
+
+const MobileLogin = () => {
+  const [name, setName] = React.useState("Аня");
+  return (
+    <div style={{ width: "100%", height: "100%", background: "var(--bg)", position: "relative", overflow: "hidden", display: "flex", flexDirection: "column", padding: "60px 24px 32px" }}>
+      <BotanicalBg intensity={1.5} pattern="ferns" />
+      <div style={{ position: "relative", flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
+        <div style={{ color: "var(--green-800)", marginBottom: 28 }}>
+          <Leaf size={44} stroke={1.6}/>
+        </div>
+        <div className="eyebrow" style={{ marginBottom: 12 }}>Живая клетка</div>
+        <h1 style={{ fontFamily: "var(--f-serif)", fontSize: 32, lineHeight: 1.1, letterSpacing: "-0.02em", marginBottom: 8 }}>
+          Добро пожаловать <em style={{ color: "var(--green-800)" }}>на урок</em>
+        </h1>
+        <p style={{ color: "var(--text-soft)", fontSize: 14, marginBottom: 28 }}>
+          Введи имя — без паролей.
+        </p>
+        <div className="field" style={{ marginBottom: 14 }}>
+          <label>Твоё имя</label>
+          <input className="input input-lg" value={name} onChange={e => setName(e.target.value)} />
+        </div>
+        <button className="btn btn-primary btn-lg" style={{ justifyContent: "center" }}>Войти на урок 🌱</button>
+      </div>
+    </div>
+  );
+};
+
+const MobileQuiz = () => (
+  <div style={{ width: "100%", height: "100%", background: "var(--bg)", position: "relative", overflow: "hidden", display: "flex", flexDirection: "column" }}>
+    <div style={{ padding: "52px 20px 12px", borderBottom: "1px solid var(--border-soft)", background: "var(--surface)" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "var(--text-muted)", marginBottom: 6 }}>
+        <span style={{ fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em" }}>Ботаника</span>
+        <span>3 / 12</span>
+      </div>
+      <div className="progress"><div className="progress-fill" style={{ width: "25%" }}/></div>
+    </div>
+    <div style={{ padding: "24px 20px", flex: 1, overflow: "auto" }}>
+      <div className="eyebrow" style={{ marginBottom: 10 }}>Вопрос 03</div>
+      <h2 style={{ fontFamily: "var(--f-serif)", fontSize: 22, lineHeight: 1.25, marginBottom: 18 }}>
+        Какая структура отличает растительную клетку от животной?
+      </h2>
+      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        {[
+          { t: "Митохондрия", s: "" },
+          { t: "Хлоропласт", s: "correct" },
+          { t: "Рибосома", s: "wrong" },
+          { t: "Аппарат Гольджи", s: "" },
+        ].map((o, i) => (
+          <div key={i} className={`answer ${o.s} ${o.s ? "locked" : ""}`} style={{ padding: "14px 14px" }}>
+            <div className="letter" style={{ flex: "0 0 30px", height: 30, fontSize: 13 }}>{String.fromCharCode(65 + i)}</div>
+            <div style={{ flex: 1, fontSize: 14 }}>{o.t}</div>
+            {o.s === "correct" && <span>🌱</span>}
+          </div>
+        ))}
+      </div>
+      <div style={{
+        marginTop: 16, padding: "12px 14px",
+        background: "var(--correct-bg)",
+        borderLeft: "3px solid var(--correct)",
+        borderRadius: 8,
+      }}>
+        <div style={{ fontFamily: "var(--f-serif)", fontStyle: "italic", fontSize: 12, color: "var(--correct)", marginBottom: 4 }}>🌱 Верно</div>
+        <div style={{ fontSize: 12, color: "var(--text-soft)", lineHeight: 1.5 }}>
+          Хлоропласты содержат хлорофилл и осуществляют фотосинтез.
+        </div>
+      </div>
+    </div>
+    <div style={{ padding: "12px 20px 28px", borderTop: "1px solid var(--border-soft)", background: "var(--surface)" }}>
+      <button className="btn btn-primary btn-lg" style={{ width: "100%", justifyContent: "center" }}>Дальше</button>
+    </div>
+  </div>
+);
+
+const MobileDashboard = () => (
+  <div style={{ width: "100%", height: "100%", background: "var(--bg)", overflow: "auto", paddingBottom: 24 }}>
+    <div style={{ padding: "52px 20px 20px", position: "relative", overflow: "hidden" }}>
+      <BotanicalBg intensity={0.5} pattern="ferns" />
+      <div className="eyebrow" style={{ marginBottom: 10, position: "relative" }}>20 апреля</div>
+      <h1 style={{ fontFamily: "var(--f-serif)", fontSize: 26, lineHeight: 1.1, position: "relative" }}>
+        Привет, Аня. <em style={{ color: "var(--green-800)" }}>Продолжим?</em>
+      </h1>
+    </div>
+    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, padding: "0 20px 20px" }}>
+      <div className="card" style={{ padding: 14 }}>
+        <div style={{ fontFamily: "var(--f-serif)", fontSize: 22 }}>2/6</div>
+        <div style={{ fontSize: 10, color: "var(--text-muted)", textTransform: "uppercase" }}>пройдено</div>
+      </div>
+      <div className="card" style={{ padding: 14 }}>
+        <div style={{ fontFamily: "var(--f-serif)", fontSize: 22, color: "var(--accent)" }}>3 дня</div>
+        <div style={{ fontSize: 10, color: "var(--text-muted)", textTransform: "uppercase" }}>серия</div>
+      </div>
+    </div>
+    <div style={{ padding: "0 20px", display: "flex", flexDirection: "column", gap: 12 }}>
+      {DASHBOARD_QUIZZES.slice(0, 3).map(q => (
+        <div key={q.id} className="card" style={{ padding: 14, display: "flex", gap: 12, alignItems: "center" }}>
+          <div style={{
+            width: 48, height: 48, borderRadius: 12,
+            background: "var(--green-100)",
+            color: "var(--green-800)",
+            display: "grid", placeItems: "center", flexShrink: 0,
+          }}>
+            {q.topic === "Ботаника" ? <Fern size={28} /> : <Cell size={32} />}
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 11, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.04em" }}>{q.topic}</div>
+            <div style={{ fontFamily: "var(--f-serif)", fontSize: 15, lineHeight: 1.2, marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{q.title}</div>
+            <div style={{ fontSize: 11, color: "var(--text-soft)", marginTop: 4 }}>{q.questions} вопросов · {q.est}</div>
+          </div>
+          <span style={{ fontSize: 14, color: "var(--green-800)" }}>→</span>
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
+const MobileResults = () => (
+  <div style={{ width: "100%", height: "100%", background: "var(--bg)", position: "relative", overflow: "auto", padding: "52px 20px 28px" }}>
+    <BotanicalBg intensity={0.5} />
+    <div style={{ position: "relative" }}>
+      <div className="eyebrow" style={{ marginBottom: 10 }}>Результат</div>
+      <h1 style={{ fontFamily: "var(--f-serif)", fontSize: 26, lineHeight: 1.1, marginBottom: 18 }}>
+        Отлично, <em style={{ color: "var(--green-800)" }}>Аня!</em>
+      </h1>
+      <div className="card" style={{ padding: 22, marginBottom: 14, textAlign: "center", position: "relative", overflow: "hidden" }}>
+        <div style={{ position: "absolute", top: -30, right: -30, color: "var(--green-200)" }}>
+          <Cell size={150} />
+        </div>
+        <div style={{ position: "relative", display: "flex", alignItems: "baseline", justifyContent: "center", gap: 6 }}>
+          <div style={{ fontFamily: "var(--f-serif)", fontSize: 64, lineHeight: 1, color: "var(--green-800)" }}>10</div>
+          <div style={{ fontFamily: "var(--f-serif)", fontSize: 22, color: "var(--text-muted)" }}>/ 12</div>
+        </div>
+        <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 6 }}>83% правильно</div>
+      </div>
+      <button className="btn btn-primary btn-lg" style={{ width: "100%", justifyContent: "center", marginBottom: 10 }}>Пройти ещё раз</button>
+      <button className="btn btn-ghost btn-lg" style={{ width: "100%", justifyContent: "center" }}>К списку тестов</button>
+    </div>
+  </div>
+);
+
+Object.assign(window, { MobileLogin, MobileQuiz, MobileDashboard, MobileResults });
+
+</script>
+<script type="text/babel" data-presets="react">
+// Main app — lays out all screens on a design canvas
+
+const TWEAKS = /*EDITMODE-BEGIN*/{
+  "theme": "light",
+  "accent": "ochre",
+  "density": "spacious",
+  "cards": "shadow"
+}/*EDITMODE-END*/;
+
+// Phone frame — simple iOS-ish
+const Phone = ({ children, label }) => (
+  <div style={{ position: "relative" }}>
+    {label && <div style={{ position: "absolute", bottom: "100%", left: 0, paddingBottom: 8, fontSize: 12, fontWeight: 500, color: "rgba(60,50,40,0.7)", whiteSpace: "nowrap" }}>{label}</div>}
+    <div style={{
+      width: 375, height: 780,
+      borderRadius: 44,
+      background: "#0b120e",
+      padding: 10,
+      boxShadow: "0 30px 60px rgba(20,40,30,0.25), 0 8px 18px rgba(0,0,0,0.1), inset 0 0 0 2px #1a2520",
+    }}>
+      <div style={{ width: "100%", height: "100%", borderRadius: 36, overflow: "hidden", background: "var(--bg)", position: "relative" }}>
+        {/* notch */}
+        <div style={{ position: "absolute", top: 14, left: "50%", transform: "translateX(-50%)", width: 110, height: 30, borderRadius: 20, background: "#0b120e", zIndex: 10 }}/>
+        {/* status */}
+        <div style={{ position: "absolute", top: 18, left: 0, right: 0, display: "flex", justifyContent: "space-between", padding: "0 30px", fontSize: 13, fontWeight: 600, color: "var(--text)", zIndex: 11 }}>
+          <span>9:41</span>
+          <span style={{ display: "flex", gap: 4, alignItems: "center", fontSize: 11 }}>•••• 🔋</span>
+        </div>
+        {children}
+      </div>
+    </div>
+  </div>
+);
+
+// Browser window — simple chrome
+const Browser = ({ children, label, url = "живая-клетка.ru", width = 1280, height = 860 }) => (
+  <div style={{ position: "relative" }}>
+    {label && <div style={{ position: "absolute", bottom: "100%", left: 0, paddingBottom: 8, fontSize: 12, fontWeight: 500, color: "rgba(60,50,40,0.7)", whiteSpace: "nowrap" }}>{label}</div>}
+    <div style={{
+      width, height,
+      borderRadius: 12,
+      background: "#e8e3d4",
+      border: "1px solid rgba(0,0,0,0.08)",
+      boxShadow: "0 30px 80px rgba(20,40,30,0.18), 0 8px 20px rgba(0,0,0,0.08)",
+      overflow: "hidden",
+    }}>
+      <div style={{ height: 38, display: "flex", alignItems: "center", padding: "0 14px", gap: 10, borderBottom: "1px solid rgba(0,0,0,0.08)" }}>
+        <div style={{ display: "flex", gap: 6 }}>
+          <div style={{ width: 12, height: 12, borderRadius: "50%", background: "#f05d50" }}/>
+          <div style={{ width: 12, height: 12, borderRadius: "50%", background: "#f4b947" }}/>
+          <div style={{ width: 12, height: 12, borderRadius: "50%", background: "#4cbf56" }}/>
+        </div>
+        <div style={{ flex: 1, background: "#f7f4ea", borderRadius: 6, padding: "5px 12px", fontSize: 12, color: "#5a6358", textAlign: "center", fontFamily: "ui-monospace, monospace" }}>
+          🔒 {url}
+        </div>
+        <div style={{ width: 60 }}/>
+      </div>
+      <div style={{ width: "100%", height: "calc(100% - 38px)", overflow: "auto", background: "var(--bg)" }}>
+        {children}
+      </div>
+    </div>
+  </div>
+);
+
+function App() {
+  const [t, setT] = React.useState(TWEAKS);
+  const [showTweaks, setShowTweaks] = React.useState(false);
+
+  React.useEffect(() => {
+    const root = document.body;
+    root.dataset.theme = t.theme;
+    root.dataset.accent = t.accent;
+    root.dataset.density = t.density;
+    root.dataset.cards = t.cards;
+  }, [t]);
+
+  // Tweaks protocol
+  React.useEffect(() => {
+    const onMsg = (e) => {
+      if (e.data?.type === "__activate_edit_mode") setShowTweaks(true);
+      if (e.data?.type === "__deactivate_edit_mode") setShowTweaks(false);
+    };
+    window.addEventListener("message", onMsg);
+    window.parent.postMessage({ type: "__edit_mode_available" }, "*");
+    return () => window.removeEventListener("message", onMsg);
+  }, []);
+
+  const update = (k, v) => {
+    const next = { ...t, [k]: v };
+    setT(next);
+    window.parent.postMessage({ type: "__edit_mode_set_keys", edits: { [k]: v } }, "*");
+  };
+
+  return (
+    <>
+      <DesignCanvas>
+        <DCSection title="Дизайн-система" subtitle="Принципы, токены, типографика и компоненты">
+          <DCArtboard width={1100} height={1520}>
+            <DesignSystemSheet />
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection title="Вход · 2 варианта" subtitle="Книжный split-экран и компактная карточка с аватаром репетитора">
+          <DCArtboard label="A · Split — книжная обложка" width={1280} height={820}>
+            <Browser url="живая-клетка.ru/вход" width={1280} height={820}>
+              <LoginClassic />
+            </Browser>
+          </DCArtboard>
+          <DCArtboard label="B · Компактная карточка" width={1280} height={820}>
+            <Browser url="живая-клетка.ru/вход" width={1280} height={820}>
+              <LoginCompact />
+            </Browser>
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection title="Dashboard ученика" subtitle="Приветствие, статистика, фильтры по темам, карточки тестов">
+          <DCArtboard width={1280} height={1360}>
+            <Browser url="живая-клетка.ru" width={1280} height={1360}>
+              <StudentDashboard />
+            </Browser>
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection title="Прохождение теста · 2 варианта" subtitle="Классический stepper и фокусный split с ботанической плитой. Ответы раскрашиваются сразу.">
+          <DCArtboard label="A · Classic stepper" width={1280} height={860}>
+            <Browser url="живая-клетка.ru/тест/фотосинтез" width={1280} height={860}>
+              <QuizClassic />
+            </Browser>
+          </DCArtboard>
+          <DCArtboard label="B · Focused split" width={1280} height={860}>
+            <Browser url="живая-клетка.ru/тест/фотосинтез" width={1280} height={860}>
+              <QuizFocused />
+            </Browser>
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection title="Экран результата" subtitle="Большой счёт, разбивка по темам, разбор ошибки, следующий шаг. Листья падают на входе.">
+          <DCArtboard width={1280} height={900}>
+            <Browser url="живая-клетка.ru/тест/результат" width={1280} height={900}>
+              <QuizResults />
+            </Browser>
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection title="Админ-панель" subtitle="Список тестов · создание теста · ученики и их результаты">
+          <DCArtboard label="Тесты" width={1280} height={900}>
+            <Browser url="живая-клетка.ru/админ/тесты" width={1280} height={900}>
+              <AdminPanel initialTab="tests" />
+            </Browser>
+          </DCArtboard>
+          <DCArtboard label="Создание теста" width={1280} height={1200}>
+            <Browser url="живая-клетка.ru/админ/новый-тест" width={1280} height={1200}>
+              <AdminPanel initialTab="create" />
+            </Browser>
+          </DCArtboard>
+          <DCArtboard label="Ученики" width={1280} height={900}>
+            <Browser url="живая-клетка.ru/админ/ученики" width={1280} height={900}>
+              <AdminPanel initialTab="students" />
+            </Browser>
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection title="Mobile" subtitle="Адаптивные ключевые экраны в iPhone-раме">
+          <Phone label="Вход"><MobileLogin /></Phone>
+          <Phone label="Dashboard"><MobileDashboard /></Phone>
+          <Phone label="Квиз — выбор сделан"><MobileQuiz /></Phone>
+          <Phone label="Результат"><MobileResults /></Phone>
+        </DCSection>
+
+        <DCPostIt top={60} right={60} rotate={3}>
+          Всё в одном scrollable canvas — масштабируй колёсиком, таскай за фон
+        </DCPostIt>
+      </DesignCanvas>
+
+      {/* Tweaks panel */}
+      {showTweaks && (
+        <div style={{
+          position: "fixed", bottom: 20, right: 20,
+          width: 280,
+          background: "var(--surface)",
+          border: "1px solid var(--border)",
+          borderRadius: 16,
+          padding: 20,
+          boxShadow: "0 20px 60px rgba(0,0,0,0.2)",
+          zIndex: 10000,
+          fontFamily: "var(--f-sans)",
+        }}>
+          <div style={{ fontFamily: "var(--f-serif)", fontSize: 16, marginBottom: 16, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            Tweaks
+            <span style={{ fontSize: 11, color: "var(--text-muted)", fontFamily: "var(--f-mono)" }}>v0.1</span>
+          </div>
+
+          <TweakRow label="Тема">
+            {["light","sepia","dark"].map(v => (
+              <TweakChip key={v} active={t.theme === v} onClick={() => update("theme", v)}>{v}</TweakChip>
+            ))}
+          </TweakRow>
+          <TweakRow label="Акцент">
+            {["amber","coral","ochre"].map(v => (
+              <TweakChip key={v} active={t.accent === v} onClick={() => update("accent", v)}>
+                <span style={{ width: 10, height: 10, borderRadius: "50%", background: `var(--${v})`, display: "inline-block", marginRight: 6, verticalAlign: "middle" }}/>
+                {v}
+              </TweakChip>
+            ))}
+          </TweakRow>
+          <TweakRow label="Плотность">
+            {["compact","cozy","spacious"].map(v => (
+              <TweakChip key={v} active={t.density === v} onClick={() => update("density", v)}>{v}</TweakChip>
+            ))}
+          </TweakRow>
+          <TweakRow label="Карточки">
+            {["flat","shadow","outline"].map(v => (
+              <TweakChip key={v} active={t.cards === v} onClick={() => update("cards", v)}>{v}</TweakChip>
+            ))}
+          </TweakRow>
+        </div>
+      )}
+    </>
+  );
+}
+
+const TweakRow = ({ label, children }) => (
+  <div style={{ marginBottom: 14 }}>
+    <div style={{ fontSize: 11, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>{label}</div>
+    <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>{children}</div>
+  </div>
+);
+const TweakChip = ({ active, onClick, children }) => (
+  <button onClick={onClick} style={{
+    padding: "5px 10px",
+    fontSize: 12,
+    border: `1px solid ${active ? "var(--green-800)" : "var(--border)"}`,
+    background: active ? "var(--green-800)" : "var(--surface)",
+    color: active ? "#fff" : "var(--text-soft)",
+    borderRadius: 999,
+    cursor: "pointer",
+    fontFamily: "inherit",
+    textTransform: "lowercase",
+  }}>{children}</button>
+);
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+
+</script>
+</body>
+</html>
