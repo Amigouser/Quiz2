@@ -33,16 +33,16 @@ const AdminSidebar = ({ active, onTab }) => {
         <button
           className="btn btn-ghost btn-sm"
           style={{ width: "100%", justifyContent: "center", marginTop: 16 }}
-          onClick={() => navigate("/dashboard")}
+          onClick={() => navigate("/")}
         >
-          ← К ученику
+          ← На главную
         </button>
       </div>
     </div>
   );
 };
 
-const AdminTestsList = ({ onCreateNew }) => {
+const AdminTestsList = ({ onCreateNew, onImport, onEdit }) => {
   const [tests, setTests] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
 
@@ -73,10 +73,11 @@ const AdminTestsList = ({ onCreateNew }) => {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 28 }}>
         <div>
           <div className="eyebrow" style={{ marginBottom: 12 }}>Тесты</div>
-          <h1 style={{ fontFamily: "var(--f-serif)", fontSize: 36, letterSpacing: "-0.01em" }}>Библиотека заданий</h1>
-          <p style={{ color: "var(--text-soft)", marginTop: 6 }}>Управляй тестами, публикуй и смотри статистику.</p>
         </div>
-        <button className="btn btn-primary" onClick={onCreateNew}>+ Новый тест</button>
+        <div style={{ display: "flex", gap: 10 }}>
+          <button className="btn btn-ghost" onClick={onImport}>📥 Импорт JSON</button>
+          <button className="btn btn-primary" onClick={onCreateNew}>+ Новый тест</button>
+        </div>
       </div>
 
       {loading ? (
@@ -89,17 +90,17 @@ const AdminTestsList = ({ onCreateNew }) => {
         <div className="card" style={{ padding: 0, overflow: "hidden" }}>
           <div style={{
             display: "grid",
-            gridTemplateColumns: "2fr 1fr 90px 90px 110px 140px",
+            gridTemplateColumns: "1fr 70px 70px 100px 230px",
             padding: "12px 20px",
             borderBottom: "1px solid var(--border-soft)",
             background: "var(--bg-muted)",
             fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-muted)", fontWeight: 600,
           }}>
-            <div>Тест</div><div>Тема</div><div>Вопр.</div><div>Попыток</div><div>Ср. балл</div><div style={{ textAlign: "right" }}>Действия</div>
+            <div>Тест</div><div>Вопр.</div><div>Попыток</div><div>Ср. балл</div><div style={{ textAlign: "right" }}>Действия</div>
           </div>
           {tests.map((t, i) => (
             <div key={t.id} style={{
-              display: "grid", gridTemplateColumns: "2fr 1fr 90px 90px 110px 140px",
+              display: "grid", gridTemplateColumns: "1fr 70px 70px 100px 230px",
               padding: "16px 20px", alignItems: "center",
               borderBottom: i < tests.length - 1 ? "1px solid var(--border-soft)" : "none",
               opacity: t.is_active ? 1 : 0.55,
@@ -112,16 +113,16 @@ const AdminTestsList = ({ onCreateNew }) => {
                 </div>
                 <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>{t.topic}</div>
               </div>
-              <div><span className="pill" style={{ background: "var(--green-100)" }}>{t.topic}</span></div>
               <div style={{ fontFamily: "var(--f-serif)", fontSize: 18 }}>{t.questions_count}</div>
               <div style={{ color: "var(--text-soft)" }}>{t.attempt_count || 0}</div>
               <div style={{ fontFamily: "var(--f-serif)", fontSize: 16 }}>
                 {t.avg_score != null ? `${t.avg_score}%` : "—"}
               </div>
-              <div style={{ display: "flex", gap: 4, justifyContent: "flex-end", flexWrap: "wrap" }}>
+              <div style={{ display: "flex", gap: 6, justifyContent: "flex-end", alignItems: "center" }}>
                 {t.is_draft && (
-                  <button className="btn btn-primary btn-sm" onClick={() => handlePublish(t.id)}>Опубликовать</button>
+                  <button className="btn btn-primary btn-sm" onClick={() => handlePublish(t.id)}>Опубл.</button>
                 )}
+                <button className="btn btn-ghost btn-sm" onClick={() => onEdit(t.id)}>Изменить</button>
                 <button className="btn btn-ghost btn-sm" onClick={() => handleToggle(t.id)}>
                   {t.is_active ? "Скрыть" : "Показать"}
                 </button>
@@ -134,6 +135,127 @@ const AdminTestsList = ({ onCreateNew }) => {
     </div>
   );
 };
+
+// ── Универсальный импорт JSON ────────────────────────────────────────────────
+const TEST_PROMPT = `Создай тест по биологии и верни ТОЛЬКО JSON без пояснений:
+
+{
+  "title": "Название теста",
+  "topic": "Ботаника",
+  "description": "Краткое описание",
+  "questions": [
+    {
+      "text": "Текст вопроса?",
+      "hint": "Подсказка (или null)",
+      "explanation": "Пояснение к правильному ответу",
+      "answers": [
+        { "text": "Вариант А", "is_correct": true },
+        { "text": "Вариант Б", "is_correct": false },
+        { "text": "Вариант В", "is_correct": false },
+        { "text": "Вариант Г", "is_correct": false }
+      ]
+    }
+  ]
+}`;
+
+const CARDS_PROMPT = `Создай набор карточек по биологии и верни ТОЛЬКО JSON без пояснений:
+
+{
+  "title": "Название набора",
+  "topic": "Ботаника",
+  "description": "Краткое описание (или null)",
+  "cards": [
+    { "term": "Термин", "definition": "Определение" }
+  ]
+}`;
+
+function ImportJsonPanel({ type, onImport, onClose }) {
+  const [text, setText] = React.useState("");
+  const [err, setErr] = React.useState(null);
+  const fileRef = React.useRef();
+  const prompt = type === "test" ? TEST_PROMPT : CARDS_PROMPT;
+
+  const handleFile = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => setText(ev.target.result);
+    reader.readAsText(file);
+  };
+
+  const handleApply = () => {
+    setErr(null);
+    try {
+      const data = JSON.parse(text.trim());
+      onImport(data);
+    } catch {
+      setErr("Неверный JSON. Проверь формат и попробуй снова.");
+    }
+  };
+
+  const copyPrompt = () => navigator.clipboard.writeText(prompt);
+
+  return (
+    <div style={{
+      background: "var(--green-50)", border: "1.5px solid var(--green-200)",
+      borderRadius: "var(--r-lg)", padding: 24, marginBottom: 24,
+    }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+        <div style={{ fontFamily: "var(--f-serif)", fontSize: 18, fontWeight: 600 }}>
+          📥 Импорт из JSON
+        </div>
+        <button className="btn btn-ghost btn-sm" onClick={onClose}>✕</button>
+      </div>
+
+      {/* Шаг 1 — промпт */}
+      <div style={{ marginBottom: 16 }}>
+        <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 6, color: "var(--text-soft)" }}>
+          Шаг 1 — скопируй этот промпт и вставь в ChatGPT / Claude / Gemini
+        </div>
+        <div style={{
+          background: "var(--surface)", border: "1px solid var(--border-soft)",
+          borderRadius: "var(--r-md)", padding: "12px 14px",
+          fontSize: 12, fontFamily: "monospace", color: "var(--text-soft)",
+          whiteSpace: "pre-wrap", maxHeight: 120, overflowY: "auto",
+          marginBottom: 8,
+        }}>
+          {prompt}
+        </div>
+        <button className="btn btn-ghost btn-sm" onClick={copyPrompt}>📋 Скопировать промпт</button>
+      </div>
+
+      {/* Шаг 2 — вставить JSON */}
+      <div>
+        <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 6, color: "var(--text-soft)" }}>
+          Шаг 2 — вставь ответ нейросети (JSON) сюда или загрузи файл
+        </div>
+        <textarea
+          className="input"
+          rows={6}
+          value={text}
+          onChange={e => { setText(e.target.value); setErr(null); }}
+          placeholder='{ "title": "...", "questions": [...] }'
+          style={{ resize: "vertical", fontFamily: "monospace", fontSize: 12, marginBottom: 8 }}
+        />
+        <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+          <button className="btn btn-ghost btn-sm" onClick={() => fileRef.current.click()}>
+            📂 Загрузить .json файл
+          </button>
+          <input ref={fileRef} type="file" accept=".json,application/json" style={{ display: "none" }} onChange={handleFile} />
+          {err && <span style={{ fontSize: 12, color: "var(--wrong)" }}>{err}</span>}
+          <button
+            className="btn btn-primary btn-sm"
+            style={{ marginLeft: "auto" }}
+            disabled={!text.trim()}
+            onClick={handleApply}
+          >
+            Применить →
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 const EMPTY_QUESTION = () => ({
   id: Date.now() + Math.random(),
@@ -149,7 +271,7 @@ const EMPTY_QUESTION = () => ({
   ],
 });
 
-const AdminCreateTest = ({ onCreated }) => {
+const AdminCreateTest = ({ onCreated, autoImport = false }) => {
   const [title, setTitle] = React.useState("");
   const [topic, setTopic] = React.useState("Ботаника");
   const [description, setDescription] = React.useState("");
@@ -157,6 +279,28 @@ const AdminCreateTest = ({ onCreated }) => {
   const [questions, setQuestions] = React.useState([EMPTY_QUESTION()]);
   const [saving, setSaving] = React.useState(false);
   const [error, setError] = React.useState(null);
+  const [showImport, setShowImport] = React.useState(autoImport);
+
+  const handleImportTest = (data) => {
+    if (data.title) setTitle(data.title);
+    if (data.topic) setTopic(data.topic);
+    if (data.description) setDescription(data.description);
+    if (Array.isArray(data.questions) && data.questions.length > 0) {
+      setQuestions(data.questions.map(q => ({
+        id: Date.now() + Math.random(),
+        text: q.text || q.question_text || "",
+        hint: q.hint || "",
+        explanation: q.explanation || "",
+        expand: true,
+        answers: (q.answers || []).map((a, i) => ({
+          id: Date.now() + Math.random() + i,
+          text: a.text || a.answer_text || "",
+          is_correct: !!(a.is_correct),
+        })),
+      })));
+    }
+    setShowImport(false);
+  };
 
   const updateQ = (qi, field, val) =>
     setQuestions(qs => qs.map((q, i) => i === qi ? { ...q, [field]: val } : q));
@@ -218,8 +362,17 @@ const AdminCreateTest = ({ onCreated }) => {
         <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13, color: "var(--text-muted)", marginBottom: 12 }}>
           <span>Тесты</span><span>›</span><span style={{ color: "var(--text)" }}>Новый тест</span>
         </div>
-        <h1 style={{ fontFamily: "var(--f-serif)", fontSize: 32, marginBottom: 6 }}>Создание теста</h1>
-        <p style={{ color: "var(--text-soft)", marginBottom: 28 }}>Назови тест, добавь вопросы и варианты ответа. Не забудь отметить правильный.</p>
+        <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginBottom: 6 }}>
+          <h1 style={{ fontFamily: "var(--f-serif)", fontSize: 32 }}>Создание теста</h1>
+          <button className="btn btn-ghost btn-sm" onClick={() => setShowImport(v => !v)}>
+            {showImport ? "✕ Закрыть импорт" : "📥 Импорт из JSON"}
+          </button>
+        </div>
+        <p style={{ color: "var(--text-soft)", marginBottom: 20 }}>Назови тест, добавь вопросы и варианты ответа. Не забудь отметить правильный.</p>
+
+        {showImport && (
+          <ImportJsonPanel type="test" onImport={handleImportTest} onClose={() => setShowImport(false)} />
+        )}
 
         {error && (
           <div style={{ padding: "12px 16px", background: "var(--wrong-bg)", border: "1px solid var(--wrong)", borderRadius: "var(--r-md)", marginBottom: 16, fontSize: 14, color: "var(--wrong)" }}>
@@ -345,6 +498,209 @@ const AdminCreateTest = ({ onCreated }) => {
             <button className="btn btn-ghost" style={{ justifyContent: "center" }}
               disabled={saving} onClick={() => handleSubmit(true)}>
               Сохранить как черновик
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ── Редактирование существующего теста ──────────────────────────────────────
+const AdminEditTest = ({ testId, onSaved }) => {
+  const [title, setTitle] = React.useState("");
+  const [topic, setTopic] = React.useState("Ботаника");
+  const [description, setDescription] = React.useState("");
+  const [questions, setQuestions] = React.useState([]);
+  const [loading, setLoading] = React.useState(true);
+  const [saving, setSaving] = React.useState(false);
+  const [error, setError] = React.useState(null);
+
+  React.useEffect(() => {
+    API.admin.getTest(testId).then(data => {
+      setTitle(data.title);
+      setTopic(data.topic || "Ботаника");
+      setDescription(data.description || "");
+      setQuestions(data.questions.map(q => ({
+        id: q.id,
+        text: q.question_text,
+        hint: q.hint || "",
+        explanation: q.explanation || "",
+        expand: false,
+        answers: q.answers.map(a => ({ id: a.id, text: a.answer_text, is_correct: !!a.is_correct })),
+      })));
+      setLoading(false);
+    });
+  }, [testId]);
+
+  const updateQ = (qi, field, val) =>
+    setQuestions(qs => qs.map((q, i) => i === qi ? { ...q, [field]: val } : q));
+
+  const updateA = (qi, ai, field, val) =>
+    setQuestions(qs => qs.map((q, i) => {
+      if (i !== qi) return q;
+      const answers = q.answers.map((a, j) => {
+        if (field === "is_correct") return { ...a, is_correct: j === ai };
+        return j === ai ? { ...a, [field]: val } : a;
+      });
+      return { ...q, answers };
+    }));
+
+  const addAnswer = (qi) =>
+    setQuestions(qs => qs.map((q, i) => i === qi
+      ? { ...q, answers: [...q.answers, { id: Date.now(), text: "", is_correct: false }] } : q));
+
+  const removeAnswer = (qi, ai) =>
+    setQuestions(qs => qs.map((q, i) => i === qi
+      ? { ...q, answers: q.answers.filter((_, j) => j !== ai) } : q));
+
+  const addQuestion = () => setQuestions(qs => [...qs, EMPTY_QUESTION()]);
+  const removeQuestion = (qi) => setQuestions(qs => qs.filter((_, i) => i !== qi));
+
+  const handleSave = async () => {
+    if (!title.trim()) { setError("Введи название теста"); return; }
+    setSaving(true); setError(null);
+    try {
+      await API.admin.updateTest(testId, {
+        title: title.trim(), topic, description: description.trim() || null,
+        questions: questions.map(q => ({
+          text: q.text.trim(), hint: q.hint.trim() || null, explanation: q.explanation.trim() || null,
+          answers: q.answers.map(a => ({ text: a.text.trim(), is_correct: a.is_correct ? 1 : 0 })),
+        })),
+      });
+      onSaved?.();
+    } catch (e) { setError(e.message); }
+    finally { setSaving(false); }
+  };
+
+  if (loading) return (
+    <div style={{ padding: "32px 40px", flex: 1, color: "var(--text-muted)", fontFamily: "var(--f-serif)", fontSize: 16 }}>Загрузка…</div>
+  );
+
+  return (
+    <div style={{ padding: "32px 40px", flex: 1, display: "grid", gridTemplateColumns: "1fr 300px", gap: 32, alignItems: "start" }}>
+      <div>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13, color: "var(--text-muted)", marginBottom: 12 }}>
+          <span>Тесты</span><span>›</span><span style={{ color: "var(--text)" }}>Редактирование</span>
+        </div>
+        <h1 style={{ fontFamily: "var(--f-serif)", fontSize: 32, marginBottom: 6 }}>Редактировать тест</h1>
+        <p style={{ color: "var(--text-soft)", marginBottom: 20 }}>Измени название, вопросы или варианты ответа.</p>
+
+        {error && (
+          <div style={{ padding: "12px 16px", background: "var(--wrong-bg)", border: "1px solid var(--wrong)", borderRadius: "var(--r-md)", marginBottom: 16, fontSize: 14, color: "var(--wrong)" }}>
+            {error}
+          </div>
+        )}
+
+        <div className="card" style={{ padding: 24, marginBottom: 20 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 16, marginBottom: 16 }}>
+            <div className="field">
+              <label>Название теста</label>
+              <input className="input input-lg" value={title} onChange={e => setTitle(e.target.value)} />
+            </div>
+            <div className="field">
+              <label>Тема</label>
+              <select className="input input-lg" value={topic} onChange={e => setTopic(e.target.value)} style={{ cursor: "pointer" }}>
+                {["Ботаника","Зоология","Генетика","Анатомия","Экология","Цитология","Эволюция","Общая биология"].map(t => (
+                  <option key={t}>{t}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <div className="field">
+            <label>Описание</label>
+            <textarea className="input" rows={2} value={description} onChange={e => setDescription(e.target.value)}
+              style={{ resize: "vertical", fontFamily: "var(--f-sans)" }}/>
+          </div>
+        </div>
+
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+          <div className="eyebrow">Вопросы · {questions.length}</div>
+          <button className="btn btn-ghost btn-sm" onClick={addQuestion}>+ Добавить вопрос</button>
+        </div>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          {questions.map((q, qi) => (
+            <div key={q.id} className="card" style={{ padding: 0, overflow: "hidden" }}>
+              <div style={{
+                padding: "16px 20px", display: "flex", alignItems: "center", gap: 14,
+                background: q.expand ? "var(--green-100)" : "transparent",
+                borderBottom: q.expand ? "1px solid var(--green-200)" : "none",
+              }}>
+                <div style={{ width: 30, height: 30, borderRadius: "50%", background: "var(--green-800)", color: "#fff", fontFamily: "var(--f-serif)", display: "grid", placeItems: "center", fontSize: 14 }}>
+                  {qi + 1}
+                </div>
+                <div style={{ flex: 1, fontWeight: 500, color: q.text ? "var(--text)" : "var(--text-muted)" }}>
+                  {q.text || "Новый вопрос"}
+                </div>
+                <button className="btn btn-ghost btn-sm" onClick={() => updateQ(qi, "expand", !q.expand)}>
+                  {q.expand ? "Свернуть" : "Открыть"}
+                </button>
+                {questions.length > 1 && (
+                  <button className="btn btn-ghost btn-sm" style={{ color: "var(--wrong)" }} onClick={() => removeQuestion(qi)}>✕</button>
+                )}
+              </div>
+              {q.expand && (
+                <div style={{ padding: "20px 24px", display: "flex", flexDirection: "column", gap: 14 }}>
+                  <div className="field">
+                    <label>Текст вопроса</label>
+                    <input className="input" value={q.text} onChange={e => updateQ(qi, "text", e.target.value)} />
+                  </div>
+                  <div className="field">
+                    <label>Подсказка</label>
+                    <input className="input" value={q.hint} onChange={e => updateQ(qi, "hint", e.target.value)} />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-soft)", marginBottom: 10 }}>Варианты ответа</div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                      {q.answers.map((a, ai) => (
+                        <label key={a.id} style={{
+                          display: "flex", alignItems: "center", gap: 12, padding: "12px 14px",
+                          background: a.is_correct ? "var(--correct-bg)" : "var(--bg-muted)",
+                          border: `1.5px solid ${a.is_correct ? "var(--correct)" : "transparent"}`,
+                          borderRadius: "var(--r-md)", cursor: "pointer",
+                        }}>
+                          <input type="radio" checked={a.is_correct} onChange={() => updateA(qi, ai, "is_correct", true)}
+                            style={{ accentColor: "var(--green-800)", width: 18, height: 18 }}/>
+                          <input value={a.text} onChange={e => updateA(qi, ai, "text", e.target.value)}
+                            style={{ flex: 1, background: "transparent", border: "none", outline: "none", fontSize: 15, fontFamily: "var(--f-sans)" }}/>
+                          {a.is_correct && <span className="pill" style={{ background: "var(--green-800)", color: "#fff" }}>верный</span>}
+                          {q.answers.length > 2 && (
+                            <button className="btn btn-ghost btn-sm" style={{ padding: "4px 8px" }} onClick={() => removeAnswer(qi, ai)}>✕</button>
+                          )}
+                        </label>
+                      ))}
+                    </div>
+                    <button className="btn btn-ghost btn-sm" style={{ marginTop: 10 }} onClick={() => addAnswer(qi)}>+ Добавить вариант</button>
+                  </div>
+                  <div className="field">
+                    <label>Пояснение к правильному ответу</label>
+                    <textarea className="input" rows={2} value={q.explanation} onChange={e => updateQ(qi, "explanation", e.target.value)}
+                      style={{ resize: "vertical", fontFamily: "var(--f-sans)" }}/>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+          <button className="btn btn-soft" style={{ justifyContent: "center" }} onClick={addQuestion}>
+            + Добавить ещё один вопрос
+          </button>
+        </div>
+      </div>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 16, position: "sticky", top: 32 }}>
+        <div className="card" style={{ padding: 20 }}>
+          <div className="eyebrow" style={{ marginBottom: 12 }}>Сохранение</div>
+          <div style={{ fontSize: 13, color: "var(--text-soft)", marginBottom: 16 }}>
+            {questions.length} вопросов · тема: {topic}
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            <button className="btn btn-primary btn-lg" style={{ justifyContent: "center" }}
+              disabled={saving} onClick={handleSave}>
+              {saving ? "Сохраняем…" : "Сохранить изменения"}
+            </button>
+            <button className="btn btn-ghost" style={{ justifyContent: "center" }} onClick={() => onSaved?.()}>
+              Отмена
             </button>
           </div>
         </div>
@@ -608,9 +964,7 @@ const AdminStudents = () => {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 28 }}>
         <div>
           <div className="eyebrow" style={{ marginBottom: 12 }}>Ученики</div>
-          <h1 style={{ fontFamily: "var(--f-serif)", fontSize: 36 }}>Твой класс</h1>
           <p style={{ color: "var(--text-soft)", marginTop: 6 }}>
-            {students.length} {students.length === 1 ? "ученик" : "учеников"} · нажми на строку, чтобы назначить задания
           </p>
         </div>
         <button className="btn btn-primary" onClick={() => setShowCreate(v => !v)}>
@@ -792,15 +1146,30 @@ const AdminStudents = () => {
 // ── Flashcard set editor ────────────────────────────────────────────────────
 const EMPTY_CARD = () => ({ id: Date.now() + Math.random(), term: "", definition: "" });
 
-const AdminEditCardSet = ({ editId, onSaved }) => {
+const AdminEditCardSet = ({ editId, onSaved, autoImport = false }) => {
   const [title, setTitle] = React.useState("");
   const [topic, setTopic] = React.useState("Ботаника");
   const [description, setDescription] = React.useState("");
   const [cards, setCards] = React.useState([EMPTY_CARD()]);
   const [bulkText, setBulkText] = React.useState("");
   const [showBulk, setShowBulk] = React.useState(false);
+  const [showImport, setShowImport] = React.useState(autoImport);
   const [saving, setSaving] = React.useState(false);
   const [error, setError] = React.useState(null);
+
+  const handleImportCards = (data) => {
+    if (data.title) setTitle(data.title);
+    if (data.topic) setTopic(data.topic);
+    if (data.description) setDescription(data.description || "");
+    if (Array.isArray(data.cards) && data.cards.length > 0) {
+      setCards(data.cards.map(c => ({
+        id: Date.now() + Math.random(),
+        term: c.term || c.front || "",
+        definition: c.definition || c.back || "",
+      })));
+    }
+    setShowImport(false);
+  };
 
   React.useEffect(() => {
     if (!editId) return;
@@ -854,8 +1223,17 @@ const AdminEditCardSet = ({ editId, onSaved }) => {
         <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13, color: "var(--text-muted)", marginBottom: 12 }}>
           <span>Карточки</span><span>›</span><span style={{ color: "var(--text)" }}>{editId ? "Редактировать набор" : "Новый набор"}</span>
         </div>
-        <h1 style={{ fontFamily: "var(--f-serif)", fontSize: 32, marginBottom: 6 }}>{editId ? "Редактировать набор" : "Создать набор карточек"}</h1>
-        <p style={{ color: "var(--text-soft)", marginBottom: 28 }}>Добавь термины и определения. Ученик будет переворачивать карточки и запоминать.</p>
+        <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginBottom: 6 }}>
+          <h1 style={{ fontFamily: "var(--f-serif)", fontSize: 32 }}>{editId ? "Редактировать набор" : "Создать набор карточек"}</h1>
+          <button className="btn btn-ghost btn-sm" onClick={() => setShowImport(v => !v)}>
+            {showImport ? "✕ Закрыть импорт" : "📥 Импорт из JSON"}
+          </button>
+        </div>
+        <p style={{ color: "var(--text-soft)", marginBottom: 20 }}>Добавь термины и определения. Ученик будет переворачивать карточки и запоминать.</p>
+
+        {showImport && (
+          <ImportJsonPanel type="cards" onImport={handleImportCards} onClose={() => setShowImport(false)} />
+        )}
 
         {error && (
           <div style={{ padding: "12px 16px", background: "var(--wrong-bg)", border: "1px solid var(--wrong)", borderRadius: "var(--r-md)", marginBottom: 16, fontSize: 14, color: "var(--wrong)" }}>
@@ -972,6 +1350,7 @@ const AdminFlashcardSets = () => {
   const [sets, setSets] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
   const [editId, setEditId] = React.useState(null); // null = list, 0 = create, N = edit
+  const [autoImport, setAutoImport] = React.useState(false);
 
   const load = () => {
     setLoading(true);
@@ -980,7 +1359,11 @@ const AdminFlashcardSets = () => {
   React.useEffect(load, []);
 
   if (editId !== null) {
-    return <AdminEditCardSet editId={editId || null} onSaved={() => { setEditId(null); load(); }} />;
+    return <AdminEditCardSet
+      editId={editId || null}
+      autoImport={autoImport}
+      onSaved={() => { setEditId(null); setAutoImport(false); load(); }}
+    />;
   }
 
   const handleDelete = async (id) => {
@@ -999,10 +1382,11 @@ const AdminFlashcardSets = () => {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 28 }}>
         <div>
           <div className="eyebrow" style={{ marginBottom: 12 }}>Карточки</div>
-          <h1 style={{ fontFamily: "var(--f-serif)", fontSize: 36 }}>Наборы карточек</h1>
-          <p style={{ color: "var(--text-soft)", marginTop: 6 }}>Создавай наборы терминов и назначай ученикам.</p>
         </div>
-        <button className="btn btn-primary" onClick={() => setEditId(0)}>+ Новый набор</button>
+        <div style={{ display: "flex", gap: 10 }}>
+          <button className="btn btn-ghost" onClick={() => { setAutoImport(true); setEditId(0); }}>📥 Импорт JSON</button>
+          <button className="btn btn-primary" onClick={() => { setAutoImport(false); setEditId(0); }}>+ Новый набор</button>
+        </div>
       </div>
 
       {loading ? (
@@ -1122,11 +1506,20 @@ const AdminResults = () => {
 
 export const AdminPanel = ({ initialTab = "tests" }) => {
   const [tab, setTab] = React.useState(initialTab);
+  const [importMode, setImportMode] = React.useState(false);
+  const [editTestId, setEditTestId] = React.useState(null);
+
+  const goTests = () => { setTab("tests"); setImportMode(false); setEditTestId(null); };
+  const goCreate = () => { setImportMode(false); setEditTestId(null); setTab("create"); };
+  const goImport = () => { setImportMode(true); setEditTestId(null); setTab("create"); };
+  const goEdit = (id) => { setEditTestId(id); setTab("edit"); };
+
   return (
     <div className="admin-layout" style={{ display: "grid", gridTemplateColumns: "240px 1fr", minHeight: "100vh", background: "var(--bg)" }}>
-      <AdminSidebar active={tab} onTab={setTab} />
-      {tab === "tests" && <AdminTestsList onCreateNew={() => setTab("create")} />}
-      {tab === "create" && <AdminCreateTest onCreated={() => setTab("tests")} />}
+      <AdminSidebar active={tab === "edit" ? "tests" : tab} onTab={(t) => { setTab(t); setImportMode(false); setEditTestId(null); }} />
+      {tab === "tests" && <AdminTestsList onCreateNew={goCreate} onImport={goImport} onEdit={goEdit} />}
+      {tab === "create" && <AdminCreateTest key={String(importMode)} autoImport={importMode} onCreated={goTests} />}
+      {tab === "edit" && editTestId && <AdminEditTest testId={editTestId} onSaved={goTests} />}
       {tab === "cards" && <AdminFlashcardSets />}
       {tab === "students" && <AdminStudents />}
       {tab === "results" && <AdminResults />}

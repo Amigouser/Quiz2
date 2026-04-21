@@ -24,6 +24,16 @@ router.get("/tests", (req, res) => {
   res.json(tests);
 });
 
+router.get("/tests/:id", (req, res) => {
+  const test = get("SELECT * FROM tests WHERE id = ?", req.params.id);
+  if (!test) return res.status(404).json({ error: "Тест не найден" });
+  const questions = all("SELECT * FROM questions WHERE test_id = ? ORDER BY order_index", req.params.id);
+  for (const q of questions) {
+    q.answers = all("SELECT * FROM answers WHERE question_id = ? ORDER BY order_index", q.id);
+  }
+  res.json({ ...test, questions });
+});
+
 router.post("/tests", (req, res) => {
   const { title, topic, description, questions = [], is_draft = 0 } = req.body;
   if (!title) return res.status(400).json({ error: "Название обязательно" });
@@ -58,10 +68,33 @@ router.post("/tests", (req, res) => {
 });
 
 router.put("/tests/:id", (req, res) => {
-  const { title, topic, description } = req.body;
-  run("UPDATE tests SET title = ?, topic = ?, description = ? WHERE id = ?",
-    title, topic, description, req.params.id);
-  res.json({ ok: true });
+  const { title, topic, description, questions } = req.body;
+  if (!title) return res.status(400).json({ error: "Название обязательно" });
+
+  db.exec("BEGIN");
+  try {
+    run("UPDATE tests SET title = ?, topic = ?, description = ? WHERE id = ?",
+      title, topic || null, description || null, req.params.id);
+
+    if (Array.isArray(questions)) {
+      run("DELETE FROM questions WHERE test_id = ?", req.params.id);
+      questions.forEach((q, qi) => {
+        const qId = run(
+          "INSERT INTO questions (test_id, question_text, hint, explanation, order_index) VALUES (?, ?, ?, ?, ?)",
+          req.params.id, q.text, q.hint || null, q.explanation || null, qi
+        ).lastInsertRowid;
+        (q.answers || []).forEach((a, ai) =>
+          run("INSERT INTO answers (question_id, answer_text, is_correct, order_index) VALUES (?, ?, ?, ?)",
+            qId, a.text, a.is_correct ? 1 : 0, ai)
+        );
+      });
+    }
+    db.exec("COMMIT");
+    res.json({ ok: true });
+  } catch (e) {
+    db.exec("ROLLBACK");
+    res.status(500).json({ error: e.message });
+  }
 });
 
 router.delete("/tests/:id", (req, res) => {

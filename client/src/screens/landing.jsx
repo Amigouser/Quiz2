@@ -503,7 +503,7 @@ export function LandingPage() {
             }}>
               <span style={{ fontSize: 16 }}>🎓</span>
               <div>
-                <div style={{ fontSize: 11, fontWeight: 600, color: "#fff" }}>МГУ</div>
+                <div style={{ fontSize: 11, fontWeight: 600, color: "#fff" }}>ТПУ</div>
                 <div style={{ fontSize: 10, color: "rgba(255,255,255,0.45)" }}>Биофак</div>
               </div>
             </div>

@@ -89,6 +89,34 @@ export const LoginCompact = ({ onEnter }) => {
   const [error, setError] = React.useState(null);
   const inputRefs = useRef([]);
 
+  // Скрытый вход репетитора: 5 нажатий на логотип
+  const [tapCount, setTapCount] = React.useState(0);
+  const [showAdminBtn, setShowAdminBtn] = React.useState(false);
+  const [adminPassword, setAdminPassword] = React.useState("");
+  const tapTimer = React.useRef(null);
+
+  const handleLogoTap = () => {
+    const next = tapCount + 1;
+    setTapCount(next);
+    clearTimeout(tapTimer.current);
+    if (next >= 5) {
+      setShowAdminBtn(true);
+      setTapCount(0);
+    } else {
+      tapTimer.current = setTimeout(() => setTapCount(0), 1500);
+    }
+  };
+
+  const handleAdminLogin = async (e) => {
+    e.preventDefault();
+    if (!adminPassword) return;
+    setLoading(true);
+    setError(null);
+    try { await onEnter?.("admin", adminPassword); }
+    catch (err) { setError(err.message || "Неверный пароль"); setAdminPassword(""); }
+    finally { setLoading(false); }
+  };
+
   const handleDigit = (i, val) => {
     const ch = val.replace(/\D/g, "").slice(-1);
     const next = [...digits];
@@ -166,14 +194,20 @@ export const LoginCompact = ({ onEnter }) => {
         zIndex: 1,
         textAlign: "center",
       }}>
-        {/* Logo */}
-        <div style={{
-          width: 72, height: 72, borderRadius: 20,
-          background: "var(--green-800)", color: "#fff",
-          margin: "0 auto 24px",
-          display: "grid", placeItems: "center",
-          boxShadow: "0 8px 24px rgba(30,80,50,0.18)",
-        }}>
+        {/* Logo — 5 нажатий = вход репетитора */}
+        <div
+          onClick={handleLogoTap}
+          style={{
+            width: 72, height: 72, borderRadius: 20,
+            background: "var(--green-800)", color: "#fff",
+            margin: "0 auto 24px",
+            display: "grid", placeItems: "center",
+            boxShadow: "0 8px 24px rgba(30,80,50,0.18)",
+            cursor: "default",
+            userSelect: "none",
+            transition: "transform 0.1s",
+          }}
+        >
           <Leaf size={34} stroke={1.5} style={{ color: "#fff" }} />
         </div>
 
@@ -243,49 +277,35 @@ export const LoginCompact = ({ onEnter }) => {
           </button>
         </form>
 
-        <AdminLoginLink onEnter={onEnter} />
+        {/* Скрытая форма репетитора — появляется после 5 нажатий на логотип */}
+        {showAdminBtn && (
+          <div style={{ marginTop: 20, paddingTop: 16, borderTop: "1px dashed var(--border)" }}>
+            <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 10 }}>Вход для преподавателя</div>
+            <form onSubmit={handleAdminLogin} style={{ display: "flex", gap: 8, justifyContent: "center" }}>
+              <input
+                type="password"
+                className="input"
+                placeholder="Пароль"
+                value={adminPassword}
+                onChange={e => { setAdminPassword(e.target.value); setError(null); }}
+                autoFocus
+                style={{ width: 160, textAlign: "center" }}
+              />
+              <button type="submit" className="btn btn-ghost btn-sm" disabled={!adminPassword || loading}>
+                {loading ? "…" : "Войти"}
+              </button>
+            </form>
+          </div>
+        )}
+
+        {/* Подсказка для ученика */}
+        {!showAdminBtn && (
+          <div style={{ marginTop: 24, fontSize: 12, color: "var(--text-muted)" }}>
+            Нет кода? Попроси его у своего репетитора.
+          </div>
+        )}
       </div>
     </div>
   );
 };
 
-/* ── Скрытая ссылка для входа репетитора ── */
-function AdminLoginLink({ onEnter }) {
-  const [show, setShow] = React.useState(false);
-  const [loading, setLoading] = React.useState(false);
-  const [error, setError] = React.useState(null);
-
-  const handleAdmin = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      await onEnter?.("admin");
-    } catch (err) {
-      setError(err.message || "Ошибка входа");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div style={{ marginTop: 28, paddingTop: 20, borderTop: "1px dashed var(--border)" }}>
-      {!show ? (
-        <button
-          onClick={() => setShow(true)}
-          style={{ background: "none", border: "none", cursor: "pointer", fontSize: 12, color: "var(--text-muted)", textDecoration: "underline", textDecorationStyle: "dotted" }}
-        >
-          Я репетитор
-        </button>
-      ) : (
-        <div style={{ textAlign: "center" }}>
-          <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 10 }}>Вход для преподавателя</div>
-          {error && <div style={{ fontSize: 12, color: "var(--wrong)", marginBottom: 8 }}>{error}</div>}
-          <button className="btn btn-ghost btn-sm" onClick={handleAdmin} disabled={loading}
-            style={{ fontSize: 13 }}>
-            {loading ? "Входим…" : "Войти как репетитор"}
-          </button>
-        </div>
-      )}
-    </div>
-  );
-}

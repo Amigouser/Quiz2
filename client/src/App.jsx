@@ -22,8 +22,8 @@ function AuthProvider({ children }) {
       .finally(() => setLoading(false));
   }, []);
 
-  const login = async (name) => {
-    const d = await API.login(name);
+  const login = async (code, password) => {
+    const d = await API.login(code, password);
     setUser(d.user);
     return d.user;
   };
@@ -68,8 +68,8 @@ function LoginPage() {
 
   if (user) return <Navigate to={location.state?.from?.pathname || "/dashboard"} replace />;
 
-  const handleEnter = async (name) => {
-    const u = await login(name);
+  const handleEnter = async (code, password) => {
+    const u = await login(code, password);
     navigate("/dashboard", { replace: true });
   };
 
@@ -79,6 +79,8 @@ function LoginPage() {
 function DashboardPage() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+
+  if (user?.is_admin) return <Navigate to="/admin" replace />;
   const [quizzes, setQuizzes] = useState([]);
   const [cardSets, setCardSets] = useState([]);
 

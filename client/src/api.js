@@ -13,7 +13,7 @@ async function req(url, opts = {}) {
 }
 
 const API = {
-  login: (code) => req("/api/auth/login", { method: "POST", body: { code } }),
+  login: (code, password) => req("/api/auth/login", { method: "POST", body: { code, password } }),
   logout: () => req("/api/auth/logout", { method: "POST" }),
   me: () => req("/api/auth/me"),
 
@@ -28,6 +28,7 @@ const API = {
 
   admin: {
     getTests: () => req("/api/admin/tests"),
+    getTest: (id) => req(`/api/admin/tests/${id}`),
     createTest: (data) => req("/api/admin/tests", { method: "POST", body: data }),
     updateTest: (id, data) => req(`/api/admin/tests/${id}`, { method: "PUT", body: data }),
     deleteTest: (id) => req(`/api/admin/tests/${id}`, { method: "DELETE" }),
