@@ -1,0 +1,120 @@
+/* ═══════════════════════════════════════════════════════════════════
+   Responsive overrides — mobile-first
+   Используются !important т.к. компоненты используют inline styles
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── Tablet 768–1024px ───────────────────────────────────────────── */
+@media (max-width: 1024px) {
+  /* Landing */
+  .lf-hero-grid    { gap: 36px !important; }
+  .lf-diplomas-grid { grid-template-columns: repeat(2, 1fr) !important; }
+
+  /* Dashboard */
+  .dash-topbar  { padding: 14px 28px !important; }
+  .dash-hero    { padding: 32px 28px 24px !important; }
+  .dash-grid    { padding: 0 28px !important; }
+  .dash-filters { padding: 0 28px 16px !important; }
+  .dash-cards-section { padding: 0 28px !important; }
+}
+
+/* ── Mobile < 768px ──────────────────────────────────────────────── */
+@media (max-width: 767px) {
+
+  /* ─ Landing: Header ─────────────────────────────────────── */
+  .lf-header      { padding: 0 16px !important; height: 56px !important; }
+  .lf-nav         { display: none !important; }
+  .lf-header-btn  { padding: 8px 14px !important; font-size: 13px !important; }
+
+  /* ─ Landing: Hero ───────────────────────────────────────── */
+  .lf-hero-section { padding-top: 56px !important; }
+  .lf-hero-grid   {
+    grid-template-columns: 1fr !important;
+    gap: 0 !important;
+    padding: 48px 20px 60px !important;
+  }
+  .lf-hero-photo  { display: none !important; }
+  .lf-hero-stats  { gap: 28px !important; }
+
+  /* ─ Landing: Sections ──────────────────────────────────── */
+  .lf-section-pad { padding-left: 20px !important; padding-right: 20px !important; }
+  .lf-about-grid  { grid-template-columns: 1fr !important; gap: 32px !important; }
+  .lf-diplomas-grid { grid-template-columns: 1fr !important; gap: 16px !important; }
+
+  /* ─ Dashboard: Header ───────────────────────────────────── */
+  .dash-topbar {
+    padding: 12px 16px !important;
+    flex-wrap: wrap !important;
+    gap: 10px !important;
+  }
+  .dash-topbar-right { gap: 10px !important; }
+  .dash-logo-label   { display: none !important; }
+
+  /* ─ Dashboard: Hero ─────────────────────────────────────── */
+  .dash-hero { padding: 24px 16px 16px !important; }
+  .dash-h1   { font-size: 28px !important; }
+  .dash-stats {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 10px !important;
+    margin-top: 20px !important;
+    max-width: 100% !important;
+  }
+  .dash-stat-val  { font-size: 20px !important; }
+
+  /* ─ Dashboard: Filters / Grid ───────────────────────────── */
+  .dash-filters { padding: 0 16px 14px !important; flex-direction: column !important; align-items: flex-start !important; }
+  .dash-grid    { padding: 0 16px !important; grid-template-columns: 1fr !important; }
+  .dash-cards-section { padding: 0 16px !important; }
+
+  /* ─ Quiz ────────────────────────────────────────────────── */
+  .quiz-topbar { padding: 14px 16px !important; gap: 12px !important; }
+  .quiz-body   { padding: 28px 16px 60px !important; }
+  .quiz-h2     { font-size: 22px !important; }
+
+  /* ─ Quiz Results ────────────────────────────────────────── */
+  .quiz-result-wrap { padding: 24px 16px !important; }
+
+  /* ─ Flashcards ──────────────────────────────────────────── */
+  .fc-topbar  { padding: 14px 16px !important; }
+  .fc-area    { padding: 24px 16px 0 !important; }
+  .fc-card-wrap { max-width: 100% !important; }
+  .fc-card    { height: 220px !important; }
+  .fc-actions { gap: 10px !important; }
+  .fc-nav     { margin-top: 16px !important; }
+
+  /* ─ Admin (скрываем на мобильном — только десктоп) ──────── */
+  .admin-layout { grid-template-columns: 1fr !important; }
+  .sidebar      { display: none !important; }
+  .admin-mobile-note {
+    display: flex !important;
+    align-items: center; justify-content: center;
+    min-height: 100vh;
+    padding: 32px 20px;
+    text-align: center;
+    font-family: var(--f-serif);
+    font-size: 18px;
+    color: var(--text-soft);
+    flex-direction: column;
+    gap: 16px;
+  }
+  .admin-mobile-hide { display: none !important; }
+
+  /* ─ Login ───────────────────────────────────────────────── */
+  .login-wrap {
+    padding: 24px 20px !important;
+    min-height: 100vh;
+  }
+  .login-card {
+    padding: 28px 20px !important;
+    max-width: 100% !important;
+  }
+
+  /* ─ Generic utility ─────────────────────────────────────── */
+  .rsp-hide-mobile { display: none !important; }
+  .rsp-full-mobile { width: 100% !important; }
+}
+
+/* ── Very small: < 400px ─────────────────────────────────────────── */
+@media (max-width: 400px) {
+  .dash-stats  { grid-template-columns: 1fr !important; }
+  .fc-card     { height: 200px !important; }
+}
