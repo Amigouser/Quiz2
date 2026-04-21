@@ -114,6 +114,20 @@ function all(sql, ...params) {
   return db.prepare(sql).all(...params);
 }
 
+// ── Миграции ──────────────────────────────────────────────────────────────────
+try { db.exec("ALTER TABLE users ADD COLUMN code TEXT"); } catch (_) {}
+try { db.exec("ALTER TABLE users ADD COLUMN group_name TEXT"); } catch (_) {}
+// Создать коды для существующих учеников без кода
+(function generateMissingCodes() {
+  const users = all("SELECT id FROM users WHERE code IS NULL AND is_admin = 0");
+  for (const u of users) {
+    let code;
+    do { code = String(Math.floor(10000000 + Math.random() * 90000000)); }
+    while (get("SELECT id FROM users WHERE code = ?", code));
+    run("UPDATE users SET code = ? WHERE id = ?", code, u.id);
+  }
+})();
+
 function seed() {
   const adminExists = get("SELECT id FROM users WHERE name = 'admin'");
   if (adminExists) return;

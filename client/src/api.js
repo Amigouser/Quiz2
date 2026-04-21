@@ -13,7 +13,7 @@ async function req(url, opts = {}) {
 }
 
 const API = {
-  login: (name) => req("/api/auth/login", { method: "POST", body: { name } }),
+  login: (code) => req("/api/auth/login", { method: "POST", body: { code } }),
   logout: () => req("/api/auth/logout", { method: "POST" }),
   me: () => req("/api/auth/me"),
 
@@ -39,6 +39,8 @@ const API = {
       req(`/api/admin/students/${studentId}/assign`, { method: "POST", body: { test_id } }),
     unassignTest: (studentId, testId) =>
       req(`/api/admin/students/${studentId}/assign/${testId}`, { method: "DELETE" }),
+    createStudent: (name, group_name) => req("/api/admin/students", { method: "POST", body: { name, group_name } }),
+    deleteStudent: (id) => req(`/api/admin/students/${id}`, { method: "DELETE" }),
     getResults: () => req("/api/admin/results"),
     getCardSets: () => req("/api/admin/flashcard-sets"),
     getCardSet: (id) => req(`/api/admin/flashcard-sets/${id}`),

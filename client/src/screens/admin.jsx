@@ -7,7 +7,6 @@ const AdminSidebar = ({ active, onTab }) => {
   const navigate = useNavigate();
   const items = [
     { id: "tests", label: "Тесты", icon: "📚" },
-    { id: "create", label: "Создать тест", icon: "✎" },
     { id: "cards", label: "Карточки", icon: "🃏" },
     { id: "students", label: "Ученики", icon: "👥" },
     { id: "results", label: "Результаты", icon: "📈" },
@@ -539,12 +538,61 @@ const AdminStudents = () => {
   const [students, setStudents] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
   const [selectedId, setSelectedId] = React.useState(null);
+  const [newName, setNewName] = React.useState("");
+  const [newGroup, setNewGroup] = React.useState("");
+  const [creating, setCreating] = React.useState(false);
+  const [createError, setCreateError] = React.useState(null);
+  const [showCreate, setShowCreate] = React.useState(false);
+  const [copiedId, setCopiedId] = React.useState(null);
+  const [deletingId, setDeletingId] = React.useState(null);
 
-  React.useEffect(() => {
+  const load = () => {
     API.admin.getStudents()
       .then(data => { setStudents(data); setLoading(false); })
       .catch(() => setLoading(false));
-  }, []);
+  };
+
+  React.useEffect(load, []);
+
+  const handleCreate = async (e) => {
+    e.preventDefault();
+    if (!newName.trim()) return;
+    setCreating(true);
+    setCreateError(null);
+    try {
+      await API.admin.createStudent(newName.trim(), newGroup || null);
+      setNewName("");
+      setNewGroup("");
+      setShowCreate(false);
+      load();
+    } catch (err) {
+      setCreateError(err.message || "Ошибка создания");
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  const handleDelete = async (e, id, name) => {
+    e.stopPropagation();
+    if (!confirm(`Удалить ученика «${name}»? Все его данные и попытки будут удалены.`)) return;
+    setDeletingId(id);
+    try {
+      await API.admin.deleteStudent(id);
+      load();
+    } catch (err) {
+      alert(err.message || "Ошибка удаления");
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const copyCode = (e, code, id) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(code).then(() => {
+      setCopiedId(id);
+      setTimeout(() => setCopiedId(null), 1800);
+    });
+  };
 
   // Открыта детальная карточка ученика
   if (selectedId) {
@@ -557,35 +605,96 @@ const AdminStudents = () => {
 
   return (
     <div style={{ padding: "32px 40px", flex: 1 }}>
-      <div style={{ marginBottom: 28 }}>
-        <div className="eyebrow" style={{ marginBottom: 12 }}>Ученики</div>
-        <h1 style={{ fontFamily: "var(--f-serif)", fontSize: 36 }}>Твой класс</h1>
-        <p style={{ color: "var(--text-soft)", marginTop: 6 }}>
-          {students.length} учеников · нажми на строку, чтобы назначить тесты
-        </p>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 28 }}>
+        <div>
+          <div className="eyebrow" style={{ marginBottom: 12 }}>Ученики</div>
+          <h1 style={{ fontFamily: "var(--f-serif)", fontSize: 36 }}>Твой класс</h1>
+          <p style={{ color: "var(--text-soft)", marginTop: 6 }}>
+            {students.length} {students.length === 1 ? "ученик" : "учеников"} · нажми на строку, чтобы назначить задания
+          </p>
+        </div>
+        <button className="btn btn-primary" onClick={() => setShowCreate(v => !v)}>
+          {showCreate ? "Отмена" : "+ Добавить ученика"}
+        </button>
       </div>
+
+      {/* Create student form */}
+      {showCreate && (
+        <div className="card" style={{ padding: 24, marginBottom: 24, background: "var(--green-50)", border: "1.5px solid var(--green-200)" }}>
+          <div style={{ fontFamily: "var(--f-serif)", fontSize: 18, marginBottom: 6 }}>Новый ученик</div>
+          <p style={{ fontSize: 13, color: "var(--text-soft)", marginBottom: 16 }}>
+            Введи имя — система автоматически создаст уникальный 8-значный код для входа.
+          </p>
+          <form onSubmit={handleCreate} style={{ display: "flex", gap: 12, alignItems: "flex-start", flexWrap: "wrap" }}>
+            <div className="field" style={{ flex: "1 1 200px", margin: 0 }}>
+              <label style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 4, display: "block" }}>Имя</label>
+              <input
+                className="input input-lg"
+                placeholder="Например: Аня"
+                value={newName}
+                onChange={e => { setNewName(e.target.value); setCreateError(null); }}
+                autoFocus
+              />
+            </div>
+            <div className="field" style={{ flex: "0 0 160px", margin: 0 }}>
+              <label style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 4, display: "block" }}>Класс / группа</label>
+              <select
+                className="input input-lg"
+                value={newGroup}
+                onChange={e => setNewGroup(e.target.value)}
+                style={{ cursor: "pointer" }}
+              >
+                <option value="">— не указан —</option>
+                <option>5 класс</option>
+                <option>6 класс</option>
+                <option>7 класс</option>
+                <option>8 класс</option>
+                <option>9 класс</option>
+                <option>10 класс</option>
+                <option>11 класс</option>
+                <option>ОГЭ</option>
+                <option>ЕГЭ</option>
+                <option>Студент</option>
+              </select>
+            </div>
+            <div style={{ alignSelf: "flex-end", flexShrink: 0 }}>
+              {createError && (
+                <div style={{ fontSize: 12, color: "var(--wrong)", marginBottom: 6 }}>{createError}</div>
+              )}
+              <button type="submit" className="btn btn-primary btn-lg"
+                disabled={!newName.trim() || creating}
+                style={{ opacity: newName.trim() && !creating ? 1 : 0.5 }}>
+                {creating ? "Создаём…" : "Создать и получить код"}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
 
       {students.length === 0 ? (
         <div className="card" style={{ padding: 40, textAlign: "center", color: "var(--text-muted)" }}>
-          Ученики ещё не заходили в систему
+          <div style={{ fontSize: 32, marginBottom: 12 }}>👥</div>
+          <div style={{ fontFamily: "var(--f-serif)", fontSize: 18, marginBottom: 8 }}>Учеников пока нет</div>
+          <div style={{ fontSize: 14, marginBottom: 20 }}>Нажми «Добавить ученика», введи имя и выдай код.</div>
+          <button className="btn btn-primary btn-sm" onClick={() => setShowCreate(true)}>+ Добавить первого ученика</button>
         </div>
       ) : (
         <div className="card" style={{ padding: 0, overflow: "hidden" }}>
           <div style={{
             display: "grid",
-            gridTemplateColumns: "2fr 90px 1.3fr 160px 120px",
+            gridTemplateColumns: "1.8fr 140px 80px 1.2fr 150px 110px",
             padding: "12px 20px", borderBottom: "1px solid var(--border-soft)",
             background: "var(--bg-muted)",
             fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-muted)", fontWeight: 600,
           }}>
-            <div>Ученик</div><div>Тестов</div><div>Средний балл</div><div>Последний вход</div><div></div>
+            <div>Ученик</div><div>Код входа</div><div>Тестов</div><div>Средний балл</div><div>Последний вход</div><div></div>
           </div>
           {students.map((s, i) => (
             <div
               key={s.id}
               style={{
                 display: "grid",
-                gridTemplateColumns: "2fr 90px 1.3fr 160px 120px",
+                gridTemplateColumns: "1.8fr 140px 80px 1.2fr 150px 110px",
                 padding: "14px 20px", alignItems: "center",
                 borderBottom: i < students.length - 1 ? "1px solid var(--border-soft)" : "none",
                 cursor: "pointer",
@@ -602,12 +711,42 @@ const AdminStudents = () => {
                   color: "var(--green-900)",
                   display: "grid", placeItems: "center",
                   fontFamily: "var(--f-serif)", fontWeight: 600, fontSize: 13,
+                  flexShrink: 0,
                 }}>{s.name[0]?.toUpperCase()}</div>
-                <div style={{ fontWeight: 500 }}>{s.name}</div>
+                <div>
+                  <div style={{ fontWeight: 500 }}>{s.name}</div>
+                  {s.group_name && (
+                    <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 1 }}>{s.group_name}</div>
+                  )}
+                </div>
               </div>
+
+              {/* Code with copy button */}
+              <div onClick={e => e.stopPropagation()}>
+                {s.code ? (
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <code style={{
+                      fontFamily: "monospace", fontSize: 14, letterSpacing: "0.1em",
+                      background: "var(--green-100)", padding: "3px 8px", borderRadius: 6,
+                      color: "var(--green-900)", fontWeight: 700,
+                    }}>{s.code}</code>
+                    <button
+                      className="btn btn-ghost btn-sm"
+                      style={{ padding: "3px 8px", fontSize: 11, flexShrink: 0 }}
+                      onClick={e => copyCode(e, s.code, s.id)}
+                      title="Скопировать код"
+                    >
+                      {copiedId === s.id ? "✓" : "📋"}
+                    </button>
+                  </div>
+                ) : (
+                  <span style={{ color: "var(--text-muted)", fontSize: 13 }}>—</span>
+                )}
+              </div>
+
               <div style={{ fontFamily: "var(--f-serif)", fontSize: 16 }}>{s.attempt_count || 0}</div>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <div style={{ flex: 1, maxWidth: 160 }}>
+                <div style={{ flex: 1, maxWidth: 120 }}>
                   <div className="progress" style={{ height: 4 }}>
                     <div className="progress-fill" style={{
                       width: `${s.avg_score || 0}%`,
@@ -624,10 +763,23 @@ const AdminStudents = () => {
               <div style={{ fontSize: 13, color: "var(--text-soft)" }}>
                 {s.last_attempt ? new Date(s.last_attempt).toLocaleDateString("ru-RU") : "—"}
               </div>
-              <div style={{ textAlign: "right" }}>
-                <span style={{ fontSize: 12, color: "var(--green-800)", fontWeight: 600 }}>
+              <div style={{ display: "flex", gap: 6, justifyContent: "flex-end", alignItems: "center" }} onClick={e => e.stopPropagation()}>
+                <button
+                  className="btn btn-ghost btn-sm"
+                  style={{ fontSize: 12, color: "var(--green-800)", fontWeight: 600 }}
+                  onClick={() => setSelectedId(s.id)}
+                >
                   Назначить →
-                </span>
+                </button>
+                <button
+                  className="btn btn-ghost btn-sm"
+                  style={{ color: "var(--wrong)", padding: "4px 8px" }}
+                  disabled={deletingId === s.id}
+                  onClick={e => handleDelete(e, s.id, s.name)}
+                  title="Удалить ученика"
+                >
+                  {deletingId === s.id ? "…" : "✕"}
+                </button>
               </div>
             </div>
           ))}
@@ -863,16 +1015,16 @@ const AdminFlashcardSets = () => {
       ) : (
         <div className="card" style={{ padding: 0, overflow: "hidden" }}>
           <div style={{
-            display: "grid", gridTemplateColumns: "2fr 1fr 80px 80px 160px",
+            display: "grid", gridTemplateColumns: "1fr 70px 90px 220px",
             padding: "12px 20px", borderBottom: "1px solid var(--border-soft)",
             background: "var(--bg-muted)",
             fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-muted)", fontWeight: 600,
           }}>
-            <div>Набор</div><div>Тема</div><div>Карт.</div><div>Статус</div><div style={{ textAlign: "right" }}>Действия</div>
+            <div>Набор</div><div>Карт.</div><div>Статус</div><div style={{ textAlign: "right" }}>Действия</div>
           </div>
           {sets.map((s, i) => (
             <div key={s.id} style={{
-              display: "grid", gridTemplateColumns: "2fr 1fr 80px 80px 160px",
+              display: "grid", gridTemplateColumns: "1fr 70px 90px 220px",
               padding: "16px 20px", alignItems: "center",
               borderBottom: i < sets.length - 1 ? "1px solid var(--border-soft)" : "none",
               opacity: s.is_active ? 1 : 0.55,
@@ -881,7 +1033,6 @@ const AdminFlashcardSets = () => {
                 <div style={{ fontWeight: 500 }}>{s.title}</div>
                 <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>{s.topic}</div>
               </div>
-              <div><span className="pill" style={{ background: "var(--green-100)" }}>{s.topic}</span></div>
               <div style={{ fontFamily: "var(--f-serif)", fontSize: 18 }}>{s.cards_count}</div>
               <div>
                 <span className="pill" style={{
@@ -892,7 +1043,7 @@ const AdminFlashcardSets = () => {
                   {s.is_active ? "активен" : "скрыт"}
                 </span>
               </div>
-              <div style={{ display: "flex", gap: 4, justifyContent: "flex-end" }}>
+              <div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
                 <button className="btn btn-ghost btn-sm" onClick={() => setEditId(s.id)}>Изменить</button>
                 <button className="btn btn-ghost btn-sm" onClick={() => handleToggle(s.id)}>
                   {s.is_active ? "Скрыть" : "Показать"}
@@ -972,7 +1123,7 @@ const AdminResults = () => {
 export const AdminPanel = ({ initialTab = "tests" }) => {
   const [tab, setTab] = React.useState(initialTab);
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "240px 1fr", minHeight: "100vh", background: "var(--bg)" }}>
+    <div className="admin-layout" style={{ display: "grid", gridTemplateColumns: "240px 1fr", minHeight: "100vh", background: "var(--bg)" }}>
       <AdminSidebar active={tab} onTab={setTab} />
       {tab === "tests" && <AdminTestsList onCreateNew={() => setTab("create")} />}
       {tab === "create" && <AdminCreateTest onCreated={() => setTab("tests")} />}

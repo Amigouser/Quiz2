@@ -35,7 +35,7 @@ export const QuizClassic = ({ quiz, onFinish, onExit }) => {
       <BotanicalBg intensity={0.4} pattern="mix" />
 
       {/* Top */}
-      <div style={{ position: "relative", padding: "20px 48px", borderBottom: "1px solid var(--border-soft)", display: "flex", alignItems: "center", gap: 24 }}>
+      <div className="quiz-topbar" style={{ position: "relative", padding: "20px 48px", borderBottom: "1px solid var(--border-soft)", display: "flex", alignItems: "center", gap: 24 }}>
         <button className="btn btn-ghost btn-sm" onClick={onExit}>← Выйти</button>
         <div style={{ flex: 1 }}>
           <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "var(--text-muted)", marginBottom: 6 }}>
@@ -49,9 +49,9 @@ export const QuizClassic = ({ quiz, onFinish, onExit }) => {
       </div>
 
       {/* Question body */}
-      <div style={{ position: "relative", maxWidth: 760, margin: "0 auto", padding: "56px 40px 80px" }}>
+      <div className="quiz-body" style={{ position: "relative", maxWidth: 760, margin: "0 auto", padding: "56px 40px 80px" }}>
         <div className="eyebrow" style={{ marginBottom: 14 }}>Вопрос {String(idx + 1).padStart(2, "0")}</div>
-        <h2 style={{ fontFamily: "var(--f-serif)", fontSize: 34, lineHeight: 1.2, marginBottom: 10, letterSpacing: "-0.01em" }}>
+        <h2 className="quiz-h2" style={{ fontFamily: "var(--f-serif)", fontSize: 34, lineHeight: 1.2, marginBottom: 10, letterSpacing: "-0.01em" }}>
           {q.q}
         </h2>
         {q.note && <p style={{ color: "var(--text-muted)", fontSize: 14, fontStyle: "italic", marginBottom: 28 }}>{q.note}</p>}

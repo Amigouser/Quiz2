@@ -83,7 +83,7 @@ router.patch("/tests/:id/publish", (req, res) => {
 
 router.get("/students", (req, res) => {
   const students = all(`
-    SELECT u.id, u.name, u.created_at,
+    SELECT u.id, u.name, u.code, u.group_name, u.created_at,
            COUNT(DISTINCT a.id) AS attempt_count,
            ROUND(AVG(CASE WHEN a.max_score > 0 THEN a.score * 100.0 / a.max_score END), 0) AS avg_score,
            MAX(a.completed_at) AS last_attempt
@@ -94,6 +94,35 @@ router.get("/students", (req, res) => {
     ORDER BY last_attempt DESC
   `);
   res.json(students);
+});
+
+router.delete("/students/:id", (req, res) => {
+  const student = get("SELECT id FROM users WHERE id = ? AND is_admin = 0", req.params.id);
+  if (!student) return res.status(404).json({ error: "Ученик не найден" });
+  run("DELETE FROM users WHERE id = ? AND is_admin = 0", req.params.id);
+  res.json({ ok: true });
+});
+
+router.post("/students", (req, res) => {
+  const { name } = req.body;
+  if (!name || !name.trim()) return res.status(400).json({ error: "Имя обязательно" });
+  const trimmed = name.trim();
+
+  const { group_name } = req.body;
+  const existing = get("SELECT id FROM users WHERE name = ?", trimmed);
+  if (existing) return res.status(409).json({ error: "Ученик с таким именем уже существует" });
+
+  // Генерируем уникальный 8-значный код
+  let code;
+  do { code = String(Math.floor(10000000 + Math.random() * 90000000)); }
+  while (get("SELECT id FROM users WHERE code = ?", code));
+
+  const r = run(
+    "INSERT INTO users (name, is_admin, code, group_name) VALUES (?, 0, ?, ?)",
+    trimmed, code, group_name || null
+  );
+  const user = get("SELECT id, name, code, group_name, created_at FROM users WHERE id = ?", r.lastInsertRowid);
+  res.json(user);
 });
 
 // ── Назначение тестов ученикам ──────────────────────────────────────────────

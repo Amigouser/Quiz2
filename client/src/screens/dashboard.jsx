@@ -143,7 +143,7 @@ export const StudentDashboard = ({ name = "Аня", quizzes = [], cardSets = [],
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg)", paddingBottom: 80 }}>
       {/* Top bar */}
-      <div style={{
+      <div className="dash-topbar" style={{
         display: "flex", alignItems: "center", justifyContent: "space-between",
         padding: "20px 48px",
         borderBottom: "1px solid var(--border-soft)",
@@ -158,8 +158,8 @@ export const StudentDashboard = ({ name = "Аня", quizzes = [], cardSets = [],
           </div>
           <div style={{ fontFamily: "var(--f-serif)", fontWeight: 600, fontSize: 17 }}>Живая клетка</div>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
-          {onAdmin && <button className="btn btn-ghost btn-sm" onClick={onAdmin}>Панель репетитора</button>}
+        <div className="dash-topbar-right" style={{ display: "flex", alignItems: "center", gap: 20 }}>
+          {onAdmin && <button className="btn btn-ghost btn-sm rsp-hide-mobile" onClick={onAdmin}>Панель репетитора</button>}
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <div style={{
               width: 34, height: 34, borderRadius: "50%", background: "var(--green-200)",
@@ -175,11 +175,11 @@ export const StudentDashboard = ({ name = "Аня", quizzes = [], cardSets = [],
       </div>
 
       {/* Hero */}
-      <div style={{ padding: "40px 48px 28px", position: "relative", overflow: "hidden" }}>
+      <div className="dash-hero" style={{ padding: "40px 48px 28px", position: "relative", overflow: "hidden" }}>
         <BotanicalBg intensity={0.6} pattern="ferns" />
         <div style={{ position: "relative" }}>
           <div className="eyebrow" style={{ marginBottom: 14 }}>Сегодня</div>
-          <h1 style={{ fontFamily: "var(--f-serif)", fontSize: 44, lineHeight: 1.05, letterSpacing: "-0.02em", marginBottom: 8 }}>
+          <h1 className="dash-h1" style={{ fontFamily: "var(--f-serif)", fontSize: 44, lineHeight: 1.05, letterSpacing: "-0.02em", marginBottom: 8 }}>
             Привет, {name}. <em style={{ color: "var(--green-800)" }}>Продолжим?</em>
           </h1>
           <p style={{ color: "var(--text-soft)", fontSize: 16, maxWidth: 560 }}>
@@ -191,14 +191,14 @@ export const StudentDashboard = ({ name = "Аня", quizzes = [], cardSets = [],
 
         {/* Stat strip */}
         {quizzes.length > 0 && (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, marginTop: 32, maxWidth: 720 }}>
+          <div className="dash-stats" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, marginTop: 32, maxWidth: 720 }}>
             {[
               { v: `${stats.done}/${stats.total}`, l: "пройдено тестов" },
               { v: stats.avg ? `${stats.avg}%` : "—", l: "средний результат" },
               { v: `${quizzes.filter(q => q.status === "new").length}`, l: "новых тестов" },
             ].map((s, i) => (
               <div key={i} className="card" style={{ padding: "18px 20px" }}>
-                <div style={{
+                <div className="dash-stat-val" style={{
                   fontFamily: "var(--f-serif)", fontSize: 28, fontWeight: 500, letterSpacing: "-0.01em",
                   color: "var(--text)",
                 }}>{s.v}</div>
@@ -213,7 +213,7 @@ export const StudentDashboard = ({ name = "Аня", quizzes = [], cardSets = [],
 
       {/* Filters */}
       {quizzes.length > 0 && (
-        <div style={{ padding: "0 48px 20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div className="dash-filters" style={{ padding: "0 48px 20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             {topics.map(t => (
               <div key={t} className={`chip ${tab === t ? "active" : ""}`} onClick={() => setTab(t)}>
@@ -227,7 +227,7 @@ export const StudentDashboard = ({ name = "Аня", quizzes = [], cardSets = [],
 
       {/* Quizzes grid */}
       {quizzes.length > 0 ? (
-        <div style={{ padding: "0 48px", display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: 20 }}>
+        <div className="dash-grid" style={{ padding: "0 48px", display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 20 }}>
           {filtered.map(q => <QuizCard key={q.id} q={q} onStart={() => onOpenQuiz?.(q)} />)}
         </div>
       ) : (

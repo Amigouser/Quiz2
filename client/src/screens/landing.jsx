@@ -253,7 +253,7 @@ export function LandingPage() {
       <style>{STYLES}</style>
 
       {/* ══ HEADER ════════════════════════════════════════════════════════════ */}
-      <header style={{
+      <header className="lf-header" style={{
         position: "fixed", top: 0, left: 0, right: 0, zIndex: 200,
         background: "rgba(15, 42, 30, 0.85)",
         backdropFilter: "blur(20px)",
@@ -275,19 +275,18 @@ export function LandingPage() {
               Живая клетка
             </div>
             <div style={{ fontSize: 10, color: "rgba(255,255,255,0.45)", letterSpacing: "0.06em" }}>
-              РЕПЕТИТОР · БИОЛОГИЯ
             </div>
           </div>
         </div>
 
-        <nav style={{ display: "flex", alignItems: "center", gap: 36 }}>
+        <nav className="lf-nav" style={{ display: "flex", alignItems: "center", gap: 36 }}>
           {[["Об авторе","#about"],["Образование","#diplomas"],["Публикации","#articles"]].map(([l,h]) => (
             <a key={h} href={h} className="lf-nav-link">{l}</a>
           ))}
         </nav>
 
         <button
-          className="lf-hero-btn lf-hero-btn-primary"
+          className="lf-hero-btn lf-hero-btn-primary lf-header-btn"
           style={{ padding: "10px 22px", fontSize: 14 }}
           onClick={() => navigate("/login")}
         >
@@ -299,7 +298,7 @@ export function LandingPage() {
       </header>
 
       {/* ══ HERO ═══════════════════════════════════════════════════════════════ */}
-      <section style={{
+      <section className="lf-hero-section" style={{
         minHeight: "100vh",
         background: "linear-gradient(145deg, #0a1f14 0%, #0f2a1e 40%, #1b3d2a 70%, #2d5a40 100%)",
         backgroundSize: "200% 200%",
@@ -334,7 +333,7 @@ export function LandingPage() {
         }} />
 
         {/* Content */}
-        <div style={{
+        <div className="lf-hero-grid" style={{
           maxWidth: 1280, margin: "0 auto",
           padding: "80px 48px",
           display: "grid", gridTemplateColumns: "1fr 420px",
@@ -396,7 +395,7 @@ export function LandingPage() {
             </div>
 
             {/* Stats */}
-            <div style={{ display: "flex", gap: 48 }}>
+            <div className="lf-hero-stats" style={{ display: "flex", gap: 48 }}>
               {TUTOR.stats.map((s, i) => (
                 <div key={i} style={{ animation: `lf-in 0.9s cubic-bezier(0.22,0.8,0.32,1) ${0.15 + i * 0.1}s both` }}>
                   <div style={{
@@ -416,7 +415,7 @@ export function LandingPage() {
           </div>
 
           {/* Right — Photo */}
-          <div style={{
+          <div className="lf-hero-photo" style={{
             position: "relative",
             animation: "lf-in 1.0s cubic-bezier(0.22,0.8,0.32,1) 0.2s both",
           }}>
@@ -526,7 +525,7 @@ export function LandingPage() {
       <WaveDivider fill="var(--bg)" fromColor="#0f2a1e" />
 
       {/* ══ О РЕПЕТИТОРЕ ══════════════════════════════════════════════════════ */}
-      <section id="about" style={{ padding: "80px 48px 96px" }}>
+      <section id="about" className="lf-section-pad" style={{ padding: "80px 48px 96px" }}>
         <div style={{ maxWidth: 1280, margin: "0 auto" }}>
 
           <div className="lf-reveal" style={{ marginBottom: 56, maxWidth: 640 }}>
@@ -547,7 +546,7 @@ export function LandingPage() {
             </h2>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 64, alignItems: "start" }}>
+          <div className="lf-about-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 64, alignItems: "start" }}>
             {/* Текст */}
             <div className="lf-reveal-left">
               <p style={{ fontSize: 17, lineHeight: 1.75, color: "var(--text-soft)", marginBottom: 24 }}>
@@ -609,7 +608,7 @@ export function LandingPage() {
       </section>
 
       {/* ══ ДИПЛОМЫ ════════════════════════════════════════════════════════════ */}
-      <section id="diplomas" style={{
+      <section id="diplomas" className="lf-section-pad" style={{
         padding: "96px 48px",
         background: "linear-gradient(180deg, var(--green-50) 0%, var(--bg) 100%)",
         position: "relative", overflow: "hidden",
@@ -638,7 +637,7 @@ export function LandingPage() {
             </h2>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 24 }}>
+          <div className="lf-diplomas-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 24 }}>
             {DIPLOMAS.map((d, i) => (
               <div
                 key={i}
@@ -699,7 +698,7 @@ export function LandingPage() {
       </section>
 
       {/* ══ СТАТЬИ ═════════════════════════════════════════════════════════════ */}
-      <section id="articles" style={{ padding: "96px 48px" }}>
+      <section id="articles" className="lf-section-pad" style={{ padding: "96px 48px" }}>
         <div style={{ maxWidth: 1280, margin: "0 auto" }}>
           <div className="lf-reveal" style={{ marginBottom: 56 }}>
             <div style={{

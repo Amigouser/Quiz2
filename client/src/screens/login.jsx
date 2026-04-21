@@ -1,8 +1,9 @@
-import React from "react";
+import React, { useRef } from "react";
 import { Leaf, Fern, Cell, Sprig, BotanicalBg } from "../botanical";
 
+/* ── Полноэкранная версия с иллюстрацией (не используется, но оставим) ── */
 export const LoginClassic = ({ onEnter }) => {
-  const [name, setName] = React.useState("");
+  const [code, setCode] = React.useState("");
   return (
     <div style={{
       position: "relative",
@@ -14,7 +15,6 @@ export const LoginClassic = ({ onEnter }) => {
     }}>
       <BotanicalBg intensity={1} pattern="ferns" />
 
-      {/* Left pane — greeting */}
       <div style={{
         position: "relative", zIndex: 1,
         padding: "72px 72px 64px",
@@ -38,41 +38,28 @@ export const LoginClassic = ({ onEnter }) => {
         <div>
           <div className="eyebrow" style={{ marginBottom: 16 }}>Урок · сегодня</div>
           <h1 style={{
-            fontFamily: "var(--f-serif)",
-            fontSize: 56, fontWeight: 400,
-            lineHeight: 1.05,
-            letterSpacing: "-0.02em",
-            marginBottom: 20,
+            fontFamily: "var(--f-serif)", fontSize: 56, fontWeight: 400,
+            lineHeight: 1.05, letterSpacing: "-0.02em", marginBottom: 20,
           }}>
             Добро&nbsp;пожаловать<br/>
             <em style={{ fontStyle: "italic", color: "var(--green-800)" }}>на урок.</em>
           </h1>
-          <p style={{ color: "var(--text-soft)", fontSize: 17, maxWidth: 440, lineHeight: 1.6 }}>
-            Изучай биологию с помощью интерактивных тестов. Готов?
-          </p>
         </div>
 
-        <form onSubmit={(e) => { e.preventDefault(); name.trim() && onEnter?.(name.trim()); }}
+        <form onSubmit={(e) => { e.preventDefault(); code.trim() && onEnter?.(code.trim()); }}
           style={{ maxWidth: 420, display: "flex", flexDirection: "column", gap: 16 }}>
           <div className="field">
-            <label>Как тебя зовут?</label>
-            <input className="input input-lg" placeholder="Например, Аня"
-              value={name} onChange={e => setName(e.target.value)} autoFocus />
+            <label>Введи код доступа</label>
+            <input className="input input-lg" placeholder="12345678"
+              value={code} onChange={e => setCode(e.target.value.replace(/\D/g, "").slice(0, 8))}
+              maxLength={8} autoFocus />
           </div>
-          <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-            <button type="submit" className="btn btn-primary btn-lg" disabled={!name.trim()}
-              style={{ opacity: name.trim() ? 1 : 0.5 }}>
-              Войти на урок
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8 H13 M9 4 L 13 8 L 9 12" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
-            </button>
-            <span style={{ color: "var(--text-muted)", fontSize: 13 }}>
-              без пароля — по имени
-            </span>
-          </div>
+          <button type="submit" className="btn btn-primary btn-lg" disabled={!code.trim()}>
+            Войти
+          </button>
         </form>
       </div>
 
-      {/* Right pane — plate */}
       <div style={{
         position: "relative",
         background: "linear-gradient(160deg, var(--green-100), var(--green-200) 60%, var(--green-300))",
@@ -86,43 +73,75 @@ export const LoginClassic = ({ onEnter }) => {
         <div style={{
           position: "absolute", top: "50%", left: "50%",
           transform: "translate(-50%, -50%)",
-          width: 320,
-          textAlign: "center",
-          color: "var(--green-900)",
+          width: 320, textAlign: "center", color: "var(--green-900)",
         }}>
-          <div style={{ color: "var(--green-800)" }}>
-            <Cell size={280} stroke={1.2} />
-          </div>
-          <div style={{ fontFamily: "var(--f-serif)", fontStyle: "italic", fontSize: 15, marginTop: 18, color: "var(--green-900)" }}>
-            Fig. 1 — Cellula vegetalis
-          </div>
-          <div style={{ fontSize: 12, letterSpacing: "0.14em", textTransform: "uppercase", marginTop: 6, color: "var(--green-700)" }}>
-            строение · ядро · мембрана
-          </div>
+          <div style={{ color: "var(--green-800)" }}><Cell size={280} stroke={1.2} /></div>
         </div>
       </div>
     </div>
   );
 };
 
+/* ── Основная компактная версия — ввод 8-значного кода ── */
 export const LoginCompact = ({ onEnter }) => {
-  const [name, setName] = React.useState("");
+  const [digits, setDigits] = React.useState(Array(8).fill(""));
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState(null);
+  const inputRefs = useRef([]);
+
+  const handleDigit = (i, val) => {
+    const ch = val.replace(/\D/g, "").slice(-1);
+    const next = [...digits];
+    next[i] = ch;
+    setDigits(next);
+    setError(null);
+    if (ch && i < 7) {
+      inputRefs.current[i + 1]?.focus();
+    }
+  };
+
+  const handleKeyDown = (i, e) => {
+    if (e.key === "Backspace") {
+      if (digits[i]) {
+        const next = [...digits];
+        next[i] = "";
+        setDigits(next);
+      } else if (i > 0) {
+        inputRefs.current[i - 1]?.focus();
+      }
+    }
+    if (e.key === "ArrowLeft" && i > 0) inputRefs.current[i - 1]?.focus();
+    if (e.key === "ArrowRight" && i < 7) inputRefs.current[i + 1]?.focus();
+  };
+
+  const handlePaste = (e) => {
+    e.preventDefault();
+    const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 8);
+    const next = Array(8).fill("");
+    for (let i = 0; i < pasted.length; i++) next[i] = pasted[i];
+    setDigits(next);
+    const focusIdx = Math.min(pasted.length, 7);
+    inputRefs.current[focusIdx]?.focus();
+  };
+
+  const code = digits.join("");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!name.trim()) return;
+    const trimmed = code.trim();
+    if (trimmed.length < 1) return;
     setLoading(true);
     setError(null);
     try {
-      await onEnter?.(name.trim());
+      await onEnter?.(trimmed);
     } catch (err) {
       setError(err.message || "Ошибка входа");
     } finally {
       setLoading(false);
     }
   };
+
+  const isReady = code.length === 8;
 
   return (
     <div style={{
@@ -142,58 +161,131 @@ export const LoginCompact = ({ onEnter }) => {
       </div>
 
       <div className="card" style={{
-        width: "min(460px, 100%)",
-        padding: 40,
+        width: "min(500px, 100%)",
+        padding: "48px 40px",
         zIndex: 1,
         textAlign: "center",
       }}>
-        {/* Tutor avatar */}
+        {/* Logo */}
         <div style={{
-          width: 88, height: 88, borderRadius: "50%",
-          background: "var(--green-200)",
-          margin: "0 auto 20px",
+          width: 72, height: 72, borderRadius: 20,
+          background: "var(--green-800)", color: "#fff",
+          margin: "0 auto 24px",
           display: "grid", placeItems: "center",
-          color: "var(--green-800)",
-          position: "relative",
-          border: "2px solid var(--green-300)",
+          boxShadow: "0 8px 24px rgba(30,80,50,0.18)",
         }}>
-          <svg width="44" height="44" viewBox="0 0 44 44" fill="none">
-            <circle cx="22" cy="18" r="8" stroke="currentColor" strokeWidth="1.6"/>
-            <path d="M6 40 Q 22 26, 38 40" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
-          </svg>
-          <div style={{
-            position: "absolute", bottom: -4, right: -4,
-            background: "var(--accent)", color: "#1a1005",
-            fontSize: 10, fontWeight: 700, padding: "3px 8px",
-            borderRadius: 999, border: "2px solid var(--surface)",
-            letterSpacing: "0.06em",
-          }}>ONLINE</div>
+          <Leaf size={34} stroke={1.5} style={{ color: "#fff" }} />
         </div>
 
-        <div className="eyebrow" style={{ justifyContent: "center", marginBottom: 12 }}>Елена Ивановна</div>
-        <h1 style={{ fontFamily: "var(--f-serif)", fontSize: 34, lineHeight: 1.1, marginBottom: 8 }}>
-          Рада видеть тебя <br/>
-          <em style={{ color: "var(--green-800)" }}>снова</em>
+        <div className="eyebrow" style={{ justifyContent: "center", marginBottom: 12 }}>Живая клетка · биология</div>
+        <h1 style={{ fontFamily: "var(--f-serif)", fontSize: 32, lineHeight: 1.15, marginBottom: 10 }}>
+          Введи код доступа
         </h1>
-        <p style={{ color: "var(--text-soft)", fontSize: 14, marginBottom: 28 }}>
-          Введи своё имя — и начнём урок.
+        <p style={{ color: "var(--text-soft)", fontSize: 14, marginBottom: 36, lineHeight: 1.55 }}>
+          Твой репетитор выдаст тебе<br/>уникальный 8-значный код.
         </p>
 
-        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          <input className="input input-lg" placeholder="Твоё имя"
-            value={name} onChange={e => setName(e.target.value)}
-            style={{ textAlign: "center" }} autoFocus />
-          {error && <div style={{ fontSize: 13, color: "var(--wrong)", textAlign: "center" }}>{error}</div>}
-          <button type="submit" className="btn btn-primary btn-lg" disabled={!name.trim() || loading}
-            style={{ opacity: name.trim() && !loading ? 1 : 0.5, justifyContent: "center" }}>
-            {loading ? "Входим…" : "Продолжить 🌱"}
+        {/* 8-digit input */}
+        <form onSubmit={handleSubmit}>
+          <div style={{
+            display: "flex", gap: 8, justifyContent: "center",
+            marginBottom: 20,
+          }}>
+            {digits.map((d, i) => (
+              <input
+                key={i}
+                ref={el => inputRefs.current[i] = el}
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                maxLength={1}
+                value={d}
+                onChange={e => handleDigit(i, e.target.value)}
+                onKeyDown={e => handleKeyDown(i, e)}
+                onPaste={handlePaste}
+                autoFocus={i === 0}
+                style={{
+                  width: 44, height: 56,
+                  textAlign: "center",
+                  fontSize: 24, fontWeight: 600,
+                  fontFamily: "var(--f-serif)",
+                  border: `2px solid ${d ? "var(--green-600)" : "var(--border)"}`,
+                  borderRadius: 10,
+                  background: d ? "var(--green-50)" : "var(--surface)",
+                  color: "var(--text)",
+                  outline: "none",
+                  transition: "border-color 0.15s, background 0.15s",
+                  caretColor: "transparent",
+                }}
+                onFocus={e => e.target.style.borderColor = "var(--green-700)"}
+                onBlur={e => e.target.style.borderColor = digits[i] ? "var(--green-600)" : "var(--border)"}
+              />
+            ))}
+          </div>
+
+          {error && (
+            <div style={{
+              fontSize: 13, color: "var(--wrong)", textAlign: "center",
+              marginBottom: 12, padding: "8px 16px",
+              background: "#fff5f5", borderRadius: 8,
+            }}>
+              {error}
+            </div>
+          )}
+
+          <button
+            type="submit"
+            className="btn btn-primary btn-lg"
+            disabled={!isReady || loading}
+            style={{ width: "100%", justifyContent: "center", opacity: isReady && !loading ? 1 : 0.5 }}
+          >
+            {loading ? "Входим…" : "Войти на урок 🌱"}
           </button>
         </form>
 
-        <div style={{ marginTop: 24, paddingTop: 20, borderTop: "1px dashed var(--border)", fontSize: 12, color: "var(--text-muted)" }}>
-          Впервые тут? Имя станет твоим профилем автоматически.
-        </div>
+        <AdminLoginLink onEnter={onEnter} />
       </div>
     </div>
   );
 };
+
+/* ── Скрытая ссылка для входа репетитора ── */
+function AdminLoginLink({ onEnter }) {
+  const [show, setShow] = React.useState(false);
+  const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState(null);
+
+  const handleAdmin = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      await onEnter?.("admin");
+    } catch (err) {
+      setError(err.message || "Ошибка входа");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div style={{ marginTop: 28, paddingTop: 20, borderTop: "1px dashed var(--border)" }}>
+      {!show ? (
+        <button
+          onClick={() => setShow(true)}
+          style={{ background: "none", border: "none", cursor: "pointer", fontSize: 12, color: "var(--text-muted)", textDecoration: "underline", textDecorationStyle: "dotted" }}
+        >
+          Я репетитор
+        </button>
+      ) : (
+        <div style={{ textAlign: "center" }}>
+          <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 10 }}>Вход для преподавателя</div>
+          {error && <div style={{ fontSize: 12, color: "var(--wrong)", marginBottom: 8 }}>{error}</div>}
+          <button className="btn btn-ghost btn-sm" onClick={handleAdmin} disabled={loading}
+            style={{ fontSize: 13 }}>
+            {loading ? "Входим…" : "Войти как репетитор"}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}

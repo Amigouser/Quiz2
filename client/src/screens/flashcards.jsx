@@ -137,7 +137,7 @@ export default function FlashcardsRoute() {
       </div>
 
       {/* Header */}
-      <div style={{
+      <div className="fc-topbar" style={{
         display: "flex", alignItems: "center", justifyContent: "space-between",
         padding: "20px 48px",
         borderBottom: "1px solid var(--border-soft)",
@@ -169,14 +169,15 @@ export default function FlashcardsRoute() {
       </div>
 
       {/* Card area */}
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "48px 48px 0", position: "relative" }}>
+      <div className="fc-area" style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "48px 48px 0", position: "relative" }}>
 
         {/* Flip card */}
         <div
+          className="fc-card-wrap"
           style={{ width: "100%", maxWidth: 640, perspective: "1200px", cursor: "pointer" }}
           onClick={() => setFlipped(f => !f)}
         >
-          <div style={{
+          <div className="fc-card" style={{
             position: "relative",
             transformStyle: "preserve-3d",
             transition: "transform 0.45s cubic-bezier(0.4, 0, 0.2, 1)",
@@ -232,7 +233,7 @@ export default function FlashcardsRoute() {
         </div>
 
         {/* Know / Don't know — fades in after flip */}
-        <div style={{
+        <div className="fc-actions" style={{
           marginTop: 32,
           display: "flex", gap: 14,
           opacity: flipped ? 1 : 0,
@@ -261,7 +262,7 @@ export default function FlashcardsRoute() {
         </div>
 
         {/* Prev / Next navigation */}
-        <div style={{ display: "flex", gap: 12, marginTop: 24, marginBottom: 60 }}>
+        <div className="fc-nav" style={{ display: "flex", gap: 12, marginTop: 24, marginBottom: 60 }}>
           <button
             className="btn btn-ghost btn-sm"
             disabled={index === 0}
