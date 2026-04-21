@@ -61,6 +61,39 @@ db.exec(`
     answer_id INTEGER,
     is_correct INTEGER DEFAULT 0
   );
+
+  CREATE TABLE IF NOT EXISTS test_assignments (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    test_id INTEGER REFERENCES tests(id) ON DELETE CASCADE,
+    assigned_at TEXT DEFAULT (datetime('now')),
+    UNIQUE(user_id, test_id)
+  );
+
+  CREATE TABLE IF NOT EXISTS flashcard_sets (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    topic TEXT,
+    description TEXT,
+    is_active INTEGER DEFAULT 1,
+    created_at TEXT DEFAULT (datetime('now'))
+  );
+
+  CREATE TABLE IF NOT EXISTS flashcard_cards (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    set_id INTEGER REFERENCES flashcard_sets(id) ON DELETE CASCADE,
+    term TEXT NOT NULL,
+    definition TEXT NOT NULL,
+    order_index INTEGER DEFAULT 0
+  );
+
+  CREATE TABLE IF NOT EXISTS flashcard_set_assignments (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    set_id INTEGER REFERENCES flashcard_sets(id) ON DELETE CASCADE,
+    assigned_at TEXT DEFAULT (datetime('now')),
+    UNIQUE(user_id, set_id)
+  );
 `);
 
 function n(v) {

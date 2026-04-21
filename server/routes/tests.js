@@ -11,13 +11,15 @@ router.get("/tests", requireAuth, (req, res) => {
 
   const tests = all(`
     SELECT t.id, t.title, t.topic, t.description,
-           COUNT(q.id) AS questions_count
+           COUNT(q.id) AS questions_count,
+           CASE WHEN ta.id IS NOT NULL THEN 1 ELSE 0 END AS is_assigned
     FROM tests t
     LEFT JOIN questions q ON q.test_id = t.id
+    LEFT JOIN test_assignments ta ON ta.test_id = t.id AND ta.user_id = ?
     WHERE t.is_active = 1 AND t.is_draft = 0
     GROUP BY t.id
-    ORDER BY t.created_at DESC
-  `);
+    ORDER BY ta.assigned_at DESC, t.created_at DESC
+  `, userId);
 
   const attempts = all(
     "SELECT test_id, score, max_score FROM attempts WHERE user_id = ? ORDER BY completed_at DESC",
@@ -42,6 +44,7 @@ router.get("/tests", requireAuth, (req, res) => {
       status: attempt ? "done" : "new",
       score: attempt ? attempt.score : null,
       max_score: attempt ? attempt.max_score : t.questions_count,
+      is_assigned: t.is_assigned === 1,
     };
   });
 

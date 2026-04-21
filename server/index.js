@@ -17,5 +17,8 @@ app.use(
 app.use("/api/auth", require("./routes/auth"));
 app.use("/api", require("./routes/tests"));
 app.use("/api/admin", require("./routes/admin"));
+const flashcards = require("./routes/flashcards");
+app.use("/api", flashcards.student);
+app.use("/api/admin", flashcards.admin);
 
 app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));

@@ -17,7 +17,11 @@
       "Bash(git commit -m ' *)",
       "Bash(git push *)",
       "Bash(git check-ignore *)",
-      "Bash(git rm *)"
+      "Bash(git rm *)",
+      "Bash(node -e \"require\\('./server/routes/flashcards.js'\\); console.log\\('Flashcards routes OK'\\)\")",
+      "Bash(node -e \"require\\('./server/index.js'\\); console.log\\('Server OK'\\)\")",
+      "Bash(kill %1)",
+      "Bash(npx vite *)"
     ]
   }
 }

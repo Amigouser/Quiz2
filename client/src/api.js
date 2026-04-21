@@ -23,6 +23,9 @@ const API = {
   submitAttempt: (id, answers) =>
     req(`/api/attempts/${id}/submit`, { method: "POST", body: { answers } }),
 
+  getCardSets: () => req("/api/flashcard-sets"),
+  getCardSet: (id) => req(`/api/flashcard-sets/${id}`),
+
   admin: {
     getTests: () => req("/api/admin/tests"),
     createTest: (data) => req("/api/admin/tests", { method: "POST", body: data }),
@@ -31,7 +34,23 @@ const API = {
     toggleTest: (id) => req(`/api/admin/tests/${id}/toggle`, { method: "PATCH" }),
     publishTest: (id) => req(`/api/admin/tests/${id}/publish`, { method: "PATCH" }),
     getStudents: () => req("/api/admin/students"),
+    getStudent: (id) => req(`/api/admin/students/${id}`),
+    assignTest: (studentId, test_id) =>
+      req(`/api/admin/students/${studentId}/assign`, { method: "POST", body: { test_id } }),
+    unassignTest: (studentId, testId) =>
+      req(`/api/admin/students/${studentId}/assign/${testId}`, { method: "DELETE" }),
     getResults: () => req("/api/admin/results"),
+    getCardSets: () => req("/api/admin/flashcard-sets"),
+    getCardSet: (id) => req(`/api/admin/flashcard-sets/${id}`),
+    createCardSet: (data) => req("/api/admin/flashcard-sets", { method: "POST", body: data }),
+    updateCardSet: (id, data) => req(`/api/admin/flashcard-sets/${id}`, { method: "PUT", body: data }),
+    deleteCardSet: (id) => req(`/api/admin/flashcard-sets/${id}`, { method: "DELETE" }),
+    toggleCardSet: (id) => req(`/api/admin/flashcard-sets/${id}/toggle`, { method: "PATCH" }),
+    getStudentCardSets: (studentId) => req(`/api/admin/students/${studentId}/card-sets`),
+    assignCardSet: (studentId, set_id) =>
+      req(`/api/admin/students/${studentId}/card-sets`, { method: "POST", body: { set_id } }),
+    unassignCardSet: (studentId, setId) =>
+      req(`/api/admin/students/${studentId}/card-sets/${setId}`, { method: "DELETE" }),
   },
 };
 

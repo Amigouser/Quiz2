@@ -1,10 +1,12 @@
 import React, { useState, useEffect, createContext, useContext } from "react";
 import { BrowserRouter, Routes, Route, Navigate, useNavigate, useParams, useLocation } from "react-router-dom";
 import API from "./api";
+import { LandingPage } from "./screens/landing";
 import { LoginCompact } from "./screens/login";
 import { StudentDashboard } from "./screens/dashboard";
 import { QuizClassic, QuizResults } from "./screens/quiz";
 import { AdminPanel } from "./screens/admin";
+import FlashcardsRoute from "./screens/flashcards";
 
 const AuthCtx = createContext(null);
 export const useAuth = () => useContext(AuthCtx);
@@ -48,13 +50,13 @@ function Spinner() {
 function RequireAuth({ children }) {
   const { user } = useAuth();
   const location = useLocation();
-  if (!user) return <Navigate to="/" state={{ from: location }} replace />;
+  if (!user) return <Navigate to="/login" state={{ from: location }} replace />;
   return children;
 }
 
 function RequireAdmin({ children }) {
   const { user } = useAuth();
-  if (!user) return <Navigate to="/" replace />;
+  if (!user) return <Navigate to="/login" replace />;
   if (!user.is_admin) return <Navigate to="/dashboard" replace />;
   return children;
 }
@@ -68,7 +70,7 @@ function LoginPage() {
 
   const handleEnter = async (name) => {
     const u = await login(name);
-    navigate(u.is_admin ? "/dashboard" : "/dashboard", { replace: true });
+    navigate("/dashboard", { replace: true });
   };
 
   return <LoginCompact onEnter={handleEnter} />;
@@ -78,6 +80,7 @@ function DashboardPage() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [quizzes, setQuizzes] = useState([]);
+  const [cardSets, setCardSets] = useState([]);
 
   useEffect(() => {
     API.getTests().then((data) => {
@@ -92,9 +95,11 @@ function DashboardPage() {
           score: q.score,
           max_score: q.max_score,
           progress: q.max_score ? Math.round((q.score / q.max_score) * 100) : 0,
+          is_assigned: q.is_assigned,
         }))
       );
     });
+    API.getCardSets().then(setCardSets).catch(() => {});
   }, []);
 
   const handleLogout = async () => {
@@ -106,7 +111,9 @@ function DashboardPage() {
     <StudentDashboard
       name={user.name}
       quizzes={quizzes}
+      cardSets={cardSets}
       onOpenQuiz={(q) => navigate(`/quiz/${q.id}`)}
+      onOpenCards={(s) => navigate(`/cards/${s.id}`)}
       onAdmin={user.is_admin ? () => navigate("/admin") : null}
       onLogout={handleLogout}
     />
@@ -189,9 +196,11 @@ export default function App() {
     <BrowserRouter>
       <AuthProvider>
         <Routes>
-          <Route path="/" element={<LoginPage />} />
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/login" element={<LoginPage />} />
           <Route path="/dashboard" element={<RequireAuth><DashboardPage /></RequireAuth>} />
           <Route path="/quiz/:id" element={<RequireAuth><QuizPage /></RequireAuth>} />
+          <Route path="/cards/:id" element={<RequireAuth><FlashcardsRoute /></RequireAuth>} />
           <Route path="/admin" element={<RequireAdmin><AdminPage /></RequireAdmin>} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

@@ -1,6 +1,49 @@
 import React from "react";
 import { Leaf, Fern, Cell, Sprig, Helix, BotanicalBg } from "../botanical";
 
+export const CardSetCard = ({ s, onStart }) => (
+  <div className="card" style={{ padding: 0, cursor: "pointer" }} onClick={onStart}>
+    {/* Illustration strip */}
+    <div style={{
+      height: 90,
+      background: "linear-gradient(135deg, var(--green-200), var(--green-300))",
+      position: "relative", overflow: "hidden",
+    }}>
+      <div style={{ position: "absolute", inset: 0, color: "var(--green-800)", opacity: 0.3 }}>
+        <Sprig size={130} style={{ position: "absolute", top: -10, right: -10, transform: "rotate(15deg)" }} />
+      </div>
+      <div style={{ position: "absolute", top: 14, left: 16, display: "flex", gap: 6 }}>
+        <span className="pill pill-muted" style={{ background: "rgba(255,255,255,0.75)", backdropFilter: "blur(8px)", fontSize: 11 }}>
+          🃏 Карточки
+        </span>
+        {s.topic && (
+          <span className="pill pill-muted" style={{ background: "rgba(255,255,255,0.6)", backdropFilter: "blur(8px)", fontSize: 11 }}>
+            {s.topic}
+          </span>
+        )}
+        {s.is_assigned && (
+          <span className="pill" style={{ background: "var(--green-800)", color: "#fff", backdropFilter: "blur(8px)", fontSize: 11 }}>
+            🌱 Назначено
+          </span>
+        )}
+      </div>
+    </div>
+
+    <div style={{ padding: "16px 20px 18px" }}>
+      <h3 style={{ fontFamily: "var(--f-serif)", fontSize: 18, fontWeight: 500, marginBottom: 8, lineHeight: 1.25 }}>
+        {s.title}
+      </h3>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <span style={{ fontSize: 13, color: "var(--text-muted)" }}>· {s.cards_count} карточек</span>
+        <button className="btn btn-soft btn-sm" onClick={(e) => { e.stopPropagation(); onStart?.(); }}>
+          Учить
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 6h6 M7 3 l 3 3 l-3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+);
+
 export const QuizCard = ({ q, onStart }) => {
   const scorePct = q.score != null ? Math.round((q.score / q.questions) * 100) : null;
   const statusLabel = {
@@ -32,10 +75,18 @@ export const QuizCard = ({ q, onStart }) => {
             <Fern size={160} style={{ position: "absolute", top: -20, right: -20 }} />
           )}
         </div>
-        <div style={{ position: "absolute", top: 14, left: 16 }}>
+        <div style={{ position: "absolute", top: 14, left: 16, display: "flex", gap: 6 }}>
           <span className="pill pill-muted" style={{ background: "rgba(255,255,255,0.7)", backdropFilter: "blur(8px)" }}>
             {q.topic}
           </span>
+          {q.is_assigned && (
+            <span className="pill" style={{
+              background: "var(--green-800)", color: "#fff",
+              backdropFilter: "blur(8px)", fontSize: 11,
+            }}>
+              🌱 Назначено
+            </span>
+          )}
         </div>
       </div>
 
@@ -75,7 +126,7 @@ export const QuizCard = ({ q, onStart }) => {
   );
 };
 
-export const StudentDashboard = ({ name = "Аня", quizzes = [], onOpenQuiz, onAdmin, onLogout }) => {
+export const StudentDashboard = ({ name = "Аня", quizzes = [], cardSets = [], onOpenQuiz, onOpenCards, onAdmin, onLogout }) => {
   const [tab, setTab] = React.useState("Все");
   const topics = ["Все", ...Array.from(new Set(quizzes.map(q => q.topic)))];
   const filtered = tab === "Все" ? quizzes : quizzes.filter(q => q.topic === tab);
@@ -182,6 +233,21 @@ export const StudentDashboard = ({ name = "Аня", quizzes = [], onOpenQuiz, on
       ) : (
         <div style={{ padding: "40px 48px", textAlign: "center", color: "var(--text-muted)" }}>
           Тесты ещё не добавлены
+        </div>
+      )}
+
+      {/* Flashcard sets section */}
+      {cardSets.length > 0 && (
+        <div style={{ padding: "40px 48px 0" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 20 }}>
+            <div className="eyebrow">Карточки для изучения</div>
+            <span className="pill pill-muted" style={{ fontSize: 11 }}>{cardSets.length} набора</span>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16 }}>
+            {cardSets.map(s => (
+              <CardSetCard key={s.id} s={s} onStart={() => onOpenCards?.(s)} />
+            ))}
+          </div>
         </div>
       )}
     </div>
