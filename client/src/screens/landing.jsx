@@ -368,7 +368,7 @@ export function LandingPage() {
           </div>
           <div>
             <div style={{ fontFamily: "var(--f-serif)", fontWeight: 600, fontSize: 16, color: "#fff", lineHeight: 1.1 }}>
-              Живая клетка
+              Vikokon
             </div>
             <div style={{ fontSize: 10, color: "rgba(255,255,255,0.45)", letterSpacing: "0.06em" }}>
             </div>
@@ -381,16 +381,25 @@ export function LandingPage() {
           ))}
         </nav>
 
-        <button
-          className="lf-hero-btn lf-hero-btn-primary lf-header-btn"
-          style={{ padding: "10px 22px", fontSize: 14 }}
-          onClick={() => navigate("/login")}
-        >
-          Войти в кабинет
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-            <path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-        </button>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <button
+            className="lf-hero-btn lf-hero-btn-ghost lf-header-btn"
+            style={{ padding: "10px 22px", fontSize: 14 }}
+            onClick={() => navigate("/tasks")}
+          >
+            Задания
+          </button>
+          <button
+            className="lf-hero-btn lf-hero-btn-primary lf-header-btn"
+            style={{ padding: "10px 22px", fontSize: 14 }}
+            onClick={() => navigate("/login")}
+          >
+            Войти в кабинет
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </button>
+        </div>
       </header>
 
       {/* ══ HERO ═══════════════════════════════════════════════════════════════ */}
@@ -1051,7 +1060,7 @@ export function LandingPage() {
             <Leaf size={15} stroke={1.8} />
           </div>
           <span style={{ fontFamily: "var(--f-serif)", fontSize: 15, color: "var(--text-soft)" }}>
-            Живая клетка · {TUTOR.name}
+            Викокон · {TUTOR.name}
           </span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 16 }}>

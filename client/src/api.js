@@ -17,6 +17,10 @@ const API = {
   logout: () => req("/api/auth/logout", { method: "POST" }),
   me: () => req("/api/auth/me"),
 
+  getPublicTests: () => req("/api/tests/public"),
+  getPublicTest: (id) => req(`/api/tests/public/${id}`),
+  getPublicCardSets: () => req("/api/flashcard-sets/public"),
+  getPublicCardSet: (id) => req(`/api/flashcard-sets/public/${id}`),
   getTests: () => req("/api/tests"),
   getTest: (id) => req(`/api/tests/${id}`),
   createAttempt: (test_id) => req("/api/attempts", { method: "POST", body: { test_id } }),

@@ -13,6 +13,27 @@ function requireAdmin(req, res, next) {
 const studentRouter = require("express").Router();
 const adminRouter = require("express").Router();
 
+// ── Public: list active card sets (no auth) ─────────────────────────────────
+studentRouter.get("/flashcard-sets/public", (req, res) => {
+  const sets = all(`
+    SELECT s.id, s.title, s.topic, s.description, COUNT(c.id) AS cards_count
+    FROM flashcard_sets s
+    LEFT JOIN flashcard_cards c ON c.set_id = s.id
+    WHERE s.is_active = 1
+    GROUP BY s.id
+    ORDER BY s.created_at DESC
+  `);
+  res.json(sets);
+});
+
+// ── Public: get one set with cards (no auth) ─────────────────────────────────
+studentRouter.get("/flashcard-sets/public/:id", (req, res) => {
+  const set = get("SELECT * FROM flashcard_sets WHERE id = ? AND is_active = 1", req.params.id);
+  if (!set) return res.status(404).json({ error: "Набор не найден" });
+  const cards = all("SELECT * FROM flashcard_cards WHERE set_id = ? ORDER BY order_index", set.id);
+  res.json({ ...set, cards });
+});
+
 // ── Student: list active card sets ──────────────────────────────────────────
 studentRouter.get("/flashcard-sets", requireAuth, (req, res) => {
   const userId = req.session.user.id;

@@ -6,6 +6,50 @@ function requireAuth(req, res, next) {
   next();
 }
 
+router.get("/tests/public", (req, res) => {
+  const tests = all(`
+    SELECT t.id, t.title, t.topic, t.description,
+           COUNT(q.id) AS questions_count
+    FROM tests t
+    LEFT JOIN questions q ON q.test_id = t.id
+    WHERE t.is_active = 1 AND t.is_draft = 0
+    GROUP BY t.id
+    ORDER BY t.created_at DESC
+  `);
+
+  res.json(tests.map((t) => ({
+    id: t.id,
+    title: t.title,
+    topic: t.topic || "Биология",
+    description: t.description,
+    questions_count: t.questions_count,
+    est_minutes: Math.max(1, Math.ceil(t.questions_count * 0.8)),
+  })));
+});
+
+router.get("/tests/public/:id", (req, res) => {
+  const test = get("SELECT * FROM tests WHERE id = ? AND is_active = 1 AND is_draft = 0", req.params.id);
+  if (!test) return res.status(404).json({ error: "Тест не найден" });
+  const questions = all("SELECT * FROM questions WHERE test_id = ? ORDER BY order_index", test.id);
+  res.json({
+    id: test.id,
+    title: test.title,
+    topic: test.topic,
+    questions: questions.map((q) => {
+      const answers = all("SELECT * FROM answers WHERE question_id = ? ORDER BY order_index", q.id);
+      const correctIndex = answers.findIndex((a) => a.is_correct === 1);
+      return {
+        id: q.id,
+        text: q.question_text,
+        hint: q.hint,
+        explanation: q.explanation,
+        correct_index: correctIndex,
+        answers: answers.map((a) => ({ id: a.id, text: a.answer_text })),
+      };
+    }),
+  });
+});
+
 router.get("/tests", requireAuth, (req, res) => {
   const userId = req.session.user.id;
 
