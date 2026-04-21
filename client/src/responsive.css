@@ -40,6 +40,27 @@
   .lf-about-grid  { grid-template-columns: 1fr !important; gap: 32px !important; }
   .lf-diplomas-grid { grid-template-columns: 1fr !important; gap: 16px !important; }
 
+  /* ─ Landing: Stats Strip ────────────────────────────── */
+  .lf-stats-strip-inner {
+    flex-wrap: wrap !important;
+    padding: 28px 20px !important;
+    justify-content: center !important;
+  }
+  .lf-strip-item {
+    min-width: calc(50% - 1px) !important;
+    padding: 16px 8px !important;
+  }
+  .lf-strip-divider { display: none !important; }
+
+  /* ─ Landing: CTA + Footer ───────────────────────────── */
+  .lf-cta-section { padding: 64px 20px 80px !important; }
+  .lf-footer {
+    padding: 24px 20px !important;
+    flex-direction: column !important;
+    text-align: center !important;
+    align-items: center !important;
+  }
+
   /* ─ Dashboard: Header ───────────────────────────────────── */
   .dash-topbar {
     padding: 12px 16px !important;

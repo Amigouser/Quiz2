@@ -3,37 +3,108 @@ import { useNavigate } from "react-router-dom";
 import { Leaf, Fern, Sprig, Cell, Helix } from "../botanical";
 
 // ─── Настройки — отредактируй под своё ─────────────────────────────────────
-const TUTOR_PHOTO = null; // import photo from "../assets/photo.jpg"
+const TUTOR_PHOTO = "/tutor.png";
 
 const TUTOR = {
   name:    "Никитенко Виктория Юрьевна",
   title:   "Репетитор по биологии",
-  tagline: "Готовлю к ОГЭ и ЕГЭ с 2015 года.\nПонятно, системно, с результатом.",
-  bio:     "Преподаю биологию для учеников 8–11 классов. Специализируюсь на подготовке к экзаменам и углублённом изучении школьного курса. Каждый урок — по индивидуальной программе.",
+  tagline: "Студент-исследователь ТГУ, арахнолог.\nГотовлю к ОГЭ и ЕГЭ — понятно, системно, с результатом.",
+  bio:     "Магистр фундаментальной и прикладной биологии, кафедра зоологии беспозвоночных Томского государственного университета (2025). С 2023 года работаю репетитором по биологии. Средняя оценка на Профи.ру — 5.0.",
   stats: [
-    { value: 6,   suffix: " лет",  label: "опыта преподавания" },
-    { value: 25, suffix: "+",     label: "учеников" },
-    { value: 94,  suffix: "%",     label: "сдали на 80+ баллов" },
+    { value: 2,  suffix: "+",  label: "года опыта" },
+    { value: 25, suffix: "+",  label: "учеников" },
+    { value: 5,  suffix: ".0", label: "рейтинг Профи.ру" },
   ],
 };
 
 const DIPLOMAS = [
-  { year: "2015", title: "Диплом специалиста",       institution: "МГУ им. М. В. Ломоносова",           faculty: "Биологический факультет" },
-  { year: "2017", title: "Магистр наук",              institution: "МГУ им. М. В. Ломоносова",           faculty: "Кафедра физиологии растений" },
-  { year: "2021", title: "Повышение квалификации",    institution: "Институт дополнительного образования", faculty: "Современные методики преподавания биологии" },
+  {
+    year: "2019–2023",
+    title: "Бакалавр биологии",
+    institution: "Томский государственный университет",
+    faculty: "Направление 06.03.01 «Биология»",
+  },
+  {
+    year: "2023–2025",
+    title: "Магистр фундаментальной и прикладной биологии",
+    institution: "Томский государственный университет",
+    faculty: "Кафедра зоологии беспозвоночных · 06.04.01",
+  },
+  {
+    year: "2023",
+    title: "Earth Science Camp",
+    institution: "СПбГУ · Карельский научный центр РАН",
+    faculty: "Студенческая школа по естественным наукам · Санкт-Петербург",
+  },
 ];
 
 const ARTICLES = [
-  { year: "2023", title: "Использование цифровых инструментов в преподавании клеточной биологии",  journal: "Биология в школе",   volume: "№ 4, с. 22–29", url: null },
-  { year: "2022", title: "Интерактивные методы изучения фотосинтеза: опыт применения",             journal: "Вопросы образования", volume: "№ 2, с. 88–97", url: null },
-  { year: "2020", title: "Геномика в школьном курсе биологии: актуальность и подходы",             journal: "Педагогика",          volume: "№ 7, с. 44–51", url: null },
+  {
+    year: "2024",
+    title: "Обзор рода Mustelicosa и близких видов группы albostriata из рода Alopecosa (Araneae: Lycosidae)",
+    journal: "Экология: факты, гипотезы, модели",
+    volume: "ИЭРиЖ УрО РАН, Екатеринбург. С. 152",
+    url: null,
+  },
+  {
+    year: "2023",
+    title: "Фауна пауков (Chelecerata, Aranei) на южной окраине г. Томска и его окрестностей",
+    journal: "Биосистемы: организация, поведение, управление",
+    volume: "76-я Всероссийская школа-конференция, Н. Новгород. С. 234",
+    url: null,
+  },
+  {
+    year: "2022",
+    title: "Фауна пауков (Araneae) Томска",
+    journal: "XVI Съезд Русского энтомологического общества",
+    volume: "Москва, КМК. С. 151",
+    url: null,
+  },
+  {
+    year: "2022",
+    title: "Фауна пауков Томска",
+    journal: "Старт в науку — LXXI конференция Биологического института ТГУ",
+    volume: "Томск: Дельтаплан. С. 35",
+    url: null,
+  },
+  {
+    year: "2020",
+    title: "Biology + technology",
+    journal: "Старт в науку — LXIX конференция Биологического института ТГУ",
+    volume: "Томск: Дельтаплан. P. 109",
+    url: null,
+  },
+];
+
+const VK_EVENTS = [
+  {
+    date: "Сент. 2023",
+    title: "Earth Science Camp",
+    desc: "Студенческая школа по естественным наукам · СПбГУ и КарНЦ РАН, Санкт-Петербург",
+    url: "https://vk.com/wall-219644318_39",
+    icon: "🏕️",
+  },
+  {
+    date: "Май 2023",
+    title: "Ночь в музее",
+    desc: "Лекция «Микромир в макропроцессах: удивительные насекомые» · ТГУ",
+    url: "https://vk.com/wall-219644318_33",
+    icon: "🦋",
+  },
+  {
+    date: "Март 2023",
+    title: "Живая Земля",
+    desc: "Практикум «Энтомология — искусство коллекционирования» для школьников · ТГУ",
+    url: "https://vk.com/wall-219644318_19",
+    icon: "🔬",
+  },
 ];
 
 const FEATURES = [
-  { icon: "🎯", title: "Индивидуальный подход",  text: "Занятия строятся под цель и уровень каждого ученика — не по шаблону." },
-  { icon: "📈", title: "Проверяемый результат",  text: "Регулярные тесты с разбором ошибок — виден прогресс после каждого занятия." },
-  { icon: "🌿", title: "Понятный язык",          text: "Сложные темы объясняю на примерах из жизни. Без лишних терминов." },
-  { icon: "🔬", title: "Научная база",           text: "Преподаю опираясь на актуальную научную литературу и собственные публикации." },
+  { icon: "🔬", title: "Научная основа",        text: "Действующий исследователь ТГУ — преподаю биологию на основе актуальной науки, а не только учебников." },
+  { icon: "🎯", title: "Подготовка к экзаменам", text: "Специализируюсь на ОГЭ и ЕГЭ по биологии. Разбираем типичные ошибки и отрабатываем слабые места." },
+  { icon: "🌿", title: "Понятный язык",          text: "Сложные темы объясняю на живых примерах. Зоология, ботаника, генетика — без скуки и зубрёжки." },
+  { icon: "📈", title: "Виден прогресс",         text: "Тесты после каждого урока прямо на этой платформе — и ты, и я видим твой результат в реальном времени." },
 ];
 
 // ─── CSS-анимации ────────────────────────────────────────────────────────────
@@ -185,7 +256,31 @@ const STYLES = `
     transform: translateY(-6px) scale(1.03);
     box-shadow: 0 20px 60px rgba(26,52,36,0.14);
   }
+
+  .lf-nav-link.lf-nav-active { color: #b7e4c7; }
+  .lf-nav-link.lf-nav-active::after { width: 100%; }
 `;
+
+// ─── Хук: активная секция в навигации ────────────────────────────────────────
+function useActiveSection(ids) {
+  const [active, setActive] = useState(null);
+  useEffect(() => {
+    const visible = new Set();
+    const update = () => setActive(ids.find(id => visible.has(id)) ?? null);
+    const observers = ids.map(id => {
+      const el = document.getElementById(id);
+      if (!el) return null;
+      const io = new IntersectionObserver(
+        ([entry]) => { entry.isIntersecting ? visible.add(id) : visible.delete(id); update(); },
+        { rootMargin: "-64px 0px -50% 0px", threshold: 0 }
+      );
+      io.observe(el);
+      return io;
+    });
+    return () => observers.forEach(io => io?.disconnect());
+  }, []);
+  return active;
+}
 
 // ─── Хук: анимации при скролле ───────────────────────────────────────────────
 function useReveal() {
@@ -247,6 +342,7 @@ function WaveDivider({ fill = "var(--bg)", fromColor = "#0f2a1e" }) {
 export function LandingPage() {
   const navigate = useNavigate();
   useReveal();
+  const activeSection = useActiveSection(["about", "diplomas", "articles"]);
 
   return (
     <div style={{ background: "var(--bg)", minHeight: "100vh", fontFamily: "var(--f-sans)", overflowX: "hidden" }}>
@@ -280,8 +376,8 @@ export function LandingPage() {
         </div>
 
         <nav className="lf-nav" style={{ display: "flex", alignItems: "center", gap: 36 }}>
-          {[["Об авторе","#about"],["Образование","#diplomas"],["Публикации","#articles"]].map(([l,h]) => (
-            <a key={h} href={h} className="lf-nav-link">{l}</a>
+          {[["Об авторе","about"],["Образование","diplomas"],["Конференции","articles"]].map(([l,id]) => (
+            <a key={id} href={`#${id}`} className={`lf-nav-link${activeSection === id ? " lf-nav-active" : ""}`}>{l}</a>
           ))}
         </nav>
 
@@ -503,8 +599,8 @@ export function LandingPage() {
             }}>
               <span style={{ fontSize: 16 }}>🎓</span>
               <div>
-                <div style={{ fontSize: 11, fontWeight: 600, color: "#fff" }}>ТПУ</div>
-                <div style={{ fontSize: 10, color: "rgba(255,255,255,0.45)" }}>Биофак</div>
+                <div style={{ fontSize: 11, fontWeight: 600, color: "#fff" }}>ТГУ</div>
+                <div style={{ fontSize: 10, color: "rgba(255,255,255,0.45)" }}>Зоология</div>
               </div>
             </div>
           </div>
@@ -552,10 +648,51 @@ export function LandingPage() {
               <p style={{ fontSize: 17, lineHeight: 1.75, color: "var(--text-soft)", marginBottom: 24 }}>
                 {TUTOR.bio}
               </p>
-              <p style={{ fontSize: 17, lineHeight: 1.75, color: "var(--text-soft)", marginBottom: 36 }}>
-                На занятиях использую авторские конспекты, визуальные схемы и интерактивные тесты.
-                Именно здесь, в «Живой клетке», мои ученики закрепляют материал после каждого урока.
+              <p style={{ fontSize: 17, lineHeight: 1.75, color: "var(--text-soft)", marginBottom: 24 }}>
+                Моя научная специализация — арахнология: систематика и морфология пауков. Участвовала
+                в полевых практиках общим объёмом более 1000 часов, выступала на всероссийских
+                и международных конференциях по зоологии и энтомологии.
               </p>
+              <p style={{ fontSize: 17, lineHeight: 1.75, color: "var(--text-soft)", marginBottom: 36 }}>
+                На занятиях использую интерактивные тесты прямо здесь, в «Живой клетке».
+                После каждого урока ты проходишь тест — я вижу результат и корректирую программу.
+              </p>
+              {/* Ссылки */}
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginBottom: 24 }}>
+                <a
+                  href="https://profi.ru/profile/NikitenkoVY"
+                  target="_blank" rel="noopener noreferrer"
+                  style={{
+                    display: "inline-flex", alignItems: "center", gap: 8,
+                    padding: "10px 18px", borderRadius: 999,
+                    background: "var(--green-100)", color: "var(--green-900)",
+                    fontWeight: 600, fontSize: 14, textDecoration: "none",
+                    border: "1.5px solid var(--green-300)",
+                    transition: "transform 0.2s, box-shadow 0.2s",
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 8px 20px rgba(45,106,79,0.15)"; }}
+                  onMouseLeave={e => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = ""; }}
+                >
+                  <span style={{ fontSize: 16 }}>⭐</span> Профиль на Профи.ру
+                </a>
+                <a
+                  href="https://vital.lib.tsu.ru/vital/access/services/Download/vital:18585/SOURCE01"
+                  target="_blank" rel="noopener noreferrer"
+                  style={{
+                    display: "inline-flex", alignItems: "center", gap: 8,
+                    padding: "10px 18px", borderRadius: 999,
+                    background: "var(--bg-muted)", color: "var(--text-soft)",
+                    fontWeight: 600, fontSize: 14, textDecoration: "none",
+                    border: "1.5px solid var(--border-soft)",
+                    transition: "transform 0.2s, box-shadow 0.2s",
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 8px 20px rgba(0,0,0,0.08)"; }}
+                  onMouseLeave={e => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = ""; }}
+                >
+                  <span style={{ fontSize: 16 }}>📄</span> Бакалаврская работа
+                </a>
+              </div>
+
               <button
                 className="lf-hero-btn"
                 style={{
@@ -575,6 +712,59 @@ export function LandingPage() {
               >
                 Войти в кабинет 🌱
               </button>
+
+              {/* Мероприятия ВК */}
+              <div style={{ marginTop: 36 }}>
+                <div style={{
+                  fontSize: 11, fontWeight: 700, letterSpacing: "0.1em",
+                  textTransform: "uppercase", color: "var(--text-muted)",
+                  marginBottom: 14,
+                }}>
+                  Мероприятия и проекты
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  {VK_EVENTS.map((ev, i) => (
+                    <a key={i} href={ev.url} target="_blank" rel="noopener noreferrer"
+                      style={{ textDecoration: "none" }}>
+                      <div style={{
+                        display: "flex", alignItems: "center", gap: 14,
+                        padding: "12px 16px", borderRadius: 14,
+                        background: "var(--surface)",
+                        border: "1.5px solid var(--border-soft)",
+                        transition: "border-color 0.2s, transform 0.2s, box-shadow 0.2s",
+                        cursor: "pointer",
+                      }}
+                        onMouseEnter={e => {
+                          e.currentTarget.style.borderColor = "var(--green-300)";
+                          e.currentTarget.style.transform = "translateX(4px)";
+                          e.currentTarget.style.boxShadow = "0 4px 16px rgba(45,106,79,0.1)";
+                        }}
+                        onMouseLeave={e => {
+                          e.currentTarget.style.borderColor = "";
+                          e.currentTarget.style.transform = "";
+                          e.currentTarget.style.boxShadow = "";
+                        }}
+                      >
+                        <div style={{
+                          width: 40, height: 40, borderRadius: 10, flexShrink: 0,
+                          background: "#e8f0ff",
+                          display: "grid", placeItems: "center", fontSize: 18,
+                        }}>
+                          {ev.icon}
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                            <span style={{ fontWeight: 600, fontSize: 14, color: "var(--text)" }}>{ev.title}</span>
+                            <span style={{ fontSize: 11, color: "var(--text-muted)", background: "var(--bg-muted)", padding: "2px 8px", borderRadius: 999 }}>{ev.date}</span>
+                          </div>
+                          <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2, lineHeight: 1.4 }}>{ev.desc}</div>
+                        </div>
+                        <div style={{ color: "#5181b8", fontSize: 13, fontWeight: 600, flexShrink: 0 }}>ВК ↗</div>
+                      </div>
+                    </a>
+                  ))}
+                </div>
+              </div>
             </div>
 
             {/* Feature cards */}
@@ -632,8 +822,8 @@ export function LandingPage() {
               fontFamily: "var(--f-serif)", fontSize: "clamp(30px, 3vw, 46px)",
               lineHeight: 1.1, letterSpacing: "-0.02em",
             }}>
-              Дипломы и<br/>
-              <em style={{ color: "var(--green-800)" }}>квалификации</em>
+              Образование и<br/>
+              <em style={{ color: "var(--green-800)" }}>деятельность</em>
             </h2>
           </div>
 
@@ -713,8 +903,8 @@ export function LandingPage() {
               fontFamily: "var(--f-serif)", fontSize: "clamp(30px, 3vw, 46px)",
               lineHeight: 1.1, letterSpacing: "-0.02em",
             }}>
-              Научные<br/>
-              <em style={{ color: "var(--green-800)" }}>статьи</em>
+              Конференции и<br/>
+              <em style={{ color: "var(--green-800)" }}>публикации</em>
             </h2>
           </div>
 
@@ -777,7 +967,7 @@ export function LandingPage() {
       </section>
 
       {/* ══ CTA ════════════════════════════════════════════════════════════════ */}
-      <section style={{
+      <section className="lf-cta-section" style={{
         padding: "96px 48px 112px",
         background: "linear-gradient(160deg, #0a1f14 0%, #0f2a1e 50%, #1b4332 100%)",
         position: "relative", overflow: "hidden",
@@ -846,7 +1036,7 @@ export function LandingPage() {
       </section>
 
       {/* ══ FOOTER ═════════════════════════════════════════════════════════════ */}
-      <footer style={{
+      <footer className="lf-footer" style={{
         padding: "32px 48px",
         borderTop: "1px solid var(--border-soft)",
         display: "flex", justifyContent: "space-between", alignItems: "center",
@@ -864,8 +1054,16 @@ export function LandingPage() {
             Живая клетка · {TUTOR.name}
           </span>
         </div>
-        <div style={{ fontSize: 13, color: "var(--text-muted)" }}>
-          Репетитор по биологии · ОГЭ и ЕГЭ
+        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+          <a href="https://profi.ru/profile/NikitenkoVY" target="_blank" rel="noopener noreferrer"
+            style={{ fontSize: 13, color: "var(--green-800)", textDecoration: "none", fontWeight: 600 }}>
+            ⭐ Профи.ру
+          </a>
+          <a href="https://vk.com/public219644318" target="_blank" rel="noopener noreferrer"
+            style={{ fontSize: 13, color: "#5181b8", textDecoration: "none", fontWeight: 600 }}>
+            🔗 ВКонтакте
+          </a>
+          <span style={{ fontSize: 13, color: "var(--text-muted)" }}>· Репетитор по биологии · ОГЭ и ЕГЭ</span>
         </div>
       </footer>
     </div>
