@@ -117,6 +117,8 @@ function all(sql, ...params) {
 // ── Миграции ──────────────────────────────────────────────────────────────────
 try { db.exec("ALTER TABLE users ADD COLUMN code TEXT"); } catch (_) {}
 try { db.exec("ALTER TABLE users ADD COLUMN group_name TEXT"); } catch (_) {}
+try { db.exec("ALTER TABLE tests ADD COLUMN category TEXT"); } catch (_) {}
+try { db.exec("ALTER TABLE flashcard_sets ADD COLUMN category TEXT"); } catch (_) {}
 // Создать коды для существующих учеников без кода
 (function generateMissingCodes() {
   const users = all("SELECT id FROM users WHERE code IS NULL AND is_admin = 0");

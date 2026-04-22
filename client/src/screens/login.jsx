@@ -22,15 +22,9 @@ export const LoginClassic = ({ onEnter }) => {
         justifyContent: "space-between",
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <div style={{
-            width: 44, height: 44, borderRadius: 12,
-            background: "var(--green-800)", color: "#fff",
-            display: "grid", placeItems: "center",
-          }}>
-            <Leaf size={24} stroke={1.6} style={{ color: "#fff" }} />
-          </div>
+          <img src="/tutor2.jpg" alt="Vikokon" style={{ width: 44, height: 44, borderRadius: 12, objectFit: "cover", border: "1.5px solid var(--border-soft)", flexShrink: 0 }} />
           <div>
-            <div style={{ fontFamily: "var(--f-serif)", fontSize: 18, fontWeight: 600 }}>Живая клетка</div>
+            <div style={{ fontFamily: "var(--f-serif)", fontSize: 18, fontWeight: 600 }}>Vikokon</div>
             <div style={{ fontSize: 12, color: "var(--text-muted)", letterSpacing: "0.04em" }}>репетитор · биология</div>
           </div>
         </div>
@@ -208,10 +202,10 @@ export const LoginCompact = ({ onEnter }) => {
             transition: "transform 0.1s",
           }}
         >
-          <Leaf size={34} stroke={1.5} style={{ color: "#fff" }} />
+          <img src="/tutor2.jpg" alt="Vikokon" style={{ width: 72, height: 72, objectFit: "cover", borderRadius: 18 }} />
         </div>
 
-        <div className="eyebrow" style={{ justifyContent: "center", marginBottom: 12 }}>Живая клетка · биология</div>
+        <div className="eyebrow" style={{ justifyContent: "center", marginBottom: 12 }}>Vikokon · биология</div>
         <h1 style={{ fontFamily: "var(--f-serif)", fontSize: 32, lineHeight: 1.15, marginBottom: 10 }}>
           Введи код доступа
         </h1>

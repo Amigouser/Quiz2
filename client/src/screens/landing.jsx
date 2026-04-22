@@ -23,18 +23,37 @@ const DIPLOMAS = [
     title: "Бакалавр биологии",
     institution: "Томский государственный университет",
     faculty: "Направление 06.03.01 «Биология»",
+    icon: "🎓",
+    accent: "var(--green-100)",
+    accent2: "var(--green-200)",
   },
   {
     year: "2023–2025",
     title: "Магистр фундаментальной и прикладной биологии",
     institution: "Томский государственный университет",
     faculty: "Кафедра зоологии беспозвоночных · 06.04.01",
+    icon: "🎓",
+    accent: "var(--green-100)",
+    accent2: "var(--green-200)",
   },
   {
     year: "2023",
     title: "Earth Science Camp",
     institution: "СПбГУ · Карельский научный центр РАН",
     faculty: "Студенческая школа по естественным наукам · Санкт-Петербург",
+    icon: "🏕️",
+    accent: "#e8f0ff",
+    accent2: "#d0e2ff",
+  },
+  {
+    year: "09.2024 — сейчас",
+    title: "Биотехнолог-энтомолог",
+    institution: "ООО «Смартинсект»",
+    faculty: "Коммерческое разведение насекомых · совмещение",
+    icon: "💼",
+    accent: "#fdf3e3",
+    accent2: "#fde8c3",
+    isWork: true,
   },
 ];
 
@@ -78,11 +97,20 @@ const ARTICLES = [
 
 const VK_EVENTS = [
   {
+    date: "Февр. 2025",
+    title: "Зимняя школа Плавучего университета",
+    desc: "«Морская биология» · БФУ, г. Калининград, 3–5 февраля 2025",
+    url: null,
+    icon: "🌊",
+    cert: "/tutor3.jpg",
+  },
+  {
     date: "Сент. 2023",
     title: "Earth Science Camp",
     desc: "Студенческая школа по естественным наукам · СПбГУ и КарНЦ РАН, Санкт-Петербург",
     url: "https://vk.com/wall-219644318_39",
     icon: "🏕️",
+    cert: "/tutor4.jpg",
   },
   {
     date: "Май 2023",
@@ -338,11 +366,54 @@ function WaveDivider({ fill = "var(--bg)", fromColor = "#0f2a1e" }) {
   );
 }
 
+// ─── Лайтбокс для сертификатов ───────────────────────────────────────────────
+function Lightbox({ src, onClose }) {
+  useEffect(() => {
+    const h = e => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("keydown", h);
+    return () => document.removeEventListener("keydown", h);
+  }, [onClose]);
+  return (
+    <div onClick={onClose} style={{
+      position: "fixed", inset: 0, zIndex: 9999,
+      background: "rgba(0,0,0,0.88)",
+      display: "grid", placeItems: "center",
+      backdropFilter: "blur(10px)",
+      animation: "lf-in 0.2s ease both",
+      cursor: "zoom-out",
+    }}>
+      <div onClick={e => e.stopPropagation()} style={{ position: "relative" }}>
+        <img src={src} alt="Сертификат" style={{
+          maxWidth: "90vw", maxHeight: "88vh",
+          borderRadius: 16, display: "block",
+          boxShadow: "0 32px 80px rgba(0,0,0,0.6)",
+        }} />
+        <button onClick={onClose} style={{
+          position: "absolute", top: -14, right: -14,
+          width: 34, height: 34, borderRadius: "50%",
+          background: "#fff", border: "none", cursor: "pointer",
+          fontSize: 20, fontWeight: 700,
+          display: "grid", placeItems: "center",
+          boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+        }}>×</button>
+      </div>
+    </div>
+  );
+}
+
 // ─── Главный компонент ───────────────────────────────────────────────────────
 export function LandingPage() {
   const navigate = useNavigate();
   useReveal();
   const activeSection = useActiveSection(["about", "diplomas", "articles"]);
+  const [lightbox, setLightbox] = useState(null);
+  const [showContacts, setShowContacts] = useState(false);
+  const contactsRef = React.useRef(null);
+  useEffect(() => {
+    const h = e => { if (contactsRef.current && !contactsRef.current.contains(e.target)) setShowContacts(false); };
+    document.addEventListener("mousedown", h);
+    return () => document.removeEventListener("mousedown", h);
+  }, []);
 
   return (
     <div style={{ background: "var(--bg)", minHeight: "100vh", fontFamily: "var(--f-sans)", overflowX: "hidden" }}>
@@ -357,23 +428,19 @@ export function LandingPage() {
         padding: "0 48px", height: 64,
         display: "flex", alignItems: "center", justifyContent: "space-between",
       }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{
-            width: 36, height: 36, borderRadius: 10,
-            background: "var(--green-600)", color: "#fff",
-            display: "grid", placeItems: "center",
-            boxShadow: "0 0 0 1px rgba(255,255,255,0.12)",
-          }}>
-            <Leaf size={18} stroke={1.8} />
+        <a href="#" onClick={e => { e.preventDefault(); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+          style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
+          <img src="/tutor2.jpg" alt="Vikokon" style={{
+            width: 40, height: 40, borderRadius: 10,
+            objectFit: "cover",
+            border: "1px solid rgba(255,255,255,0.18)",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
+            flexShrink: 0,
+          }} />
+          <div style={{ fontFamily: "var(--f-serif)", fontWeight: 600, fontSize: 16, color: "#fff", lineHeight: 1.1 }}>
+            Vikokon
           </div>
-          <div>
-            <div style={{ fontFamily: "var(--f-serif)", fontWeight: 600, fontSize: 16, color: "#fff", lineHeight: 1.1 }}>
-              Vikokon
-            </div>
-            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.45)", letterSpacing: "0.06em" }}>
-            </div>
-          </div>
-        </div>
+        </a>
 
         <nav className="lf-nav" style={{ display: "flex", alignItems: "center", gap: 36 }}>
           {[["Об авторе","about"],["Образование","diplomas"],["Конференции","articles"]].map(([l,id]) => (
@@ -382,6 +449,69 @@ export function LandingPage() {
         </nav>
 
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          {/* Контакты */}
+          <div ref={contactsRef} style={{ position: "relative" }}>
+            <button
+              className="lf-hero-btn lf-hero-btn-ghost lf-header-btn"
+              style={{ padding: "10px 22px", fontSize: 14 }}
+              onClick={() => setShowContacts(v => !v)}
+            >
+              Контакты
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style={{ transition: "transform 0.2s", transform: showContacts ? "rotate(180deg)" : "none" }}>
+                <path d="M2 4l4 4 4-4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+            {showContacts && (
+              <div style={{
+                position: "absolute", top: "calc(100% + 10px)", right: 0,
+                width: 260, borderRadius: 16,
+                background: "rgba(10, 26, 18, 0.97)",
+                border: "1px solid rgba(255,255,255,0.1)",
+                backdropFilter: "blur(20px)",
+                boxShadow: "0 20px 60px rgba(0,0,0,0.5)",
+                overflow: "hidden",
+                animation: "lf-in 0.18s cubic-bezier(0.22,0.8,0.32,1) both",
+                zIndex: 300,
+              }}>
+                <div style={{ padding: "10px 8px" }}>
+                  {[
+                    {
+                      label: "ВКонтакте", href: "https://vk.com/vikotiks",
+                      icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="#5181b8"><path d="M12.785 16.241s.288-.032.436-.194c.136-.148.132-.427.132-.427s-.019-1.304.587-1.496c.598-.189 1.365 1.26 2.179 1.815.615.418 1.082.326 1.082.326l2.172-.03s1.135-.07.597-1.097c-.044-.078-.312-.662-1.608-1.87-1.356-1.264-1.174-1.059.459-3.246.996-1.332 1.394-2.145 1.269-2.491-.12-.33-.855-.243-.855-.243l-2.443.015s-.181-.025-.315.056c-.132.08-.217.267-.217.267s-.387 1.03-.903 1.905c-1.088 1.847-1.524 1.945-1.702 1.83-.414-.267-.311-1.075-.311-1.648 0-1.793.271-2.54-.529-2.733-.265-.064-.46-.106-1.138-.113-.871-.009-1.608.003-2.025.207-.278.136-.492.44-.361.457.162.021.527.099.721.363.251.341.242 1.107.242 1.107s.144 2.11-.336 2.372c-.33.18-.783-.188-1.754-1.874-.498-.861-.874-1.814-.874-1.814s-.072-.181-.202-.278c-.157-.117-.376-.154-.376-.154l-2.322.015s-.348.01-.476.161c-.112.135-.009.414-.009.414s1.818 4.249 3.878 6.394c1.889 1.97 4.034 1.841 4.034 1.841h.972z"/></svg>,
+                    },
+                    {
+                      label: "Telegram", href: "https://t.me/vikotiks",
+                      icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="#29b6d8"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L7.16 13.67l-2.94-.92c-.64-.203-.654-.64.135-.954l11.566-4.461c.537-.194 1.006.131.973.886z"/></svg>,
+                    },
+                    {
+                      label: "nikiviki@gmail.com", href: "mailto:nikiviki@gmail.com",
+                      icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#74c69d" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 7 10 7 10-7"/></svg>,
+                    },
+                  ].map((c, i) => (
+                    <a key={i} href={c.href} target={c.href.startsWith("mailto") ? undefined : "_blank"} rel="noopener noreferrer"
+                      style={{ textDecoration: "none", display: "block" }}>
+                      <div style={{
+                        display: "flex", alignItems: "center", gap: 12,
+                        padding: "10px 12px", borderRadius: 10,
+                        transition: "background 0.15s", cursor: "pointer",
+                      }}
+                        onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.07)"}
+                        onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+                      >
+                        <div style={{
+                          width: 36, height: 36, borderRadius: 10, flexShrink: 0,
+                          background: "rgba(255,255,255,0.06)",
+                          display: "grid", placeItems: "center",
+                        }}>{c.icon}</div>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.85)" }}>{c.label}</div>
+                      </div>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
           <button
             className="lf-hero-btn lf-hero-btn-ghost lf-header-btn"
             style={{ padding: "10px 22px", fontSize: 14 }}
@@ -733,32 +863,18 @@ export function LandingPage() {
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                   {VK_EVENTS.map((ev, i) => (
-                    <a key={i} href={ev.url} target="_blank" rel="noopener noreferrer"
-                      style={{ textDecoration: "none" }}>
-                      <div style={{
-                        display: "flex", alignItems: "center", gap: 14,
-                        padding: "12px 16px", borderRadius: 14,
-                        background: "var(--surface)",
-                        border: "1.5px solid var(--border-soft)",
-                        transition: "border-color 0.2s, transform 0.2s, box-shadow 0.2s",
-                        cursor: "pointer",
-                      }}
-                        onMouseEnter={e => {
-                          e.currentTarget.style.borderColor = "var(--green-300)";
-                          e.currentTarget.style.transform = "translateX(4px)";
-                          e.currentTarget.style.boxShadow = "0 4px 16px rgba(45,106,79,0.1)";
-                        }}
-                        onMouseLeave={e => {
-                          e.currentTarget.style.borderColor = "";
-                          e.currentTarget.style.transform = "";
-                          e.currentTarget.style.boxShadow = "";
-                        }}
-                      >
-                        <div style={{
-                          width: 40, height: 40, borderRadius: 10, flexShrink: 0,
-                          background: "#e8f0ff",
-                          display: "grid", placeItems: "center", fontSize: 18,
-                        }}>
+                    <div key={i} style={{
+                      borderRadius: 14, background: "var(--surface)",
+                      border: "1.5px solid var(--border-soft)",
+                      overflow: "hidden",
+                      transition: "border-color 0.2s, box-shadow 0.2s",
+                    }}
+                      onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--green-300)"; e.currentTarget.style.boxShadow = "0 4px 16px rgba(45,106,79,0.1)"; }}
+                      onMouseLeave={e => { e.currentTarget.style.borderColor = ""; e.currentTarget.style.boxShadow = ""; }}
+                    >
+                      {/* Основная строка */}
+                      <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "12px 16px" }}>
+                        <div style={{ width: 40, height: 40, borderRadius: 10, flexShrink: 0, background: "#e8f0ff", display: "grid", placeItems: "center", fontSize: 18 }}>
                           {ev.icon}
                         </div>
                         <div style={{ flex: 1, minWidth: 0 }}>
@@ -768,9 +884,41 @@ export function LandingPage() {
                           </div>
                           <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2, lineHeight: 1.4 }}>{ev.desc}</div>
                         </div>
-                        <div style={{ color: "#5181b8", fontSize: 13, fontWeight: 600, flexShrink: 0 }}>ВК ↗</div>
+                        {/* Кнопки действий */}
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+                          {ev.cert && (
+                            <button onClick={() => setLightbox(ev.cert)} style={{
+                              display: "inline-flex", alignItems: "center", gap: 5,
+                              padding: "5px 10px", borderRadius: 8, border: "1.5px solid var(--green-300)",
+                              background: "var(--green-50)", color: "var(--green-800)",
+                              fontSize: 12, fontWeight: 600, cursor: "pointer",
+                              transition: "background 0.15s",
+                            }}
+                              onMouseEnter={e => e.currentTarget.style.background = "var(--green-100)"}
+                              onMouseLeave={e => e.currentTarget.style.background = "var(--green-50)"}
+                            >
+                              📄 Сертификат
+                            </button>
+                          )}
+                          {ev.url && (
+                            <a href={ev.url} target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none" }}>
+                              <button style={{
+                                display: "inline-flex", alignItems: "center", gap: 5,
+                                padding: "5px 10px", borderRadius: 8, border: "1.5px solid #c5d8f0",
+                                background: "#eef3fb", color: "#5181b8",
+                                fontSize: 12, fontWeight: 600, cursor: "pointer",
+                                transition: "background 0.15s",
+                              }}
+                                onMouseEnter={e => e.currentTarget.style.background = "#dde8f7"}
+                                onMouseLeave={e => e.currentTarget.style.background = "#eef3fb"}
+                              >
+                                ВК ↗
+                              </button>
+                            </a>
+                          )}
+                        </div>
                       </div>
-                    </a>
+                    </div>
                   ))}
                 </div>
               </div>
@@ -836,14 +984,14 @@ export function LandingPage() {
             </h2>
           </div>
 
-          <div className="lf-diplomas-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 24 }}>
+          <div className="lf-diplomas-grid" style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 24 }}>
             {DIPLOMAS.map((d, i) => (
               <div
                 key={i}
                 className="lf-card-hover lf-reveal"
                 style={{
                   borderRadius: 24, overflow: "hidden",
-                  border: "1.5px solid var(--border-soft)",
+                  border: `1.5px solid ${d.isWork ? "#f5d9a0" : "var(--border-soft)"}`,
                   background: "var(--surface)",
                   boxShadow: "var(--sh-md)",
                   transitionDelay: `${i * 0.1}s`,
@@ -851,21 +999,25 @@ export function LandingPage() {
               >
                 {/* Illustration */}
                 <div style={{
-                  height: 200,
-                  background: `linear-gradient(135deg, var(--green-100) 0%, var(--green-200) 100%)`,
+                  height: 160,
+                  background: `linear-gradient(135deg, ${d.accent || "var(--green-100)"} 0%, ${d.accent2 || "var(--green-200)"} 100%)`,
                   display: "flex", alignItems: "center", justifyContent: "center",
                   position: "relative", overflow: "hidden",
                 }}>
-                  <div style={{ position: "absolute", inset: 0, color: "var(--green-700)", opacity: 0.13 }}>
-                    <Fern size={220} style={{ position: "absolute", top: -30, right: -30 }} />
-                  </div>
+                  {!d.isWork && (
+                    <div style={{ position: "absolute", inset: 0, color: "var(--green-700)", opacity: 0.13 }}>
+                      <Fern size={220} style={{ position: "absolute", top: -30, right: -30 }} />
+                    </div>
+                  )}
                   <div style={{ position: "relative", textAlign: "center" }}>
-                    <div style={{ fontSize: 48, marginBottom: 8 }}>🎓</div>
-                    <div style={{ fontSize: 12, color: "var(--green-800)", opacity: 0.6 }}>диплом</div>
+                    <div style={{ fontSize: 44, marginBottom: 6 }}>{d.icon || "🎓"}</div>
+                    <div style={{ fontSize: 11, color: d.isWork ? "#a07020" : "var(--green-800)", opacity: 0.7 }}>
+                      {d.isWork ? "опыт работы" : "диплом"}
+                    </div>
                   </div>
                   <div style={{
                     position: "absolute", top: 16, left: 16,
-                    background: "var(--green-800)", color: "#fff",
+                    background: d.isWork ? "#d4900a" : "var(--green-800)", color: "#fff",
                     borderRadius: 999, padding: "4px 14px",
                     fontSize: 12, fontWeight: 700, letterSpacing: "0.04em",
                   }}>
@@ -1052,15 +1204,9 @@ export function LandingPage() {
         flexWrap: "wrap", gap: 16,
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{
-            width: 30, height: 30, borderRadius: 8,
-            background: "var(--green-800)", color: "#fff",
-            display: "grid", placeItems: "center",
-          }}>
-            <Leaf size={15} stroke={1.8} />
-          </div>
+          <img src="/tutor2.jpg" alt="Vikokon" style={{ width: 30, height: 30, borderRadius: 8, objectFit: "cover" }} />
           <span style={{ fontFamily: "var(--f-serif)", fontSize: 15, color: "var(--text-soft)" }}>
-            Викокон · {TUTOR.name}
+            Vikokon · {TUTOR.name}
           </span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
@@ -1075,6 +1221,8 @@ export function LandingPage() {
           <span style={{ fontSize: 13, color: "var(--text-muted)" }}>· Репетитор по биологии · ОГЭ и ЕГЭ</span>
         </div>
       </footer>
+
+      {lightbox && <Lightbox src={lightbox} onClose={() => setLightbox(null)} />}
     </div>
   );
 }

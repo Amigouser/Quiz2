@@ -13,12 +13,13 @@ const AdminSidebar = ({ active, onTab }) => {
   ];
   return (
     <div className="sidebar" style={{ minHeight: "100%" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 12px 20px" }}>
-        <div style={{ width: 36, height: 36, borderRadius: 10, background: "var(--green-800)", color: "#fff", display: "grid", placeItems: "center" }}>
-          <Leaf size={18} stroke={1.8} />
-        </div>
+      <div
+        style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 12px 20px", cursor: "pointer" }}
+        onClick={() => navigate("/")}
+      >
+        <img src="/tutor2.jpg" alt="Vikokon" style={{ width: 36, height: 36, borderRadius: 10, objectFit: "cover", border: "1.5px solid var(--border-soft)", flexShrink: 0 }} />
         <div>
-          <div style={{ fontFamily: "var(--f-serif)", fontWeight: 600, fontSize: 15 }}>Живая клетка</div>
+          <div style={{ fontFamily: "var(--f-serif)", fontWeight: 600, fontSize: 15 }}>Vikokon</div>
           <div style={{ fontSize: 11, color: "var(--text-muted)" }}>панель репетитора</div>
         </div>
       </div>
@@ -275,6 +276,7 @@ const AdminCreateTest = ({ onCreated, autoImport = false }) => {
   const [title, setTitle] = React.useState("");
   const [topic, setTopic] = React.useState("Ботаника");
   const [description, setDescription] = React.useState("");
+  const [category, setCategory] = React.useState("");
   const [isDraft, setIsDraft] = React.useState(false);
   const [questions, setQuestions] = React.useState([EMPTY_QUESTION()]);
   const [saving, setSaving] = React.useState(false);
@@ -340,6 +342,7 @@ const AdminCreateTest = ({ onCreated, autoImport = false }) => {
         title: title.trim(),
         topic,
         description: description.trim() || null,
+        category: category || null,
         is_draft: draft ? 1 : 0,
         questions: questions.map(q => ({
           text: q.text.trim(),
@@ -399,6 +402,17 @@ const AdminCreateTest = ({ onCreated, autoImport = false }) => {
             <label>Краткое описание (необязательно)</label>
             <textarea className="input" rows={2} value={description} onChange={e => setDescription(e.target.value)}
               placeholder="Что проверяет этот тест?" style={{ resize: "vertical", fontFamily: "var(--f-sans)" }}/>
+          </div>
+          <div className="field" style={{ marginTop: 16 }}>
+            <label>Категория</label>
+            <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
+              {[["", "Без категории"], ["ОГЭ", "ОГЭ"], ["ЕГЭ", "ЕГЭ"]].map(([val, lbl]) => (
+                <button key={val} type="button" onClick={() => setCategory(val)}
+                  className={category === val ? "btn btn-primary btn-sm" : "btn btn-ghost btn-sm"}>
+                  {lbl}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
@@ -511,6 +525,7 @@ const AdminEditTest = ({ testId, onSaved }) => {
   const [title, setTitle] = React.useState("");
   const [topic, setTopic] = React.useState("Ботаника");
   const [description, setDescription] = React.useState("");
+  const [category, setCategory] = React.useState("");
   const [questions, setQuestions] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
   const [saving, setSaving] = React.useState(false);
@@ -521,6 +536,7 @@ const AdminEditTest = ({ testId, onSaved }) => {
       setTitle(data.title);
       setTopic(data.topic || "Ботаника");
       setDescription(data.description || "");
+      setCategory(data.category || "");
       setQuestions(data.questions.map(q => ({
         id: q.id,
         text: q.question_text,
@@ -562,7 +578,7 @@ const AdminEditTest = ({ testId, onSaved }) => {
     setSaving(true); setError(null);
     try {
       await API.admin.updateTest(testId, {
-        title: title.trim(), topic, description: description.trim() || null,
+        title: title.trim(), topic, description: description.trim() || null, category: category || null,
         questions: questions.map(q => ({
           text: q.text.trim(), hint: q.hint.trim() || null, explanation: q.explanation.trim() || null,
           answers: q.answers.map(a => ({ text: a.text.trim(), is_correct: a.is_correct ? 1 : 0 })),
@@ -611,6 +627,17 @@ const AdminEditTest = ({ testId, onSaved }) => {
             <label>Описание</label>
             <textarea className="input" rows={2} value={description} onChange={e => setDescription(e.target.value)}
               style={{ resize: "vertical", fontFamily: "var(--f-sans)" }}/>
+          </div>
+          <div className="field" style={{ marginTop: 16 }}>
+            <label>Категория</label>
+            <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
+              {[["", "Без категории"], ["ОГЭ", "ОГЭ"], ["ЕГЭ", "ЕГЭ"]].map(([val, lbl]) => (
+                <button key={val} type="button" onClick={() => setCategory(val)}
+                  className={category === val ? "btn btn-primary btn-sm" : "btn btn-ghost btn-sm"}>
+                  {lbl}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
@@ -1150,6 +1177,7 @@ const AdminEditCardSet = ({ editId, onSaved, autoImport = false }) => {
   const [title, setTitle] = React.useState("");
   const [topic, setTopic] = React.useState("Ботаника");
   const [description, setDescription] = React.useState("");
+  const [category, setCategory] = React.useState("");
   const [cards, setCards] = React.useState([EMPTY_CARD()]);
   const [bulkText, setBulkText] = React.useState("");
   const [showBulk, setShowBulk] = React.useState(false);
@@ -1177,6 +1205,7 @@ const AdminEditCardSet = ({ editId, onSaved, autoImport = false }) => {
       setTitle(data.title);
       setTopic(data.topic || "Ботаника");
       setDescription(data.description || "");
+      setCategory(data.category || "");
       setCards(data.cards.map(c => ({ id: c.id, term: c.term, definition: c.definition })));
     });
   }, [editId]);
@@ -1208,6 +1237,7 @@ const AdminEditCardSet = ({ editId, onSaved, autoImport = false }) => {
     try {
       const payload = {
         title: title.trim(), topic, description: description.trim() || null,
+        category: category || null,
         cards: validCards.map(c => ({ term: c.term.trim(), definition: c.definition.trim() })),
       };
       if (editId) await API.admin.updateCardSet(editId, payload);
@@ -1259,6 +1289,17 @@ const AdminEditCardSet = ({ editId, onSaved, autoImport = false }) => {
             <label>Описание (необязательно)</label>
             <textarea className="input" rows={2} value={description} onChange={e => setDescription(e.target.value)}
               placeholder="Что будем учить?" style={{ resize: "vertical", fontFamily: "var(--f-sans)" }} />
+          </div>
+          <div className="field" style={{ marginTop: 16 }}>
+            <label>Категория</label>
+            <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
+              {[["", "Без категории"], ["ОГЭ", "ОГЭ"], ["ЕГЭ", "ЕГЭ"]].map(([val, lbl]) => (
+                <button key={val} type="button" onClick={() => setCategory(val)}
+                  className={category === val ? "btn btn-primary btn-sm" : "btn btn-ghost btn-sm"}>
+                  {lbl}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
@@ -1452,6 +1493,15 @@ const AdminResults = () => {
       .catch(() => setLoading(false));
   }, []);
 
+  const deleteResult = (id) => {
+    API.admin.deleteResult(id).then(() => setResults(prev => prev.filter(r => r.id !== id)));
+  };
+
+  const deleteAll = () => {
+    if (!window.confirm("Удалить все результаты?")) return;
+    API.admin.deleteAllResults().then(() => setResults([]));
+  };
+
   if (loading) return (
     <div style={{ padding: "32px 40px", flex: 1, color: "var(--text-muted)", fontFamily: "var(--f-serif)", fontSize: 16 }}>Загрузка…</div>
   );
@@ -1459,7 +1509,14 @@ const AdminResults = () => {
   return (
     <div style={{ padding: "32px 40px", flex: 1 }}>
       <div className="eyebrow" style={{ marginBottom: 12 }}>Результаты</div>
-      <h1 style={{ fontFamily: "var(--f-serif)", fontSize: 36, marginBottom: 28 }}>Все попытки</h1>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 28 }}>
+        <h1 style={{ fontFamily: "var(--f-serif)", fontSize: 36, margin: 0 }}>Все попытки</h1>
+        {results.length > 0 && (
+          <button className="btn btn-ghost btn-sm" style={{ color: "var(--danger, #e53)" }} onClick={deleteAll}>
+            Очистить всё
+          </button>
+        )}
+      </div>
 
       {results.length === 0 ? (
         <div className="card" style={{ padding: 40, textAlign: "center", color: "var(--text-muted)" }}>
@@ -1469,16 +1526,16 @@ const AdminResults = () => {
         <div className="card" style={{ padding: 0, overflow: "hidden" }}>
           <div style={{
             display: "grid",
-            gridTemplateColumns: "1.5fr 2fr 1fr 140px",
+            gridTemplateColumns: "1.5fr 2fr 1fr 140px 40px",
             padding: "12px 20px", borderBottom: "1px solid var(--border-soft)",
             background: "var(--bg-muted)",
             fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-muted)", fontWeight: 600,
           }}>
-            <div>Ученик</div><div>Тест</div><div>Результат</div><div>Дата</div>
+            <div>Ученик</div><div>Тест</div><div>Результат</div><div>Дата</div><div></div>
           </div>
           {results.map((r, i) => (
             <div key={r.id} style={{
-              display: "grid", gridTemplateColumns: "1.5fr 2fr 1fr 140px",
+              display: "grid", gridTemplateColumns: "1.5fr 2fr 1fr 140px 40px",
               padding: "14px 20px", alignItems: "center",
               borderBottom: i < results.length - 1 ? "1px solid var(--border-soft)" : "none",
             }}>
@@ -1496,6 +1553,11 @@ const AdminResults = () => {
               <div style={{ fontSize: 13, color: "var(--text-soft)" }}>
                 {new Date(r.completed_at).toLocaleDateString("ru-RU")}
               </div>
+              <button
+                onClick={() => deleteResult(r.id)}
+                style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", fontSize: 16, padding: "4px 6px", borderRadius: 4, lineHeight: 1 }}
+                title="Удалить"
+              >✕</button>
             </div>
           ))}
         </div>

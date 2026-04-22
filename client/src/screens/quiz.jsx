@@ -146,8 +146,8 @@ export const QuizFocused = ({ quiz, onFinish }) => {
         </div>
         <div style={{ position: "relative" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 40 }}>
-            <Leaf size={20} stroke={1.8} style={{ color: "var(--green-400)" }}/>
-            <div style={{ fontFamily: "var(--f-serif)", fontSize: 14 }}>Живая клетка</div>
+            <img src="/tutor2.jpg" alt="Vikokon" style={{ width: 24, height: 24, borderRadius: 6, objectFit: "cover" }} />
+            <div style={{ fontFamily: "var(--f-serif)", fontSize: 14 }}>Vikokon</div>
           </div>
           <div style={{ fontSize: 11, letterSpacing: "0.2em", textTransform: "uppercase", opacity: 0.7, marginBottom: 10 }}>
             {quiz.topic}

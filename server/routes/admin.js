@@ -35,15 +35,15 @@ router.get("/tests/:id", (req, res) => {
 });
 
 router.post("/tests", (req, res) => {
-  const { title, topic, description, questions = [], is_draft = 0 } = req.body;
+  const { title, topic, description, category, questions = [], is_draft = 0 } = req.body;
   if (!title) return res.status(400).json({ error: "Название обязательно" });
 
   db.exec("BEGIN");
   let testId;
   try {
     testId = run(
-      "INSERT INTO tests (title, topic, description, is_draft) VALUES (?, ?, ?, ?)",
-      title, topic || null, description || null, is_draft ? 1 : 0
+      "INSERT INTO tests (title, topic, description, category, is_draft) VALUES (?, ?, ?, ?, ?)",
+      title, topic || null, description || null, category || null, is_draft ? 1 : 0
     ).lastInsertRowid;
 
     questions.forEach((q, qi) => {
@@ -68,13 +68,13 @@ router.post("/tests", (req, res) => {
 });
 
 router.put("/tests/:id", (req, res) => {
-  const { title, topic, description, questions } = req.body;
+  const { title, topic, description, category, questions } = req.body;
   if (!title) return res.status(400).json({ error: "Название обязательно" });
 
   db.exec("BEGIN");
   try {
-    run("UPDATE tests SET title = ?, topic = ?, description = ? WHERE id = ?",
-      title, topic || null, description || null, req.params.id);
+    run("UPDATE tests SET title = ?, topic = ?, description = ?, category = ? WHERE id = ?",
+      title, topic || null, description || null, category || null, req.params.id);
 
     if (Array.isArray(questions)) {
       run("DELETE FROM questions WHERE test_id = ?", req.params.id);
@@ -132,8 +132,16 @@ router.get("/students", (req, res) => {
 router.delete("/students/:id", (req, res) => {
   const student = get("SELECT id FROM users WHERE id = ? AND is_admin = 0", req.params.id);
   if (!student) return res.status(404).json({ error: "Ученик не найден" });
-  run("DELETE FROM users WHERE id = ? AND is_admin = 0", req.params.id);
-  res.json({ ok: true });
+  db.exec("BEGIN");
+  try {
+    run("DELETE FROM attempts WHERE user_id = ?", req.params.id);
+    run("DELETE FROM users WHERE id = ? AND is_admin = 0", req.params.id);
+    db.exec("COMMIT");
+    res.json({ ok: true });
+  } catch (e) {
+    db.exec("ROLLBACK");
+    res.status(500).json({ error: e.message });
+  }
 });
 
 router.post("/students", (req, res) => {
@@ -306,6 +314,16 @@ router.get("/results", (req, res) => {
     ORDER BY a.completed_at DESC
   `);
   res.json(results);
+});
+
+router.delete("/results/:id", (req, res) => {
+  run("DELETE FROM attempts WHERE id = ?", req.params.id);
+  res.json({ ok: true });
+});
+
+router.delete("/results", (req, res) => {
+  run("DELETE FROM attempts");
+  res.json({ ok: true });
 });
 
 module.exports = router;

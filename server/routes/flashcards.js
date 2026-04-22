@@ -16,7 +16,7 @@ const adminRouter = require("express").Router();
 // ── Public: list active card sets (no auth) ─────────────────────────────────
 studentRouter.get("/flashcard-sets/public", (req, res) => {
   const sets = all(`
-    SELECT s.id, s.title, s.topic, s.description, COUNT(c.id) AS cards_count
+    SELECT s.id, s.title, s.topic, s.description, s.category, COUNT(c.id) AS cards_count
     FROM flashcard_sets s
     LEFT JOIN flashcard_cards c ON c.set_id = s.id
     WHERE s.is_active = 1
@@ -88,15 +88,15 @@ adminRouter.get("/flashcard-sets/:id", requireAuth, requireAdmin, (req, res) => 
 
 // ── Admin: create set ────────────────────────────────────────────────────────
 adminRouter.post("/flashcard-sets", requireAuth, requireAdmin, (req, res) => {
-  const { title, topic, description, cards = [] } = req.body;
+  const { title, topic, description, category, cards = [] } = req.body;
   if (!title) return res.status(400).json({ error: "Нужно название" });
 
   db.exec("BEGIN");
   let setId;
   try {
     setId = run(
-      "INSERT INTO flashcard_sets (title, topic, description) VALUES (?, ?, ?)",
-      title, topic || null, description || null
+      "INSERT INTO flashcard_sets (title, topic, description, category) VALUES (?, ?, ?, ?)",
+      title, topic || null, description || null, category || null
     ).lastInsertRowid;
     cards.forEach((c, i) => {
       run(
@@ -114,14 +114,14 @@ adminRouter.post("/flashcard-sets", requireAuth, requireAdmin, (req, res) => {
 
 // ── Admin: update set ────────────────────────────────────────────────────────
 adminRouter.put("/flashcard-sets/:id", requireAuth, requireAdmin, (req, res) => {
-  const { title, topic, description, cards } = req.body;
+  const { title, topic, description, category, cards } = req.body;
   const id = req.params.id;
 
   db.exec("BEGIN");
   try {
     run(
-      "UPDATE flashcard_sets SET title = ?, topic = ?, description = ? WHERE id = ?",
-      title, topic || null, description || null, id
+      "UPDATE flashcard_sets SET title = ?, topic = ?, description = ?, category = ? WHERE id = ?",
+      title, topic || null, description || null, category || null, id
     );
     if (Array.isArray(cards)) {
       run("DELETE FROM flashcard_cards WHERE set_id = ?", id);

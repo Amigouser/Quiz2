@@ -363,6 +363,7 @@ export default function TasksPage() {
   const [activeQuiz, setActiveQuiz] = useState(null);
   const [activeCards, setActiveCards] = useState(null);
   const [showLimit, setShowLimit] = useState(false);
+  const [catFilter, setCatFilter] = useState("Все");
 
   useEffect(() => {
     Promise.all([
@@ -418,13 +419,7 @@ export default function TasksPage() {
           display: "flex", alignItems: "center", gap: 10,
           background: "none", border: "none", cursor: "pointer", padding: 0,
         }}>
-          <div style={{
-            width: 36, height: 36, borderRadius: 10,
-            background: "var(--green-600)", color: "#fff",
-            display: "grid", placeItems: "center",
-          }}>
-            <Leaf size={18} stroke={1.8} />
-          </div>
+          <img src="/tutor2.jpg" alt="Vikokon" style={{ width: 36, height: 36, borderRadius: 10, objectFit: "cover", border: "1px solid rgba(255,255,255,0.18)" }} />
           <span style={{ fontFamily: "var(--f-serif)", fontWeight: 600, fontSize: 16, color: "#fff" }}>
             Vikokon
           </span>
@@ -467,16 +462,32 @@ export default function TasksPage() {
           </p>
         </div>
 
+        {/* Фильтр по категории */}
+        <div style={{ display: "flex", gap: 8, marginBottom: 36 }}>
+          {["Все", "ОГЭ", "ЕГЭ"].map(cat => (
+            <button key={cat} onClick={() => setCatFilter(cat)} style={{
+              padding: "10px 24px", borderRadius: 999, fontSize: 14, fontWeight: 700,
+              border: "2px solid",
+              borderColor: catFilter === cat ? "var(--green-700)" : "var(--border-soft)",
+              background: catFilter === cat ? "var(--green-800)" : "transparent",
+              color: catFilter === cat ? "#fff" : "var(--text-muted)",
+              cursor: "pointer", transition: "all 0.15s",
+            }}>
+              {cat}
+            </button>
+          ))}
+        </div>
+
         {loading ? (
           <div style={{ textAlign: "center", padding: "80px 0", color: "var(--text-muted)", fontSize: 16 }}>Загрузка…</div>
         ) : (
           <>
             {/* Тесты */}
-            {tests.length > 0 && (
+            {(catFilter === "Все" ? tests : tests.filter(t => t.category === catFilter)).length > 0 && (
               <div style={{ marginBottom: 64 }}>
                 <h2 style={{ fontFamily: "var(--f-serif)", fontSize: 24, marginBottom: 24, letterSpacing: "-0.01em" }}>Тесты</h2>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 20 }}>
-                  {tests.map((test) => (
+                  {(catFilter === "Все" ? tests : tests.filter(t => t.category === catFilter)).map((test) => (
                     <div key={test.id} onClick={() => openTest(test.id)} style={{
                       borderRadius: 20, overflow: "hidden",
                       border: "1.5px solid var(--border-soft)",
@@ -529,11 +540,11 @@ export default function TasksPage() {
             )}
 
             {/* Карточки */}
-            {cardSets.length > 0 && (
+            {(catFilter === "Все" ? cardSets : cardSets.filter(c => c.category === catFilter)).length > 0 && (
               <div>
                 <h2 style={{ fontFamily: "var(--f-serif)", fontSize: 24, marginBottom: 24, letterSpacing: "-0.01em" }}>Карточки</h2>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 20 }}>
-                  {cardSets.map((set) => (
+                  {(catFilter === "Все" ? cardSets : cardSets.filter(c => c.category === catFilter)).map((set) => (
                     <div key={set.id} onClick={() => openCards(set.id)} style={{
                       borderRadius: 20,
                       border: "1.5px solid var(--border-soft)",

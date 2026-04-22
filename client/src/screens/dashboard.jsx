@@ -1,4 +1,5 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import { Leaf, Fern, Cell, Sprig, Helix, BotanicalBg } from "../botanical";
 
 export const CardSetCard = ({ s, onStart }) => (
@@ -127,6 +128,7 @@ export const QuizCard = ({ q, onStart }) => {
 };
 
 export const StudentDashboard = ({ name = "Аня", quizzes = [], cardSets = [], onOpenQuiz, onOpenCards, onAdmin, onLogout }) => {
+  const navigate = useNavigate();
   const [tab, setTab] = React.useState("Все");
   const topics = ["Все", ...Array.from(new Set(quizzes.map(q => q.topic)))];
   const filtered = tab === "Все" ? quizzes : quizzes.filter(q => q.topic === tab);
@@ -149,14 +151,9 @@ export const StudentDashboard = ({ name = "Аня", quizzes = [], cardSets = [],
         borderBottom: "1px solid var(--border-soft)",
         background: "var(--surface)",
       }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <div style={{
-            width: 36, height: 36, borderRadius: 10, background: "var(--green-800)",
-            color: "#fff", display: "grid", placeItems: "center",
-          }}>
-            <Leaf size={18} stroke={1.8} />
-          </div>
-          <div style={{ fontFamily: "var(--f-serif)", fontWeight: 600, fontSize: 17 }}>Живая клетка</div>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, cursor: "pointer" }} onClick={() => navigate("/")}>
+          <img src="/tutor2.jpg" alt="Vikokon" style={{ width: 36, height: 36, borderRadius: 10, objectFit: "cover", border: "1.5px solid var(--border-soft)", flexShrink: 0 }} />
+          <div style={{ fontFamily: "var(--f-serif)", fontWeight: 600, fontSize: 17 }}>Vikokon</div>
         </div>
         <div className="dash-topbar-right" style={{ display: "flex", alignItems: "center", gap: 20 }}>
           {onAdmin && <button className="btn btn-ghost btn-sm rsp-hide-mobile" onClick={onAdmin}>Панель репетитора</button>}
