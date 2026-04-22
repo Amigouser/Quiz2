@@ -35,15 +35,15 @@ router.get("/tests/:id", (req, res) => {
 });
 
 router.post("/tests", (req, res) => {
-  const { title, topic, description, category, questions = [], is_draft = 0 } = req.body;
+  const { title, topic, description, category, section, part, line, source, questions = [], is_draft = 0 } = req.body;
   if (!title) return res.status(400).json({ error: "Название обязательно" });
 
   db.exec("BEGIN");
   let testId;
   try {
     testId = run(
-      "INSERT INTO tests (title, topic, description, category, is_draft) VALUES (?, ?, ?, ?, ?)",
-      title, topic || null, description || null, category || null, is_draft ? 1 : 0
+      "INSERT INTO tests (title, topic, description, category, section, part, line, source, is_draft) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+      title, topic || null, description || null, category || null, section || null, part || null, line || null, source || null, is_draft ? 1 : 0
     ).lastInsertRowid;
 
     questions.forEach((q, qi) => {
@@ -68,13 +68,13 @@ router.post("/tests", (req, res) => {
 });
 
 router.put("/tests/:id", (req, res) => {
-  const { title, topic, description, category, questions } = req.body;
+  const { title, topic, description, category, section, part, line, source, questions } = req.body;
   if (!title) return res.status(400).json({ error: "Название обязательно" });
 
   db.exec("BEGIN");
   try {
-    run("UPDATE tests SET title = ?, topic = ?, description = ?, category = ? WHERE id = ?",
-      title, topic || null, description || null, category || null, req.params.id);
+    run("UPDATE tests SET title = ?, topic = ?, description = ?, category = ?, section = ?, part = ?, line = ?, source = ? WHERE id = ?",
+      title, topic || null, description || null, category || null, section || null, part || null, line || null, source || null, req.params.id);
 
     if (Array.isArray(questions)) {
       run("DELETE FROM questions WHERE test_id = ?", req.params.id);

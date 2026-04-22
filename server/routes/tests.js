@@ -8,7 +8,7 @@ function requireAuth(req, res, next) {
 
 router.get("/tests/public", (req, res) => {
   const tests = all(`
-    SELECT t.id, t.title, t.topic, t.description, t.category,
+    SELECT t.id, t.title, t.topic, t.description, t.category, t.section, t.part, t.line, t.source,
            COUNT(q.id) AS questions_count
     FROM tests t
     LEFT JOIN questions q ON q.test_id = t.id
@@ -23,6 +23,10 @@ router.get("/tests/public", (req, res) => {
     topic: t.topic || "Биология",
     description: t.description,
     category: t.category || null,
+    section: t.section || null,
+    part: t.part || null,
+    line: t.line || null,
+    source: t.source || null,
     questions_count: t.questions_count,
     est_minutes: Math.max(1, Math.ceil(t.questions_count * 0.8)),
   })));

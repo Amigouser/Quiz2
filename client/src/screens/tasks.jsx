@@ -353,6 +353,34 @@ const btnGhost = {
   cursor: "pointer",
 };
 
+// ── Дропдаун-фильтр ───────────────────────────────────────────────────────────
+function FilterSelect({ label, value, onChange, options }) {
+  return (
+    <div style={{ position: "relative", display: "inline-flex" }}>
+      <select
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        style={{
+          appearance: "none", WebkitAppearance: "none",
+          padding: "9px 36px 9px 16px",
+          borderRadius: 999,
+          border: value ? "1.5px solid var(--green-600)" : "1.5px solid var(--border-soft)",
+          background: value ? "var(--green-100)" : "var(--surface)",
+          color: value ? "var(--green-900)" : "var(--text-soft)",
+          fontSize: 14, fontFamily: "var(--f-sans)", fontWeight: value ? 600 : 400,
+          cursor: "pointer", outline: "none",
+        }}
+      >
+        <option value="">{label}</option>
+        {options.map(o => <option key={o} value={o}>{o}</option>)}
+      </select>
+      <svg style={{ position: "absolute", right: 13, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} width="11" height="11" viewBox="0 0 11 11" fill="none">
+        <path d="M1.5 3.5l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
+    </div>
+  );
+}
+
 // ── Главный компонент ─────────────────────────────────────────────────────────
 export default function TasksPage() {
   const navigate = useNavigate();
@@ -363,7 +391,14 @@ export default function TasksPage() {
   const [activeQuiz, setActiveQuiz] = useState(null);
   const [activeCards, setActiveCards] = useState(null);
   const [showLimit, setShowLimit] = useState(false);
-  const [catFilter, setCatFilter] = useState("Все");
+
+  const [catFilter, setCatFilter] = useState("");
+  const [sectionFilter, setSectionFilter] = useState("");
+  const [topicFilter, setTopicFilter] = useState("");
+  const [partFilter, setPartFilter] = useState("");
+  const [lineFilter, setLineFilter] = useState("");
+  const [sourceFilter, setSourceFilter] = useState("");
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
     Promise.all([
@@ -375,6 +410,31 @@ export default function TasksPage() {
       setLoading(false);
     });
   }, []);
+
+  const uniqueSections = [...new Set([...tests.map(t => t.section), ...cardSets.map(c => c.section)].filter(Boolean))].sort();
+  const uniqueTopics  = [...new Set([...tests.map(t => t.topic),   ...cardSets.map(c => c.topic)].filter(Boolean))].sort();
+  const uniqueParts   = [...new Set([...tests.map(t => t.part),    ...cardSets.map(c => c.part)].filter(Boolean))];
+  const uniqueLines   = [...new Set([...tests.map(t => t.line),    ...cardSets.map(c => c.line)].filter(Boolean))].sort((a, b) => +a - +b);
+  const uniqueSources = [...new Set([...tests.map(t => t.source),  ...cardSets.map(c => c.source)].filter(Boolean))].sort();
+  const hasFilters = catFilter || sectionFilter || topicFilter || partFilter || lineFilter || sourceFilter || search;
+
+  function applyFilters(items) {
+    return items.filter(item => {
+      if (catFilter && item.category !== catFilter) return false;
+      if (sectionFilter && item.section !== sectionFilter) return false;
+      if (topicFilter && item.topic !== topicFilter) return false;
+      if (partFilter && item.part !== partFilter) return false;
+      if (lineFilter && item.line !== lineFilter) return false;
+      if (sourceFilter && item.source !== sourceFilter) return false;
+      if (search && !item.title.toLowerCase().includes(search.toLowerCase())) return false;
+      return true;
+    });
+  }
+
+  function resetFilters() {
+    setCatFilter(""); setSectionFilter(""); setTopicFilter(""); setPartFilter("");
+    setLineFilter(""); setSourceFilter(""); setSearch("");
+  }
 
   function checkLimit(t, c) {
     if (t >= LIMIT && c >= LIMIT) setShowLimit(true);
@@ -462,20 +522,50 @@ export default function TasksPage() {
           </p>
         </div>
 
-        {/* Фильтр по категории */}
-        <div style={{ display: "flex", gap: 8, marginBottom: 36 }}>
-          {["Все", "ОГЭ", "ЕГЭ"].map(cat => (
-            <button key={cat} onClick={() => setCatFilter(cat)} style={{
-              padding: "10px 24px", borderRadius: 999, fontSize: 14, fontWeight: 700,
-              border: "2px solid",
-              borderColor: catFilter === cat ? "var(--green-700)" : "var(--border-soft)",
-              background: catFilter === cat ? "var(--green-800)" : "transparent",
-              color: catFilter === cat ? "#fff" : "var(--text-muted)",
-              cursor: "pointer", transition: "all 0.15s",
+        {/* Фильтры */}
+        <div style={{ marginBottom: 36, display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center" }}>
+          <FilterSelect label="Категория" value={catFilter} onChange={setCatFilter} options={["ОГЭ", "ЕГЭ"]} />
+          {uniqueSections.length > 0 && (
+            <FilterSelect label="Раздел" value={sectionFilter} onChange={setSectionFilter} options={uniqueSections} />
+          )}
+          {uniqueTopics.length > 0 && (
+            <FilterSelect label="Тема" value={topicFilter} onChange={setTopicFilter} options={uniqueTopics} />
+          )}
+          {uniqueParts.length > 0 && (
+            <FilterSelect label="Часть" value={partFilter} onChange={setPartFilter} options={uniqueParts} />
+          )}
+          {uniqueLines.length > 0 && (
+            <FilterSelect label="Линия" value={lineFilter} onChange={setLineFilter} options={uniqueLines} />
+          )}
+          {uniqueSources.length > 0 && (
+            <FilterSelect label="Источник" value={sourceFilter} onChange={setSourceFilter} options={uniqueSources} />
+          )}
+          <div style={{ position: "relative" }}>
+            <input
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Поиск..."
+              style={{
+                padding: "9px 16px 9px 38px", borderRadius: 999,
+                border: "1.5px solid var(--border-soft)",
+                background: "var(--surface)", fontSize: 14, outline: "none",
+                fontFamily: "var(--f-sans)", minWidth: 180,
+              }}
+            />
+            <svg style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)", pointerEvents: "none" }} width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <circle cx="6" cy="6" r="4.5" stroke="currentColor" strokeWidth="1.5"/>
+              <path d="M10 10l2.5 2.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+            </svg>
+          </div>
+          {hasFilters && (
+            <button onClick={resetFilters} style={{
+              padding: "9px 16px", borderRadius: 999, fontSize: 13,
+              border: "1.5px solid var(--border-soft)", background: "transparent",
+              color: "var(--text-muted)", cursor: "pointer",
             }}>
-              {cat}
+              Сбросить
             </button>
-          ))}
+          )}
         </div>
 
         {loading ? (
@@ -483,11 +573,11 @@ export default function TasksPage() {
         ) : (
           <>
             {/* Тесты */}
-            {(catFilter === "Все" ? tests : tests.filter(t => t.category === catFilter)).length > 0 && (
+            {applyFilters(tests).length > 0 && (
               <div style={{ marginBottom: 64 }}>
                 <h2 style={{ fontFamily: "var(--f-serif)", fontSize: 24, marginBottom: 24, letterSpacing: "-0.01em" }}>Тесты</h2>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 20 }}>
-                  {(catFilter === "Все" ? tests : tests.filter(t => t.category === catFilter)).map((test) => (
+                  {applyFilters(tests).map((test) => (
                     <div key={test.id} onClick={() => openTest(test.id)} style={{
                       borderRadius: 20, overflow: "hidden",
                       border: "1.5px solid var(--border-soft)",
@@ -540,11 +630,11 @@ export default function TasksPage() {
             )}
 
             {/* Карточки */}
-            {(catFilter === "Все" ? cardSets : cardSets.filter(c => c.category === catFilter)).length > 0 && (
+            {applyFilters(cardSets).length > 0 && (
               <div>
                 <h2 style={{ fontFamily: "var(--f-serif)", fontSize: 24, marginBottom: 24, letterSpacing: "-0.01em" }}>Карточки</h2>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 20 }}>
-                  {(catFilter === "Все" ? cardSets : cardSets.filter(c => c.category === catFilter)).map((set) => (
+                  {applyFilters(cardSets).map((set) => (
                     <div key={set.id} onClick={() => openCards(set.id)} style={{
                       borderRadius: 20,
                       border: "1.5px solid var(--border-soft)",

@@ -274,9 +274,13 @@ const EMPTY_QUESTION = () => ({
 
 const AdminCreateTest = ({ onCreated, autoImport = false }) => {
   const [title, setTitle] = React.useState("");
-  const [topic, setTopic] = React.useState("Ботаника");
+  const [section, setSection] = React.useState("");
+  const [topic, setTopic] = React.useState("");
   const [description, setDescription] = React.useState("");
   const [category, setCategory] = React.useState("");
+  const [part, setPart] = React.useState("");
+  const [line, setLine] = React.useState("");
+  const [source, setSource] = React.useState("");
   const [isDraft, setIsDraft] = React.useState(false);
   const [questions, setQuestions] = React.useState([EMPTY_QUESTION()]);
   const [saving, setSaving] = React.useState(false);
@@ -340,9 +344,13 @@ const AdminCreateTest = ({ onCreated, autoImport = false }) => {
     try {
       await API.admin.createTest({
         title: title.trim(),
-        topic,
+        section: section.trim() || null,
+        topic: topic.trim() || null,
         description: description.trim() || null,
         category: category || null,
+        part: part.trim() || null,
+        line: line.trim() || null,
+        source: source.trim() || null,
         is_draft: draft ? 1 : 0,
         questions: questions.map(q => ({
           text: q.text.trim(),
@@ -389,13 +397,15 @@ const AdminCreateTest = ({ onCreated, autoImport = false }) => {
               <label>Название теста</label>
               <input className="input input-lg" value={title} onChange={e => setTitle(e.target.value)} placeholder="Например: Фотосинтез" />
             </div>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
+            <div className="field">
+              <label>Раздел</label>
+              <input className="input" value={section} onChange={e => setSection(e.target.value)} placeholder="Напр.: Молекулярная биология" />
+            </div>
             <div className="field">
               <label>Тема</label>
-              <select className="input input-lg" value={topic} onChange={e => setTopic(e.target.value)} style={{ cursor: "pointer" }}>
-                {["Ботаника","Зоология","Генетика","Анатомия","Экология","Цитология","Эволюция"].map(t => (
-                  <option key={t}>{t}</option>
-                ))}
-              </select>
+              <input className="input" value={topic} onChange={e => setTopic(e.target.value)} placeholder="Напр.: Строение ДНК" />
             </div>
           </div>
           <div className="field">
@@ -412,6 +422,20 @@ const AdminCreateTest = ({ onCreated, autoImport = false }) => {
                   {lbl}
                 </button>
               ))}
+            </div>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginTop: 16 }}>
+            <div className="field">
+              <label>Часть</label>
+              <input className="input" value={part} onChange={e => setPart(e.target.value)} placeholder="Напр.: Часть 1" />
+            </div>
+            <div className="field">
+              <label>Линия</label>
+              <input className="input" value={line} onChange={e => setLine(e.target.value)} placeholder="Напр.: 5" />
+            </div>
+            <div className="field">
+              <label>Источник</label>
+              <input className="input" value={source} onChange={e => setSource(e.target.value)} placeholder="Напр.: ФИПИ" />
             </div>
           </div>
         </div>
@@ -523,9 +547,13 @@ const AdminCreateTest = ({ onCreated, autoImport = false }) => {
 // ── Редактирование существующего теста ──────────────────────────────────────
 const AdminEditTest = ({ testId, onSaved }) => {
   const [title, setTitle] = React.useState("");
-  const [topic, setTopic] = React.useState("Ботаника");
+  const [section, setSection] = React.useState("");
+  const [topic, setTopic] = React.useState("");
   const [description, setDescription] = React.useState("");
   const [category, setCategory] = React.useState("");
+  const [part, setPart] = React.useState("");
+  const [line, setLine] = React.useState("");
+  const [source, setSource] = React.useState("");
   const [questions, setQuestions] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
   const [saving, setSaving] = React.useState(false);
@@ -534,9 +562,13 @@ const AdminEditTest = ({ testId, onSaved }) => {
   React.useEffect(() => {
     API.admin.getTest(testId).then(data => {
       setTitle(data.title);
-      setTopic(data.topic || "Ботаника");
+      setSection(data.section || "");
+      setTopic(data.topic || "");
       setDescription(data.description || "");
       setCategory(data.category || "");
+      setPart(data.part || "");
+      setLine(data.line || "");
+      setSource(data.source || "");
       setQuestions(data.questions.map(q => ({
         id: q.id,
         text: q.question_text,
@@ -578,7 +610,9 @@ const AdminEditTest = ({ testId, onSaved }) => {
     setSaving(true); setError(null);
     try {
       await API.admin.updateTest(testId, {
-        title: title.trim(), topic, description: description.trim() || null, category: category || null,
+        title: title.trim(), section: section.trim() || null, topic: topic.trim() || null,
+        description: description.trim() || null, category: category || null,
+        part: part.trim() || null, line: line.trim() || null, source: source.trim() || null,
         questions: questions.map(q => ({
           text: q.text.trim(), hint: q.hint.trim() || null, explanation: q.explanation.trim() || null,
           answers: q.answers.map(a => ({ text: a.text.trim(), is_correct: a.is_correct ? 1 : 0 })),
@@ -609,18 +643,18 @@ const AdminEditTest = ({ testId, onSaved }) => {
         )}
 
         <div className="card" style={{ padding: 24, marginBottom: 20 }}>
-          <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 16, marginBottom: 16 }}>
+          <div className="field" style={{ marginBottom: 16 }}>
+            <label>Название теста</label>
+            <input className="input input-lg" value={title} onChange={e => setTitle(e.target.value)} />
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
             <div className="field">
-              <label>Название теста</label>
-              <input className="input input-lg" value={title} onChange={e => setTitle(e.target.value)} />
+              <label>Раздел</label>
+              <input className="input" value={section} onChange={e => setSection(e.target.value)} placeholder="Напр.: Молекулярная биология" />
             </div>
             <div className="field">
               <label>Тема</label>
-              <select className="input input-lg" value={topic} onChange={e => setTopic(e.target.value)} style={{ cursor: "pointer" }}>
-                {["Ботаника","Зоология","Генетика","Анатомия","Экология","Цитология","Эволюция","Общая биология"].map(t => (
-                  <option key={t}>{t}</option>
-                ))}
-              </select>
+              <input className="input" value={topic} onChange={e => setTopic(e.target.value)} placeholder="Напр.: Строение ДНК" />
             </div>
           </div>
           <div className="field">
@@ -637,6 +671,20 @@ const AdminEditTest = ({ testId, onSaved }) => {
                   {lbl}
                 </button>
               ))}
+            </div>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginTop: 16 }}>
+            <div className="field">
+              <label>Часть</label>
+              <input className="input" value={part} onChange={e => setPart(e.target.value)} placeholder="Напр.: Часть 1" />
+            </div>
+            <div className="field">
+              <label>Линия</label>
+              <input className="input" value={line} onChange={e => setLine(e.target.value)} placeholder="Напр.: 5" />
+            </div>
+            <div className="field">
+              <label>Источник</label>
+              <input className="input" value={source} onChange={e => setSource(e.target.value)} placeholder="Напр.: ФИПИ" />
             </div>
           </div>
         </div>
@@ -1175,9 +1223,13 @@ const EMPTY_CARD = () => ({ id: Date.now() + Math.random(), term: "", definition
 
 const AdminEditCardSet = ({ editId, onSaved, autoImport = false }) => {
   const [title, setTitle] = React.useState("");
-  const [topic, setTopic] = React.useState("Ботаника");
+  const [section, setSection] = React.useState("");
+  const [topic, setTopic] = React.useState("");
   const [description, setDescription] = React.useState("");
   const [category, setCategory] = React.useState("");
+  const [part, setPart] = React.useState("");
+  const [line, setLine] = React.useState("");
+  const [source, setSource] = React.useState("");
   const [cards, setCards] = React.useState([EMPTY_CARD()]);
   const [bulkText, setBulkText] = React.useState("");
   const [showBulk, setShowBulk] = React.useState(false);
@@ -1203,9 +1255,13 @@ const AdminEditCardSet = ({ editId, onSaved, autoImport = false }) => {
     if (!editId) return;
     API.admin.getCardSet(editId).then(data => {
       setTitle(data.title);
-      setTopic(data.topic || "Ботаника");
+      setSection(data.section || "");
+      setTopic(data.topic || "");
       setDescription(data.description || "");
       setCategory(data.category || "");
+      setPart(data.part || "");
+      setLine(data.line || "");
+      setSource(data.source || "");
       setCards(data.cards.map(c => ({ id: c.id, term: c.term, definition: c.definition })));
     });
   }, [editId]);
@@ -1236,8 +1292,9 @@ const AdminEditCardSet = ({ editId, onSaved, autoImport = false }) => {
     setSaving(true); setError(null);
     try {
       const payload = {
-        title: title.trim(), topic, description: description.trim() || null,
-        category: category || null,
+        title: title.trim(), section: section.trim() || null, topic: topic.trim() || null,
+        description: description.trim() || null, category: category || null,
+        part: part.trim() || null, line: line.trim() || null, source: source.trim() || null,
         cards: validCards.map(c => ({ term: c.term.trim(), definition: c.definition.trim() })),
       };
       if (editId) await API.admin.updateCardSet(editId, payload);
@@ -1273,16 +1330,18 @@ const AdminEditCardSet = ({ editId, onSaved, autoImport = false }) => {
 
         {/* Meta */}
         <div className="card" style={{ padding: 24, marginBottom: 20 }}>
-          <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 16, marginBottom: 16 }}>
+          <div className="field" style={{ marginBottom: 16 }}>
+            <label>Название набора</label>
+            <input className="input input-lg" value={title} onChange={e => setTitle(e.target.value)} placeholder="Например: Термины по генетике" />
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
             <div className="field">
-              <label>Название набора</label>
-              <input className="input input-lg" value={title} onChange={e => setTitle(e.target.value)} placeholder="Например: Термины по генетике" />
+              <label>Раздел</label>
+              <input className="input" value={section} onChange={e => setSection(e.target.value)} placeholder="Напр.: Молекулярная биология" />
             </div>
             <div className="field">
               <label>Тема</label>
-              <select className="input input-lg" value={topic} onChange={e => setTopic(e.target.value)} style={{ cursor: "pointer" }}>
-                {["Ботаника","Зоология","Генетика","Анатомия","Экология","Цитология","Эволюция"].map(t => <option key={t}>{t}</option>)}
-              </select>
+              <input className="input" value={topic} onChange={e => setTopic(e.target.value)} placeholder="Напр.: Строение ДНК" />
             </div>
           </div>
           <div className="field">
@@ -1299,6 +1358,20 @@ const AdminEditCardSet = ({ editId, onSaved, autoImport = false }) => {
                   {lbl}
                 </button>
               ))}
+            </div>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginTop: 16 }}>
+            <div className="field">
+              <label>Часть</label>
+              <input className="input" value={part} onChange={e => setPart(e.target.value)} placeholder="Напр.: Часть 1" />
+            </div>
+            <div className="field">
+              <label>Линия</label>
+              <input className="input" value={line} onChange={e => setLine(e.target.value)} placeholder="Напр.: 5" />
+            </div>
+            <div className="field">
+              <label>Источник</label>
+              <input className="input" value={source} onChange={e => setSource(e.target.value)} placeholder="Напр.: ФИПИ" />
             </div>
           </div>
         </div>

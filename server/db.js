@@ -119,6 +119,14 @@ try { db.exec("ALTER TABLE users ADD COLUMN code TEXT"); } catch (_) {}
 try { db.exec("ALTER TABLE users ADD COLUMN group_name TEXT"); } catch (_) {}
 try { db.exec("ALTER TABLE tests ADD COLUMN category TEXT"); } catch (_) {}
 try { db.exec("ALTER TABLE flashcard_sets ADD COLUMN category TEXT"); } catch (_) {}
+try { db.exec("ALTER TABLE tests ADD COLUMN part TEXT"); } catch (_) {}
+try { db.exec("ALTER TABLE tests ADD COLUMN line TEXT"); } catch (_) {}
+try { db.exec("ALTER TABLE tests ADD COLUMN source TEXT"); } catch (_) {}
+try { db.exec("ALTER TABLE tests ADD COLUMN section TEXT"); } catch (_) {}
+try { db.exec("ALTER TABLE flashcard_sets ADD COLUMN part TEXT"); } catch (_) {}
+try { db.exec("ALTER TABLE flashcard_sets ADD COLUMN line TEXT"); } catch (_) {}
+try { db.exec("ALTER TABLE flashcard_sets ADD COLUMN source TEXT"); } catch (_) {}
+try { db.exec("ALTER TABLE flashcard_sets ADD COLUMN section TEXT"); } catch (_) {}
 // Создать коды для существующих учеников без кода
 (function generateMissingCodes() {
   const users = all("SELECT id FROM users WHERE code IS NULL AND is_admin = 0");
