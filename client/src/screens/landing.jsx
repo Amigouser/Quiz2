@@ -287,6 +287,113 @@ const STYLES = `
 
   .lf-nav-link.lf-nav-active { color: #b7e4c7; }
   .lf-nav-link.lf-nav-active::after { width: 100%; }
+
+  /* Hero composition */
+  .lf-comp {
+    position: relative;
+    width: min(96vw, 1100px);
+    height: clamp(380px, 55vh, 560px);
+    flex-shrink: 0;
+    animation: lf-in 0.9s cubic-bezier(0.22,0.8,0.32,1) both;
+  }
+  .lf-comp-photo {
+    position: absolute;
+    border-radius: 18px;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.12);
+    box-shadow: 0 20px 50px rgba(0,0,0,0.55);
+    background: linear-gradient(160deg, #1b4332, #2d6a4f);
+  }
+  .lf-comp-photo img {
+    width: 100%; height: 100%; object-fit: cover; display: block;
+  }
+  .lf-comp-photo-1 {
+    top: 0; left: 0;
+    width: clamp(200px, 30%, 340px);
+    height: clamp(130px, 38%, 220px);
+    transform: rotate(-3deg);
+  }
+  .lf-comp-photo-2 {
+    bottom: 0; right: 0;
+    width: clamp(200px, 30%, 340px);
+    height: clamp(130px, 38%, 220px);
+    transform: rotate(2deg);
+  }
+  .lf-comp-text {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    white-space: nowrap;
+    pointer-events: none;
+    z-index: 3;
+  }
+  .lf-comp-title {
+    font-family: var(--f-serif);
+    font-size: clamp(52px, 8vw, 100px);
+    font-weight: 600;
+    line-height: 0.9;
+    letter-spacing: -0.02em;
+    color: transparent;
+    background-image: linear-gradient(135deg, #74c69d 0%, #b7e4c7 50%, #52b788 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+  }
+  .lf-comp-sub {
+    font-size: clamp(13px, 1.5vw, 18px);
+    color: rgba(183,228,199,0.7);
+    letter-spacing: 0.22em;
+    font-family: var(--f-serif);
+    font-style: italic;
+    margin-bottom: 8px;
+  }
+
+  @media (max-width: 640px) {
+    .lf-comp {
+      width: 100%;
+      height: auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0;
+      padding: 0 20px 20px;
+    }
+    .lf-comp-photo { position: static; transform: none !important; width: 100%; height: 180px; }
+    .lf-comp-photo-1 { order: 1; border-radius: 16px; margin-bottom: 24px; }
+    .lf-comp-photo-2 { order: 3; border-radius: 16px; margin-top: 24px; }
+    .lf-comp-text {
+      position: static; transform: none;
+      order: 2; white-space: normal;
+      padding: 0 8px;
+    }
+    .lf-comp-title { font-size: clamp(44px, 13vw, 72px); }
+    .lf-hero-section { height: auto !important; min-height: 100vh; }
+  }
+
+  /* CTA section responsive */
+  .lf-cta-grid {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 40px;
+    align-items: center;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+  @media (max-width: 768px) {
+    .lf-cta-grid {
+      grid-template-columns: 1fr;
+      grid-template-rows: auto auto auto;
+      gap: 36px;
+      text-align: center;
+    }
+    .lf-cta-grid > :nth-child(2) { order: -1; justify-self: center; width: min(280px, 80vw) !important; }
+  }
+
+  @media (max-width: 640px) {
+    .lf-header { padding: 0 20px !important; }
+    .lf-nav { display: none !important; }
+    .lf-hero-section { padding-left: 0 !important; }
+  }
 `;
 
 // ─── Хук: активная секция в навигации ────────────────────────────────────────
@@ -539,7 +646,7 @@ export function LandingPage() {
         backgroundSize: "200% 200%",
         animation: "lf-bg-shift 12s ease infinite",
         position: "relative", overflow: "hidden",
-        display: "flex", alignItems: "center",
+        display: "flex", alignItems: "center", justifyContent: "center",
         paddingTop: 64,
       }}>
         {/* Floating botanical decorations */}
@@ -552,195 +659,28 @@ export function LandingPage() {
         <div style={{ position: "absolute", top: "20%", left: "5%", color: "#74c69d", opacity: 0.07, animation: "lf-drift 14s ease-in-out infinite", pointerEvents: "none" }}>
           <Sprig size={160} />
         </div>
-        <div style={{ position: "absolute", top: "55%", right: "18%", color: "#b7e4c7", opacity: 0.06, animation: "lf-drift 9s ease-in-out infinite 3s", pointerEvents: "none" }}>
-          <Helix size={100} />
-        </div>
         <div style={{ position: "absolute", bottom: "20%", right: "4%", color: "#52b788", opacity: 0.08, animation: "lf-pulse 7s ease-in-out infinite 1s", pointerEvents: "none" }}>
           <Cell size={180} />
         </div>
-        {/* Ambient orb */}
-        <div style={{
-          position: "absolute", top: "30%", right: "28%",
-          width: 320, height: 320, borderRadius: "50%",
-          background: "radial-gradient(circle, rgba(82,183,136,0.12) 0%, transparent 70%)",
-          animation: "lf-pulse 6s ease-in-out infinite",
-          pointerEvents: "none",
-        }} />
 
-        {/* Content */}
-        <div className="lf-hero-grid" style={{
-          maxWidth: 1280, margin: "0 auto",
-          padding: "80px 48px",
-          display: "grid", gridTemplateColumns: "1fr 420px",
-          gap: 72, alignItems: "center",
-          position: "relative", width: "100%",
-        }}>
-          {/* Left */}
-          <div style={{ animation: "lf-in 0.9s cubic-bezier(0.22,0.8,0.32,1) both" }}>
-            <div style={{
-              display: "inline-flex", alignItems: "center", gap: 8,
-              background: "rgba(183,228,199,0.12)",
-              border: "1px solid rgba(183,228,199,0.25)",
-              borderRadius: 999, padding: "6px 16px",
-              marginBottom: 28,
-            }}>
-              <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#74c69d", animation: "lf-pulse 2s infinite", display: "inline-block" }} />
-              <span style={{ fontSize: 12, color: "#b7e4c7", letterSpacing: "0.08em", fontWeight: 600 }}>
-                РЕПЕТИТОР ПО БИОЛОГИИ · ОГЭ И ЕГЭ
-              </span>
-            </div>
-
-            <h1 style={{
-              fontFamily: "var(--f-serif)",
-              fontSize: "clamp(44px, 5.5vw, 78px)",
-              lineHeight: 1.0, letterSpacing: "-0.03em",
-              color: "#fff",
-              marginBottom: 28,
-            }}>
-              {TUTOR.name}
-              <br />
-              <em style={{
-                color: "transparent",
-                backgroundImage: "linear-gradient(135deg, #74c69d, #b7e4c7)",
-                WebkitBackgroundClip: "text",
-                backgroundClip: "text",
-                fontStyle: "italic",
-              }}>
-                {TUTOR.title}
-              </em>
-            </h1>
-
-            <p style={{
-              fontSize: 18, lineHeight: 1.7,
-              color: "rgba(255,255,255,0.65)",
-              maxWidth: 480, whiteSpace: "pre-line",
-              marginBottom: 44,
-            }}>
-              {TUTOR.tagline}
-            </p>
-
-            <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginBottom: 60 }}>
-              <button className="lf-hero-btn lf-hero-btn-primary" onClick={() => navigate("/login")}>
-                Начать обучение
-                <span style={{ fontSize: 16 }}>🌱</span>
-              </button>
-              <a href="#about" style={{ textDecoration: "none" }}>
-                <button className="lf-hero-btn lf-hero-btn-ghost">Узнать больше</button>
-              </a>
-            </div>
-
-            {/* Stats */}
-            <div className="lf-hero-stats" style={{ display: "flex", gap: 48 }}>
-              {TUTOR.stats.map((s, i) => (
-                <div key={i} style={{ animation: `lf-in 0.9s cubic-bezier(0.22,0.8,0.32,1) ${0.15 + i * 0.1}s both` }}>
-                  <div style={{
-                    fontFamily: "var(--f-serif)", fontSize: 38,
-                    fontWeight: 500, lineHeight: 1,
-                    color: "#fff",
-                    marginBottom: 6,
-                  }}>
-                    <CountUp value={s.value} suffix={s.suffix} />
-                  </div>
-                  <div style={{ fontSize: 13, color: "rgba(255,255,255,0.45)", letterSpacing: "0.03em" }}>
-                    {s.label}
-                  </div>
-                </div>
-              ))}
-            </div>
+        {/* Centered composition */}
+        <div className="lf-comp">
+          <div className="lf-comp-photo lf-comp-photo-1">
+            <img src="/tutor1.jpg" alt="" onError={e => { e.target.style.display = "none"; }} />
           </div>
 
-          {/* Right — Photo */}
-          <div className="lf-hero-photo" style={{
-            position: "relative",
-            animation: "lf-in 1.0s cubic-bezier(0.22,0.8,0.32,1) 0.2s both",
-          }}>
-            {/* Декоративное кольцо */}
-            <div style={{
-              position: "absolute", inset: -20,
-              borderRadius: 38,
-              border: "1px solid rgba(183,228,199,0.12)",
-              animation: "lf-glow 4s ease-in-out infinite",
-              pointerEvents: "none",
-            }} />
+          <div className="lf-comp-photo lf-comp-photo-2">
+            <img src="/tutor2.jpg" alt="" onError={e => { e.target.style.display = "none"; }} />
+          </div>
 
-            {/* Фото-карточка */}
-            <div style={{
-              width: "100%", maxWidth: 380, height: 460,
-              borderRadius: 28, overflow: "hidden",
-              background: "linear-gradient(160deg, #1b4332, #2d6a4f)",
-              border: "1px solid rgba(255,255,255,0.08)",
-              boxShadow: "0 32px 80px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.05)",
-              position: "relative",
-            }}>
-              {/* Паттерн за фото */}
-              <div style={{ position: "absolute", inset: 0, color: "#52b788", opacity: 0.07 }}>
-                <Fern size={320} style={{ position: "absolute", top: -40, right: -40 }} />
-              </div>
-
-              {TUTOR_PHOTO ? (
-                <img src={TUTOR_PHOTO} alt={TUTOR.name}
-                  style={{ width: "100%", height: "100%", objectFit: "cover", position: "relative" }} />
-              ) : (
-                <div style={{
-                  width: "100%", height: "100%",
-                  display: "flex", flexDirection: "column",
-                  alignItems: "center", justifyContent: "center",
-                  gap: 16, position: "relative",
-                }}>
-                  <div style={{
-                    width: 96, height: 96, borderRadius: "50%",
-                    background: "rgba(255,255,255,0.08)",
-                    border: "1.5px solid rgba(255,255,255,0.15)",
-                    display: "grid", placeItems: "center",
-                    color: "rgba(255,255,255,0.4)",
-                  }}>
-                    <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
-                      <circle cx="24" cy="18" r="10" stroke="currentColor" strokeWidth="1.5"/>
-                      <path d="M6 46 Q24 32, 42 46" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-                    </svg>
-                  </div>
-                  <div style={{ fontSize: 13, color: "rgba(255,255,255,0.3)", textAlign: "center", lineHeight: 1.5 }}>
-                    Здесь будет фото<br/>
-                    <span style={{ fontSize: 11, opacity: 0.6 }}>замените TUTOR_PHOTO</span>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Значок справа внизу */}
-            <div style={{
-              position: "absolute", bottom: -12, right: -20,
-              background: "linear-gradient(135deg, #2d6a4f, #52b788)",
-              borderRadius: 20, padding: "16px 22px",
-              boxShadow: "0 12px 40px rgba(45,106,79,0.5)",
-              border: "1px solid rgba(255,255,255,0.12)",
-              textAlign: "center",
-              animation: "lf-float 6s ease-in-out infinite 1s",
-            }}>
-              <div style={{ fontFamily: "var(--f-serif)", fontSize: 26, fontWeight: 500, color: "#fff", lineHeight: 1 }}>
-                {TUTOR.stats[1].value}+
-              </div>
-              <div style={{ fontSize: 10, color: "rgba(255,255,255,0.7)", marginTop: 3, letterSpacing: "0.06em" }}>
-                УЧЕНИКОВ
-              </div>
-            </div>
-
-            {/* Маленький значок слева сверху */}
-            <div style={{
-              position: "absolute", top: 24, left: -24,
-              background: "rgba(15,42,30,0.9)",
-              backdropFilter: "blur(12px)",
-              border: "1px solid rgba(183,228,199,0.2)",
-              borderRadius: 14, padding: "10px 14px",
-              display: "flex", alignItems: "center", gap: 8,
-              boxShadow: "0 8px 24px rgba(0,0,0,0.3)",
-              animation: "lf-float 7s ease-in-out infinite 2s",
-            }}>
-              <span style={{ fontSize: 16 }}>🎓</span>
-              <div>
-                <div style={{ fontSize: 11, fontWeight: 600, color: "#fff" }}>ТГУ</div>
-                <div style={{ fontSize: 10, color: "rgba(255,255,255,0.45)" }}>Зоология</div>
-              </div>
+          <div className="lf-comp-text">
+            <div style={{ fontSize: 18, marginBottom: 6, color: "#74c69d", opacity: 0.7 }}>✦</div>
+            <div className="lf-comp-sub">подготовка по</div>
+            <div className="lf-comp-title">БИОЛОГИИ</div>
+            <div style={{ display: "flex", justifyContent: "center", gap: 14, marginTop: 16, color: "#52b788" }}>
+              <span style={{ fontSize: 18, opacity: 0.55 }}>🌿</span>
+              <span style={{ fontSize: 16, color: "#74c69d", opacity: 0.65 }}>✦</span>
+              <span style={{ fontSize: 18, opacity: 0.55 }}>🌿</span>
             </div>
           </div>
         </div>
@@ -754,6 +694,111 @@ export function LandingPage() {
           <div style={{ fontSize: 11, color: "#b7e4c7", letterSpacing: "0.1em" }}>СКРОЛЛ</div>
           <div style={{ width: 1, height: 40, background: "linear-gradient(180deg, #74c69d, transparent)" }} />
         </div>
+      </section>
+
+      {/* ══ ТЕСТЫ + ЗАПИСЬ ════════════════════════════════════════════════════ */}
+      <section style={{
+        background: "linear-gradient(145deg, #0a1f14 0%, #0f2a1e 50%, #1b3d2a 100%)",
+        padding: "80px 48px 100px",
+        position: "relative", overflow: "hidden",
+      }}>
+        {/* Wavy lines top decoration */}
+        <div style={{ position: "absolute", top: 0, left: 0, right: 0, lineHeight: 0, pointerEvents: "none" }}>
+          <svg viewBox="0 0 1440 40" fill="none" style={{ display: "block", width: "100%" }}>
+            <path d="M0,20 C200,5 400,35 600,20 C800,5 1000,35 1200,20 C1320,10 1380,25 1440,20" stroke="#52b788" strokeWidth="1.5" opacity="0.25" fill="none"/>
+            <path d="M0,28 C200,13 400,43 600,28 C800,13 1000,43 1200,28 C1320,18 1380,33 1440,28" stroke="#52b788" strokeWidth="1" opacity="0.15" fill="none"/>
+          </svg>
+        </div>
+
+        <div className="lf-cta-grid">
+          {/* Left — ТЕСТЫ */}
+          <div style={{ textAlign: "center" }}>
+            <div style={{
+              fontSize: 13, color: "#74c69d", letterSpacing: "0.2em",
+              marginBottom: 16, opacity: 0.7,
+            }}>
+              ↓
+            </div>
+            <div style={{
+              fontFamily: "var(--f-serif)",
+              fontSize: "clamp(36px, 4vw, 58px)",
+              fontWeight: 600, letterSpacing: "-0.01em",
+              color: "#fff", marginBottom: 20, lineHeight: 1,
+            }}>
+              ТЕСТЫ
+            </div>
+            <p style={{
+              fontSize: 15, color: "rgba(255,255,255,0.5)",
+              lineHeight: 1.6, maxWidth: 260, margin: "0 auto 28px",
+            }}>
+              ОГЭ и ЕГЭ по биологии — проверь себя и отследи прогресс
+            </p>
+            <button
+              className="lf-hero-btn lf-hero-btn-ghost"
+              style={{ fontSize: 14, padding: "12px 28px" }}
+              onClick={() => navigate("/tasks")}
+            >
+              Открыть задания
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+          </div>
+
+          {/* Center — big photo */}
+          <div style={{
+            width: 320, flexShrink: 0,
+            borderRadius: 28, overflow: "hidden",
+            border: "1px solid rgba(255,255,255,0.1)",
+            boxShadow: "0 40px 100px rgba(0,0,0,0.6)",
+            background: "linear-gradient(160deg, #1b4332, #2d6a4f)",
+            aspectRatio: "3/4",
+          }}>
+            <img src="/hero-girl.jpg" alt=""
+              style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+              onError={e => { e.target.style.display = "none"; }}
+            />
+          </div>
+
+          {/* Right — ЗАПИСЬ */}
+          <div style={{ textAlign: "center" }}>
+            <div style={{
+              fontSize: 13, color: "#74c69d", letterSpacing: "0.2em",
+              marginBottom: 16, opacity: 0.7,
+            }}>
+              ↓
+            </div>
+            <div style={{
+              fontFamily: "var(--f-serif)",
+              fontSize: "clamp(28px, 3.5vw, 46px)",
+              fontWeight: 600, letterSpacing: "-0.01em",
+              color: "#fff", marginBottom: 20, lineHeight: 1.1,
+            }}>
+              ЗАПИСЬ<br/>НА КУРС
+            </div>
+            <p style={{
+              fontSize: 15, color: "rgba(255,255,255,0.5)",
+              lineHeight: 1.6, maxWidth: 260, margin: "0 auto 28px",
+            }}>
+              Индивидуальные занятия с репетитором — пиши в Telegram
+            </p>
+            <a href="https://t.me/vikotiks" target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none" }}>
+              <button className="lf-hero-btn lf-hero-btn-primary" style={{ fontSize: 14, padding: "12px 28px" }}>
+                Записаться
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                  <path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </button>
+            </a>
+          </div>
+        </div>
+
+        {/* Bottom line */}
+        <div style={{
+          position: "absolute", bottom: 0, left: "10%", right: "10%",
+          height: 1,
+          background: "linear-gradient(90deg, transparent, rgba(82,183,136,0.3), transparent)",
+        }} />
       </section>
 
       {/* Волна */}
