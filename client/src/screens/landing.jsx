@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import Lenis from "lenis";
 import { Leaf, Fern, Sprig, Cell, Helix } from "../botanical";
 
 // ─── Настройки — отредактируй под своё ─────────────────────────────────────
@@ -393,6 +394,10 @@ const STYLES = `
     .lf-header { padding: 0 20px !important; }
     .lf-nav { display: none !important; }
     .lf-hero-section { padding-left: 0 !important; }
+    .lf-stats-grid { grid-template-columns: 1fr !important; }
+  }
+  @media (max-width: 900px) and (min-width: 641px) {
+    .lf-stats-grid { grid-template-columns: repeat(3, 1fr) !important; }
   }
 `;
 
@@ -430,6 +435,66 @@ function useReveal() {
       .forEach(el => io.observe(el));
     return () => io.disconnect();
   });
+}
+
+// ─── Хук: плавный скролл (Lenis) ─────────────────────────────────────────────
+function useSmoothScroll() {
+  const lenisRef = useRef(null);
+  useEffect(() => {
+    const lenis = new Lenis({
+      duration: 1.15,
+      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      smoothWheel: true,
+      wheelMultiplier: 1,
+      touchMultiplier: 1.2,
+    });
+    lenisRef.current = lenis;
+
+    let rafId;
+    const raf = (time) => {
+      lenis.raf(time);
+      rafId = requestAnimationFrame(raf);
+    };
+    rafId = requestAnimationFrame(raf);
+
+    return () => {
+      cancelAnimationFrame(rafId);
+      lenis.destroy();
+      lenisRef.current = null;
+    };
+  }, []);
+  return lenisRef;
+}
+
+// ─── Хук: прогресс-бар + параллакс декораций ─────────────────────────────────
+function useScrollEffects(progressRef, parallaxRefs) {
+  useEffect(() => {
+    let ticking = false;
+    const update = () => {
+      const h = document.documentElement;
+      const scroll = window.scrollY || h.scrollTop;
+      const limit = h.scrollHeight - h.clientHeight;
+
+      if (progressRef.current && limit > 0) {
+        progressRef.current.style.transform = `scaleX(${scroll / limit})`;
+      }
+      parallaxRefs.current.forEach((el) => {
+        if (!el) return;
+        const speed = parseFloat(el.dataset.speed || "0.25");
+        el.style.transform = `translate3d(0, ${scroll * speed}px, 0)`;
+      });
+      ticking = false;
+    };
+    const onScroll = () => {
+      if (!ticking) {
+        requestAnimationFrame(update);
+        ticking = true;
+      }
+    };
+    update();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [progressRef, parallaxRefs]);
 }
 
 // ─── Компонент: анимированный счётчик ────────────────────────────────────────
@@ -513,6 +578,18 @@ function Lightbox({ src, onClose }) {
 export function LandingPage() {
   const navigate = useNavigate();
   useReveal();
+  const lenisRef = useSmoothScroll();
+  const progressRef = useRef(null);
+  const parallaxRefs = useRef([]);
+  const setParallax = (i) => (el) => { parallaxRefs.current[i] = el; };
+  useScrollEffects(progressRef, parallaxRefs);
+
+  const scrollToTarget = (target) => {
+    if (lenisRef.current) lenisRef.current.scrollTo(target, { duration: 1.2 });
+    else if (typeof target === "number") window.scrollTo({ top: target, behavior: "smooth" });
+    else document.querySelector(target)?.scrollIntoView({ behavior: "smooth" });
+  };
+
   const activeSection = useActiveSection(["about", "diplomas", "articles"]);
   const [lightbox, setLightbox] = useState(null);
   const [showContacts, setShowContacts] = useState(false);
@@ -527,6 +604,21 @@ export function LandingPage() {
     <div style={{ background: "var(--bg)", minHeight: "100vh", fontFamily: "var(--f-sans)", overflowX: "hidden" }}>
       <style>{STYLES}</style>
 
+      {/* ══ SCROLL PROGRESS BAR ═══════════════════════════════════════════════ */}
+      <div style={{
+        position: "fixed", top: 0, left: 0, right: 0,
+        height: 3, zIndex: 300, pointerEvents: "none",
+        background: "rgba(255,255,255,0.04)",
+      }}>
+        <div ref={progressRef} style={{
+          height: "100%", width: "100%",
+          background: "linear-gradient(90deg, #52b788 0%, #74c69d 50%, #b7e4c7 100%)",
+          transform: "scaleX(0)", transformOrigin: "0 50%",
+          boxShadow: "0 0 12px rgba(116,198,157,0.55)",
+          willChange: "transform",
+        }} />
+      </div>
+
       {/* ══ HEADER ════════════════════════════════════════════════════════════ */}
       <header className="lf-header" style={{
         position: "fixed", top: 0, left: 0, right: 0, zIndex: 200,
@@ -536,7 +628,7 @@ export function LandingPage() {
         padding: "0 48px", height: 64,
         display: "flex", alignItems: "center", justifyContent: "space-between",
       }}>
-        <a href="#" onClick={e => { e.preventDefault(); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+        <a href="#" onClick={e => { e.preventDefault(); scrollToTarget(0); }}
           style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
           <img src="/tutor2.jpg" alt="Vikokon" style={{
             width: 40, height: 40, borderRadius: 10,
@@ -552,7 +644,9 @@ export function LandingPage() {
 
         <nav className="lf-nav" style={{ display: "flex", alignItems: "center", gap: 36 }}>
           {[["Об авторе","about"],["Образование","diplomas"],["Конференции","articles"]].map(([l,id]) => (
-            <a key={id} href={`#${id}`} className={`lf-nav-link${activeSection === id ? " lf-nav-active" : ""}`}>{l}</a>
+            <a key={id} href={`#${id}`}
+              onClick={e => { e.preventDefault(); scrollToTarget(`#${id}`); }}
+              className={`lf-nav-link${activeSection === id ? " lf-nav-active" : ""}`}>{l}</a>
           ))}
         </nav>
 
@@ -650,18 +744,26 @@ export function LandingPage() {
         display: "flex", alignItems: "center", justifyContent: "center",
         paddingTop: 64,
       }}>
-        {/* Floating botanical decorations */}
-        <div style={{ position: "absolute", top: "8%", right: "6%", color: "#52b788", opacity: 0.12, animation: "lf-float 8s ease-in-out infinite", pointerEvents: "none" }}>
-          <Fern size={340} />
+        {/* Floating botanical decorations (parallax-wrapped) */}
+        <div ref={setParallax(0)} data-speed="0.35" style={{ position: "absolute", top: "8%", right: "6%", pointerEvents: "none", willChange: "transform" }}>
+          <div style={{ color: "#52b788", opacity: 0.12, animation: "lf-float 8s ease-in-out infinite" }}>
+            <Fern size={340} />
+          </div>
         </div>
-        <div style={{ position: "absolute", bottom: "5%", left: "2%", color: "#52b788", opacity: 0.08, animation: "lf-float2 10s ease-in-out infinite 2s", pointerEvents: "none" }}>
-          <Fern size={240} />
+        <div ref={setParallax(1)} data-speed="0.2" style={{ position: "absolute", bottom: "5%", left: "2%", pointerEvents: "none", willChange: "transform" }}>
+          <div style={{ color: "#52b788", opacity: 0.08, animation: "lf-float2 10s ease-in-out infinite 2s" }}>
+            <Fern size={240} />
+          </div>
         </div>
-        <div style={{ position: "absolute", top: "20%", left: "5%", color: "#74c69d", opacity: 0.07, animation: "lf-drift 14s ease-in-out infinite", pointerEvents: "none" }}>
-          <Sprig size={160} />
+        <div ref={setParallax(2)} data-speed="0.5" style={{ position: "absolute", top: "20%", left: "5%", pointerEvents: "none", willChange: "transform" }}>
+          <div style={{ color: "#74c69d", opacity: 0.07, animation: "lf-drift 14s ease-in-out infinite" }}>
+            <Sprig size={160} />
+          </div>
         </div>
-        <div style={{ position: "absolute", bottom: "20%", right: "4%", color: "#52b788", opacity: 0.08, animation: "lf-pulse 7s ease-in-out infinite 1s", pointerEvents: "none" }}>
-          <Cell size={180} />
+        <div ref={setParallax(3)} data-speed="0.15" style={{ position: "absolute", bottom: "20%", right: "4%", pointerEvents: "none", willChange: "transform" }}>
+          <div style={{ color: "#52b788", opacity: 0.08, animation: "lf-pulse 7s ease-in-out infinite 1s" }}>
+            <Cell size={180} />
+          </div>
         </div>
 
         {/* Centered composition */}
@@ -699,39 +801,103 @@ export function LandingPage() {
 
       <WaveDivider fill="var(--bg)" fromColor="#0f2a1e" />
 
-      {/* ══ ТЕСТЫ + ЗАПИСЬ ════════════════════════════════════════════════════ */}
-      <section style={{
-        padding: "80px 48px 100px",
-      }}>
+      {/* ══ СТАТИСТИКА ════════════════════════════════════════════════════════ */}
+      <section style={{ padding: "64px 48px 24px" }}>
+        <div style={{
+          maxWidth: 1100, margin: "0 auto",
+          display: "grid",
+          gridTemplateColumns: `repeat(${TUTOR.stats.length}, 1fr)`,
+          gap: 20,
+        }} className="lf-stats-grid">
+          {TUTOR.stats.map((s, i) => (
+            <div
+              key={i}
+              className="lf-stat-card lf-reveal"
+              style={{
+                background: "var(--surface)",
+                border: "1.5px solid var(--border-soft)",
+                borderRadius: 24,
+                padding: "32px 28px",
+                textAlign: "center",
+                boxShadow: "0 8px 32px rgba(26,52,36,0.06)",
+                transitionDelay: `${i * 0.1}s`,
+              }}
+            >
+              <div style={{
+                fontFamily: "var(--f-serif)",
+                fontSize: "clamp(44px, 5vw, 64px)",
+                fontWeight: 600,
+                lineHeight: 1,
+                letterSpacing: "-0.02em",
+                color: "transparent",
+                backgroundImage: "linear-gradient(135deg, var(--green-700) 0%, var(--green-800) 100%)",
+                WebkitBackgroundClip: "text",
+                backgroundClip: "text",
+                marginBottom: 10,
+              }}>
+                <CountUp value={s.value} suffix={s.suffix} />
+              </div>
+              <div style={{
+                fontSize: 13, fontWeight: 600,
+                letterSpacing: "0.05em", textTransform: "uppercase",
+                color: "var(--text-muted)",
+              }}>
+                {s.label}
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
 
+      {/* ══ ТЕСТЫ + ЗАПИСЬ ════════════════════════════════════════════════════ */}
+      <section style={{ padding: "80px 48px 100px" }}>
         <div style={{
           display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          gap: 40,
-          alignItems: "center",
-          maxWidth: 800,
+          gridTemplateColumns: "1fr auto 1fr",
+          gap: 0,
+          alignItems: "stretch",
+          maxWidth: 900,
           margin: "0 auto",
-          position: "relative",
         }}>
+
           {/* Left — ТЕСТЫ */}
-          <div style={{ textAlign: "center" }}>
+          <div className="lf-card-hover" style={{
+            textAlign: "center",
+            background: "var(--green-50)",
+            border: "1.5px solid var(--green-200)",
+            borderRadius: 28,
+            padding: "48px 40px 44px",
+            boxShadow: "0 8px 32px rgba(45,106,79,0.08), 0 2px 8px rgba(45,106,79,0.04)",
+            display: "flex", flexDirection: "column", alignItems: "center",
+          }}>
+            <div style={{
+              width: 64, height: 64, borderRadius: 20,
+              background: "var(--green-800)",
+              display: "grid", placeItems: "center",
+              marginBottom: 24,
+              boxShadow: "0 6px 20px rgba(45,106,79,0.3)",
+            }}>
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
+              </svg>
+            </div>
             <div style={{
               fontFamily: "var(--f-serif)",
-              fontSize: "clamp(36px, 4vw, 58px)",
+              fontSize: "clamp(32px, 3.5vw, 52px)",
               fontWeight: 600, letterSpacing: "-0.01em",
-              color: "var(--text)", marginBottom: 20, lineHeight: 1,
+              color: "var(--text)", marginBottom: 16, lineHeight: 1,
             }}>
               ТЕСТЫ
             </div>
             <p style={{
               fontSize: 15, color: "var(--text-soft)",
-              lineHeight: 1.6, maxWidth: 260, margin: "0 auto 28px",
+              lineHeight: 1.65, maxWidth: 240, margin: "0 auto 32px",
             }}>
-              ОГЭ и ЕГЭ по биологии — проверь себя и отследи прогресс
+              ОГЭ, ЕГЭ и ВПР по биологии — проверь себя и отследи прогресс
             </p>
             <button
               className="lf-hero-btn"
-              style={{ fontSize: 14, padding: "12px 28px", background: "var(--green-800)", color: "#fff" }}
+              style={{ fontSize: 14, padding: "13px 30px", background: "var(--green-800)", color: "#fff", marginTop: "auto" }}
               onClick={() => navigate("/tasks")}
             >
               Открыть задания
@@ -741,24 +907,55 @@ export function LandingPage() {
             </button>
           </div>
 
+          {/* Center — divider with leaf */}
+          <div style={{
+            display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+            padding: "0 32px", gap: 10,
+          }}>
+            <div style={{ width: 1, flex: 1, background: "linear-gradient(180deg, transparent, var(--green-300))" }} />
+            <div style={{ color: "var(--green-600)", opacity: 0.7 }}>
+              <Leaf size={32} stroke={1} />
+            </div>
+            <div style={{ width: 1, flex: 1, background: "linear-gradient(180deg, var(--green-300), transparent)" }} />
+          </div>
+
           {/* Right — ЗАПИСЬ */}
-          <div style={{ textAlign: "center" }}>
+          <div className="lf-card-hover" style={{
+            textAlign: "center",
+            background: "var(--green-50)",
+            border: "1.5px solid var(--green-200)",
+            borderRadius: 28,
+            padding: "48px 40px 44px",
+            boxShadow: "0 8px 32px rgba(45,106,79,0.08), 0 2px 8px rgba(45,106,79,0.04)",
+            display: "flex", flexDirection: "column", alignItems: "center",
+          }}>
+            <div style={{
+              width: 64, height: 64, borderRadius: 20,
+              background: "var(--green-800)",
+              display: "grid", placeItems: "center",
+              marginBottom: 24,
+              boxShadow: "0 6px 20px rgba(45,106,79,0.3)",
+            }}>
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+              </svg>
+            </div>
             <div style={{
               fontFamily: "var(--f-serif)",
-              fontSize: "clamp(28px, 3.5vw, 46px)",
+              fontSize: "clamp(26px, 3vw, 44px)",
               fontWeight: 600, letterSpacing: "-0.01em",
-              color: "var(--text)", marginBottom: 20, lineHeight: 1.1,
+              color: "var(--text)", marginBottom: 16, lineHeight: 1.1,
             }}>
               ЗАПИСЬ<br/>НА КУРС
             </div>
             <p style={{
               fontSize: 15, color: "var(--text-soft)",
-              lineHeight: 1.6, maxWidth: 260, margin: "0 auto 28px",
+              lineHeight: 1.65, maxWidth: 240, margin: "0 auto 32px",
             }}>
               Индивидуальные занятия с репетитором — пиши в Telegram
             </p>
-            <a href="https://t.me/vikotiks" target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none" }}>
-              <button className="lf-hero-btn lf-hero-btn-primary" style={{ fontSize: 14, padding: "12px 28px" }}>
+            <a href="https://t.me/vikotiks" target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none", marginTop: "auto" }}>
+              <button className="lf-hero-btn lf-hero-btn-primary" style={{ fontSize: 14, padding: "13px 30px" }}>
                 Записаться
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                   <path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
@@ -766,6 +963,7 @@ export function LandingPage() {
               </button>
             </a>
           </div>
+
         </div>
       </section>
 

@@ -25,7 +25,9 @@
       "Bash(node -e \"const db = require\\('./server/db'\\); const {all} = db; console.log\\(Object.keys\\(all\\('SELECT * FROM tests LIMIT 1'\\)[0] || {}\\).join\\(', '\\)\\)\")",
       "Bash(node -e \"const {all} = require\\('./server/db'\\); console.log\\(Object.keys\\(all\\('SELECT * FROM tests LIMIT 1'\\)[0]||{}\\).join\\(', '\\)\\)\")",
       "Bash(node -e \"const {all}=require\\('./server/db'\\); const t=all\\('SELECT id, title, is_active, is_draft FROM tests'\\); console.log\\(JSON.stringify\\(t, null, 2\\)\\)\")",
-      "Bash(node -e \"const {all}=require\\('./server/db'\\); console.log\\('Tests:', all\\('SELECT id,title,is_active,is_draft FROM tests'\\).length\\); console.log\\('CardSets:', all\\('SELECT id,title,is_active FROM flashcard_sets'\\).map\\(s=>s.title+' active='+s.is_active\\)\\)\")"
+      "Bash(node -e \"const {all}=require\\('./server/db'\\); console.log\\('Tests:', all\\('SELECT id,title,is_active,is_draft FROM tests'\\).length\\); console.log\\('CardSets:', all\\('SELECT id,title,is_active FROM flashcard_sets'\\).map\\(s=>s.title+' active='+s.is_active\\)\\)\")",
+      "Bash(cp -r /tmp/skills-temp/skills/frontend-design ~/.claude/skills/)",
+      "Read(//c/Users/user/.claude/skills/**)"
     ]
   }
 }
