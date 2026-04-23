@@ -463,10 +463,11 @@ function CountUp({ value, suffix = "" }) {
 // ─── Волновой разделитель ─────────────────────────────────────────────────────
 function WaveDivider({ fill = "var(--bg)", fromColor = "#0f2a1e" }) {
   return (
-    <div style={{ background: fromColor, lineHeight: 0 }}>
-      <svg viewBox="0 0 1440 72" fill="none" xmlns="http://www.w3.org/2000/svg"
+    <div style={{ lineHeight: 0, fontSize: 0, position: "relative", zIndex: 1, marginBottom: -3 }}>
+      <svg viewBox="0 0 1440 74" fill="none" xmlns="http://www.w3.org/2000/svg"
         style={{ display: "block", width: "100%" }}>
-        <path d="M0,40 C240,80 480,0 720,40 C960,80 1200,10 1440,40 L1440,72 L0,72 Z"
+        <rect width="1440" height="74" fill={fromColor} />
+        <path d="M0,40 C240,80 480,0 720,40 C960,80 1200,10 1440,40 L1440,74 L0,74 Z"
           fill={fill}/>
       </svg>
     </div>
@@ -696,46 +697,41 @@ export function LandingPage() {
         </div>
       </section>
 
+      <WaveDivider fill="var(--bg)" fromColor="#0f2a1e" />
+
       {/* ══ ТЕСТЫ + ЗАПИСЬ ════════════════════════════════════════════════════ */}
       <section style={{
-        background: "linear-gradient(145deg, #0a1f14 0%, #0f2a1e 50%, #1b3d2a 100%)",
         padding: "80px 48px 100px",
-        position: "relative", overflow: "hidden",
       }}>
-        {/* Wavy lines top decoration */}
-        <div style={{ position: "absolute", top: 0, left: 0, right: 0, lineHeight: 0, pointerEvents: "none" }}>
-          <svg viewBox="0 0 1440 40" fill="none" style={{ display: "block", width: "100%" }}>
-            <path d="M0,20 C200,5 400,35 600,20 C800,5 1000,35 1200,20 C1320,10 1380,25 1440,20" stroke="#52b788" strokeWidth="1.5" opacity="0.25" fill="none"/>
-            <path d="M0,28 C200,13 400,43 600,28 C800,13 1000,43 1200,28 C1320,18 1380,33 1440,28" stroke="#52b788" strokeWidth="1" opacity="0.15" fill="none"/>
-          </svg>
-        </div>
 
-        <div className="lf-cta-grid">
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          gap: 40,
+          alignItems: "center",
+          maxWidth: 800,
+          margin: "0 auto",
+          position: "relative",
+        }}>
           {/* Left — ТЕСТЫ */}
           <div style={{ textAlign: "center" }}>
-            <div style={{
-              fontSize: 13, color: "#74c69d", letterSpacing: "0.2em",
-              marginBottom: 16, opacity: 0.7,
-            }}>
-              ↓
-            </div>
             <div style={{
               fontFamily: "var(--f-serif)",
               fontSize: "clamp(36px, 4vw, 58px)",
               fontWeight: 600, letterSpacing: "-0.01em",
-              color: "#fff", marginBottom: 20, lineHeight: 1,
+              color: "var(--text)", marginBottom: 20, lineHeight: 1,
             }}>
               ТЕСТЫ
             </div>
             <p style={{
-              fontSize: 15, color: "rgba(255,255,255,0.5)",
+              fontSize: 15, color: "var(--text-soft)",
               lineHeight: 1.6, maxWidth: 260, margin: "0 auto 28px",
             }}>
               ОГЭ и ЕГЭ по биологии — проверь себя и отследи прогресс
             </p>
             <button
-              className="lf-hero-btn lf-hero-btn-ghost"
-              style={{ fontSize: 14, padding: "12px 28px" }}
+              className="lf-hero-btn"
+              style={{ fontSize: 14, padding: "12px 28px", background: "var(--green-800)", color: "#fff" }}
               onClick={() => navigate("/tasks")}
             >
               Открыть задания
@@ -745,39 +741,18 @@ export function LandingPage() {
             </button>
           </div>
 
-          {/* Center — big photo */}
-          <div style={{
-            width: 320, flexShrink: 0,
-            borderRadius: 28, overflow: "hidden",
-            border: "1px solid rgba(255,255,255,0.1)",
-            boxShadow: "0 40px 100px rgba(0,0,0,0.6)",
-            background: "linear-gradient(160deg, #1b4332, #2d6a4f)",
-            aspectRatio: "3/4",
-          }}>
-            <img src="/hero-girl.jpg" alt=""
-              style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-              onError={e => { e.target.style.display = "none"; }}
-            />
-          </div>
-
           {/* Right — ЗАПИСЬ */}
           <div style={{ textAlign: "center" }}>
-            <div style={{
-              fontSize: 13, color: "#74c69d", letterSpacing: "0.2em",
-              marginBottom: 16, opacity: 0.7,
-            }}>
-              ↓
-            </div>
             <div style={{
               fontFamily: "var(--f-serif)",
               fontSize: "clamp(28px, 3.5vw, 46px)",
               fontWeight: 600, letterSpacing: "-0.01em",
-              color: "#fff", marginBottom: 20, lineHeight: 1.1,
+              color: "var(--text)", marginBottom: 20, lineHeight: 1.1,
             }}>
               ЗАПИСЬ<br/>НА КУРС
             </div>
             <p style={{
-              fontSize: 15, color: "rgba(255,255,255,0.5)",
+              fontSize: 15, color: "var(--text-soft)",
               lineHeight: 1.6, maxWidth: 260, margin: "0 auto 28px",
             }}>
               Индивидуальные занятия с репетитором — пиши в Telegram
@@ -792,17 +767,7 @@ export function LandingPage() {
             </a>
           </div>
         </div>
-
-        {/* Bottom line */}
-        <div style={{
-          position: "absolute", bottom: 0, left: "10%", right: "10%",
-          height: 1,
-          background: "linear-gradient(90deg, transparent, rgba(82,183,136,0.3), transparent)",
-        }} />
       </section>
-
-      {/* Волна */}
-      <WaveDivider fill="var(--bg)" fromColor="#0f2a1e" />
 
       {/* ══ О РЕПЕТИТОРЕ ══════════════════════════════════════════════════════ */}
       <section id="about" className="lf-section-pad" style={{ padding: "80px 48px 96px" }}>
