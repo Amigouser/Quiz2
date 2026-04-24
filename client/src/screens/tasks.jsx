@@ -13,6 +13,26 @@ const TOPIC_ICONS = {
   "Биология": "🌱", "Анатомия": "🫀", "Экология": "🌍",
 };
 
+// Встроенные категории, разделы, части (должны совпадать со списками в admin.jsx)
+const CATEGORY_OPTIONS = ["9 класс", "10 класс", "11 класс", "ОГЭ", "ЕГЭ", "ВПР"];
+const PART_OPTIONS = ["Часть 1", "Часть 2"];
+const SECTION_OPTIONS = [
+  "Биология как наука. Методы. Уровни организации",
+  "Строение клетки",
+  "Биохимия клетки",
+  "Метаболизм клетки",
+  "Клеточный цикл",
+  "Размножение и развитие",
+  "Прокариоты и вирусы",
+  "Грибы и лишайники",
+  "Растения",
+  "Животные",
+  "Человек",
+  "Эволюция",
+  "Экология",
+  "Генетика",
+];
+
 function getDone() {
   return {
     tests: Number(localStorage.getItem("g_tests") || 0),
@@ -411,9 +431,22 @@ export default function TasksPage() {
     });
   }, []);
 
-  const uniqueSections = [...new Set([...tests.map(t => t.section), ...cardSets.map(c => c.section)].filter(Boolean))].sort();
+  const dataSections = [...new Set([...tests.map(t => t.section), ...cardSets.map(c => c.section)].filter(Boolean))];
+  const uniqueSections = [
+    ...SECTION_OPTIONS,
+    ...dataSections.filter(s => !SECTION_OPTIONS.includes(s)).sort(),
+  ];
+  const dataCategories = [...new Set([...tests.map(t => t.category), ...cardSets.map(c => c.category)].filter(Boolean))];
+  const uniqueCategories = [
+    ...CATEGORY_OPTIONS,
+    ...dataCategories.filter(c => !CATEGORY_OPTIONS.includes(c)).sort(),
+  ];
   const uniqueTopics  = [...new Set([...tests.map(t => t.topic),   ...cardSets.map(c => c.topic)].filter(Boolean))].sort();
-  const uniqueParts   = [...new Set([...tests.map(t => t.part),    ...cardSets.map(c => c.part)].filter(Boolean))];
+  const dataParts = [...new Set([...tests.map(t => t.part), ...cardSets.map(c => c.part)].filter(Boolean))];
+  const uniqueParts = [
+    ...PART_OPTIONS,
+    ...dataParts.filter(p => !PART_OPTIONS.includes(p)).sort(),
+  ];
   const uniqueLines   = [...new Set([...tests.map(t => t.line),    ...cardSets.map(c => c.line)].filter(Boolean))].sort((a, b) => +a - +b);
   const uniqueSources = [...new Set([...tests.map(t => t.source),  ...cardSets.map(c => c.source)].filter(Boolean))].sort();
   const hasFilters = catFilter || sectionFilter || topicFilter || partFilter || lineFilter || sourceFilter || search;
@@ -524,16 +557,12 @@ export default function TasksPage() {
 
         {/* Фильтры */}
         <div style={{ marginBottom: 36, display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center" }}>
-          <FilterSelect label="Категория" value={catFilter} onChange={setCatFilter} options={["ОГЭ", "ЕГЭ"]} />
-          {uniqueSections.length > 0 && (
-            <FilterSelect label="Раздел" value={sectionFilter} onChange={setSectionFilter} options={uniqueSections} />
-          )}
+          <FilterSelect label="Категория" value={catFilter} onChange={setCatFilter} options={uniqueCategories} />
+          <FilterSelect label="Раздел" value={sectionFilter} onChange={setSectionFilter} options={uniqueSections} />
           {uniqueTopics.length > 0 && (
             <FilterSelect label="Тема" value={topicFilter} onChange={setTopicFilter} options={uniqueTopics} />
           )}
-          {uniqueParts.length > 0 && (
-            <FilterSelect label="Часть" value={partFilter} onChange={setPartFilter} options={uniqueParts} />
-          )}
+          <FilterSelect label="Часть" value={partFilter} onChange={setPartFilter} options={uniqueParts} />
           {uniqueLines.length > 0 && (
             <FilterSelect label="Линия" value={lineFilter} onChange={setLineFilter} options={uniqueLines} />
           )}

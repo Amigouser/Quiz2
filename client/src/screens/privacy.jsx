@@ -242,32 +242,28 @@ export default function PrivacyPage() {
 
           <h1 style={{
             fontFamily: "var(--f-serif)",
-            fontSize: "clamp(30px, 4vw, 46px)",
-            fontWeight: 500, lineHeight: 1.1,
-            letterSpacing: "-0.02em",
-            marginBottom: 14,
+            fontSize: "clamp(32px, 4.4vw, 52px)",
+            fontWeight: 500, lineHeight: 1.08,
+            letterSpacing: "-0.025em",
+            marginBottom: 20,
+            color: "#f5fbf7",
           }}>
-            Политика в отношении<br/>
+            <span style={{ color: "#f5fbf7" }}>Политика в отношении</span><br/>
             <em style={{
               color: "transparent",
-              backgroundImage: "linear-gradient(135deg, #74c69d, #b7e4c7)",
+              backgroundImage: "linear-gradient(135deg, #b7e4c7 0%, #74c69d 55%, #95d5b2 100%)",
               WebkitBackgroundClip: "text", backgroundClip: "text",
+              fontStyle: "italic",
             }}>
               обработки персональных данных
             </em>
           </h1>
 
           <div style={{
-            fontSize: 14, color: "rgba(255,255,255,0.65)",
-            display: "flex", flexWrap: "wrap", gap: "6px 18px",
+            fontSize: 14, color: "rgba(255,255,255,0.55)",
+            fontWeight: 500,
           }}>
-            <span>Оператор: {OPERATOR}</span>
-            <span>·</span>
-            <span>{DOMAIN}</span>
-            <span>·</span>
-            <a href={`mailto:${EMAIL}`} style={{ color: "#b7e4c7", textDecoration: "none" }}>
-              {EMAIL}
-            </a>
+            Действует с 24.04.2026
           </div>
         </div>
       </header>

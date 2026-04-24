@@ -1935,17 +1935,16 @@ export function LandingPage() {
             >
               Политика конфиденциальности
             </a>
-            <button
-              type="button"
-              onClick={() => setLegalModal("cookies")}
+            <a
+              href="/cookie/"
+              onClick={(e) => { e.preventDefault(); navigate("/cookie"); }}
               style={{
-                background: "none", border: "none", padding: 0, cursor: "pointer",
                 fontSize: 12, color: "var(--text-soft)", textDecoration: "underline",
-                textUnderlineOffset: 3, fontFamily: "inherit",
+                textUnderlineOffset: 3,
               }}
             >
               Политика использования cookies
-            </button>
+            </a>
           </div>
         </div>
       </footer>

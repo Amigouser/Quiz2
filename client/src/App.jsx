@@ -9,6 +9,7 @@ import { AdminPanel } from "./screens/admin";
 import FlashcardsRoute from "./screens/flashcards";
 import TasksPage from "./screens/tasks";
 import PrivacyPage from "./screens/privacy";
+import CookiePage from "./screens/cookie";
 
 const AuthCtx = createContext(null);
 export const useAuth = () => useContext(AuthCtx);
@@ -203,6 +204,8 @@ export default function App() {
           <Route path="/" element={<LandingPage />} />
           <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="/privacy/" element={<PrivacyPage />} />
+          <Route path="/cookie" element={<CookiePage />} />
+          <Route path="/cookie/" element={<CookiePage />} />
           <Route path="/tasks" element={<TasksPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/dashboard" element={<RequireAuth><DashboardPage /></RequireAuth>} />

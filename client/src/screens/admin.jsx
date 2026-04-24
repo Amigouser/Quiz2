@@ -3,6 +3,81 @@ import { useNavigate } from "react-router-dom";
 import { Leaf } from "../botanical";
 import API from "../api";
 
+// Встроенные разделы биологии (используются в формах тестов и карточек)
+const BIO_SECTIONS = [
+  "Биология как наука. Методы. Уровни организации",
+  "Строение клетки",
+  "Биохимия клетки",
+  "Метаболизм клетки",
+  "Клеточный цикл",
+  "Размножение и развитие",
+  "Прокариоты и вирусы",
+  "Грибы и лишайники",
+  "Растения",
+  "Животные",
+  "Человек",
+  "Эволюция",
+  "Экология",
+  "Генетика",
+];
+
+const SectionSelect = ({ value, onChange }) => (
+  <select
+    className="input"
+    value={value || ""}
+    onChange={e => onChange(e.target.value)}
+    style={{ cursor: "pointer" }}
+  >
+    <option value="">— выбери раздел —</option>
+    {BIO_SECTIONS.map(s => <option key={s} value={s}>{s}</option>)}
+  </select>
+);
+
+// Категории для тестов и наборов карточек
+const CATEGORIES = [
+  ["", "Без категории"],
+  ["9 класс", "9 класс"],
+  ["10 класс", "10 класс"],
+  ["11 класс", "11 класс"],
+  ["ОГЭ", "ОГЭ"],
+  ["ЕГЭ", "ЕГЭ"],
+  ["ВПР", "ВПР"],
+];
+
+const CategoryPicker = ({ value, onChange }) => (
+  <div style={{ display: "flex", gap: 8, marginTop: 6, flexWrap: "wrap" }}>
+    {CATEGORIES.map(([val, lbl]) => (
+      <button
+        key={val}
+        type="button"
+        onClick={() => onChange(val)}
+        className={value === val ? "btn btn-primary btn-sm" : "btn btn-ghost btn-sm"}
+      >
+        {lbl}
+      </button>
+    ))}
+  </div>
+);
+
+// Часть экзамена — только для ОГЭ и ЕГЭ
+const PART_OPTIONS = ["Часть 1", "Часть 2"];
+const isExamCategory = (cat) => cat === "ОГЭ" || cat === "ЕГЭ";
+
+const PartSelect = ({ value, onChange, category }) => {
+  if (!isExamCategory(category)) return null;
+  return (
+    <select
+      className="input"
+      value={value || ""}
+      onChange={e => onChange(e.target.value)}
+      style={{ cursor: "pointer" }}
+    >
+      <option value="">— выбери часть —</option>
+      {PART_OPTIONS.map(p => <option key={p} value={p}>{p}</option>)}
+    </select>
+  );
+};
+
 const AdminSidebar = ({ active, onTab }) => {
   const navigate = useNavigate();
   const items = [
@@ -401,7 +476,7 @@ const AdminCreateTest = ({ onCreated, autoImport = false }) => {
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
             <div className="field">
               <label>Раздел</label>
-              <input className="input" value={section} onChange={e => setSection(e.target.value)} placeholder="Напр.: Молекулярная биология" />
+              <SectionSelect value={section} onChange={setSection} />
             </div>
             <div className="field">
               <label>Тема</label>
@@ -415,20 +490,19 @@ const AdminCreateTest = ({ onCreated, autoImport = false }) => {
           </div>
           <div className="field" style={{ marginTop: 16 }}>
             <label>Категория</label>
-            <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
-              {[["", "Без категории"], ["ОГЭ", "ОГЭ"], ["ЕГЭ", "ЕГЭ"]].map(([val, lbl]) => (
-                <button key={val} type="button" onClick={() => setCategory(val)}
-                  className={category === val ? "btn btn-primary btn-sm" : "btn btn-ghost btn-sm"}>
-                  {lbl}
-                </button>
-              ))}
-            </div>
+            <CategoryPicker value={category} onChange={(val) => { setCategory(val); if (!isExamCategory(val)) setPart(""); }} />
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginTop: 16 }}>
-            <div className="field">
-              <label>Часть</label>
-              <input className="input" value={part} onChange={e => setPart(e.target.value)} placeholder="Напр.: Часть 1" />
-            </div>
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: isExamCategory(category) ? "1fr 1fr 1fr" : "1fr 1fr",
+            gap: 12, marginTop: 16,
+          }}>
+            {isExamCategory(category) && (
+              <div className="field">
+                <label>Часть</label>
+                <PartSelect value={part} onChange={setPart} category={category} />
+              </div>
+            )}
             <div className="field">
               <label>Линия</label>
               <input className="input" value={line} onChange={e => setLine(e.target.value)} placeholder="Напр.: 5" />
@@ -650,7 +724,7 @@ const AdminEditTest = ({ testId, onSaved }) => {
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
             <div className="field">
               <label>Раздел</label>
-              <input className="input" value={section} onChange={e => setSection(e.target.value)} placeholder="Напр.: Молекулярная биология" />
+              <SectionSelect value={section} onChange={setSection} />
             </div>
             <div className="field">
               <label>Тема</label>
@@ -664,20 +738,19 @@ const AdminEditTest = ({ testId, onSaved }) => {
           </div>
           <div className="field" style={{ marginTop: 16 }}>
             <label>Категория</label>
-            <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
-              {[["", "Без категории"], ["ОГЭ", "ОГЭ"], ["ЕГЭ", "ЕГЭ"]].map(([val, lbl]) => (
-                <button key={val} type="button" onClick={() => setCategory(val)}
-                  className={category === val ? "btn btn-primary btn-sm" : "btn btn-ghost btn-sm"}>
-                  {lbl}
-                </button>
-              ))}
-            </div>
+            <CategoryPicker value={category} onChange={(val) => { setCategory(val); if (!isExamCategory(val)) setPart(""); }} />
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginTop: 16 }}>
-            <div className="field">
-              <label>Часть</label>
-              <input className="input" value={part} onChange={e => setPart(e.target.value)} placeholder="Напр.: Часть 1" />
-            </div>
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: isExamCategory(category) ? "1fr 1fr 1fr" : "1fr 1fr",
+            gap: 12, marginTop: 16,
+          }}>
+            {isExamCategory(category) && (
+              <div className="field">
+                <label>Часть</label>
+                <PartSelect value={part} onChange={setPart} category={category} />
+              </div>
+            )}
             <div className="field">
               <label>Линия</label>
               <input className="input" value={line} onChange={e => setLine(e.target.value)} placeholder="Напр.: 5" />
@@ -1337,7 +1410,7 @@ const AdminEditCardSet = ({ editId, onSaved, autoImport = false }) => {
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
             <div className="field">
               <label>Раздел</label>
-              <input className="input" value={section} onChange={e => setSection(e.target.value)} placeholder="Напр.: Молекулярная биология" />
+              <SectionSelect value={section} onChange={setSection} />
             </div>
             <div className="field">
               <label>Тема</label>
@@ -1351,20 +1424,19 @@ const AdminEditCardSet = ({ editId, onSaved, autoImport = false }) => {
           </div>
           <div className="field" style={{ marginTop: 16 }}>
             <label>Категория</label>
-            <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
-              {[["", "Без категории"], ["ОГЭ", "ОГЭ"], ["ЕГЭ", "ЕГЭ"]].map(([val, lbl]) => (
-                <button key={val} type="button" onClick={() => setCategory(val)}
-                  className={category === val ? "btn btn-primary btn-sm" : "btn btn-ghost btn-sm"}>
-                  {lbl}
-                </button>
-              ))}
-            </div>
+            <CategoryPicker value={category} onChange={(val) => { setCategory(val); if (!isExamCategory(val)) setPart(""); }} />
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginTop: 16 }}>
-            <div className="field">
-              <label>Часть</label>
-              <input className="input" value={part} onChange={e => setPart(e.target.value)} placeholder="Напр.: Часть 1" />
-            </div>
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: isExamCategory(category) ? "1fr 1fr 1fr" : "1fr 1fr",
+            gap: 12, marginTop: 16,
+          }}>
+            {isExamCategory(category) && (
+              <div className="field">
+                <label>Часть</label>
+                <PartSelect value={part} onChange={setPart} category={category} />
+              </div>
+            )}
             <div className="field">
               <label>Линия</label>
               <input className="input" value={line} onChange={e => setLine(e.target.value)} placeholder="Напр.: 5" />
