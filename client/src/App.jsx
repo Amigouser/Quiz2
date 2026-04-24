@@ -8,6 +8,7 @@ import { QuizClassic, QuizResults } from "./screens/quiz";
 import { AdminPanel } from "./screens/admin";
 import FlashcardsRoute from "./screens/flashcards";
 import TasksPage from "./screens/tasks";
+import PrivacyPage from "./screens/privacy";
 
 const AuthCtx = createContext(null);
 export const useAuth = () => useContext(AuthCtx);
@@ -200,6 +201,8 @@ export default function App() {
       <AuthProvider>
         <Routes>
           <Route path="/" element={<LandingPage />} />
+          <Route path="/privacy" element={<PrivacyPage />} />
+          <Route path="/privacy/" element={<PrivacyPage />} />
           <Route path="/tasks" element={<TasksPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/dashboard" element={<RequireAuth><DashboardPage /></RequireAuth>} />

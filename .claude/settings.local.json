@@ -27,7 +27,10 @@
       "Bash(node -e \"const {all}=require\\('./server/db'\\); const t=all\\('SELECT id, title, is_active, is_draft FROM tests'\\); console.log\\(JSON.stringify\\(t, null, 2\\)\\)\")",
       "Bash(node -e \"const {all}=require\\('./server/db'\\); console.log\\('Tests:', all\\('SELECT id,title,is_active,is_draft FROM tests'\\).length\\); console.log\\('CardSets:', all\\('SELECT id,title,is_active FROM flashcard_sets'\\).map\\(s=>s.title+' active='+s.is_active\\)\\)\")",
       "Bash(cp -r /tmp/skills-temp/skills/frontend-design ~/.claude/skills/)",
-      "Read(//c/Users/user/.claude/skills/**)"
+      "Read(//c/Users/user/.claude/skills/**)",
+      "Bash(mkdir -p .claude/skills)",
+      "Bash(git clone *)",
+      "Bash(rtk npm *)"
     ]
   }
 }

@@ -21,40 +21,19 @@ const TUTOR = {
 const DIPLOMAS = [
   {
     year: "2019–2023",
+    degree: "Бакалавриат",
     title: "Бакалавр биологии",
     institution: "Томский государственный университет",
     faculty: "Направление 06.03.01 «Биология»",
-    icon: "🎓",
-    accent: "var(--green-100)",
-    accent2: "var(--green-200)",
+    photo: "/diploma-bachelor.jpg",
   },
   {
     year: "2023–2025",
+    degree: "Магистратура",
     title: "Магистр фундаментальной и прикладной биологии",
     institution: "Томский государственный университет",
     faculty: "Кафедра зоологии беспозвоночных · 06.04.01",
-    icon: "🎓",
-    accent: "var(--green-100)",
-    accent2: "var(--green-200)",
-  },
-  {
-    year: "2023",
-    title: "Earth Science Camp",
-    institution: "СПбГУ · Карельский научный центр РАН",
-    faculty: "Студенческая школа по естественным наукам · Санкт-Петербург",
-    icon: "🏕️",
-    accent: "#e8f0ff",
-    accent2: "#d0e2ff",
-  },
-  {
-    year: "09.2024 — сейчас",
-    title: "Биотехнолог-энтомолог",
-    institution: "ООО «Смартинсект»",
-    faculty: "Коммерческое разведение насекомых · совмещение",
-    icon: "💼",
-    accent: "#fdf3e3",
-    accent2: "#fde8c3",
-    isWork: true,
+    photo: "/diploma-master.jpg",
   },
 ];
 
@@ -208,6 +187,17 @@ const STYLES = `
   .lf-card-hover:hover {
     transform: translateY(-5px) scale(1.01);
     box-shadow: 0 20px 60px rgba(26,52,36,0.14), 0 4px 14px rgba(26,52,36,0.08);
+  }
+
+  .lf-diploma-card:nth-child(odd) .lf-diploma-frame { transform: rotate(-0.6deg); }
+  .lf-diploma-card:nth-child(even) .lf-diploma-frame { transform: rotate(0.6deg); }
+  .lf-diploma-card:hover .lf-diploma-frame {
+    transform: rotate(0deg) translateY(-8px);
+    box-shadow: 0 34px 70px -24px rgba(20, 60, 30, 0.38),
+                0 10px 24px -6px rgba(20, 60, 30, 0.18);
+  }
+  .lf-diploma-card:hover .lf-diploma-img {
+    transform: scale(1.04);
   }
 
   .lf-nav-link {
@@ -399,6 +389,274 @@ const STYLES = `
   @media (max-width: 900px) and (min-width: 641px) {
     .lf-stats-grid { grid-template-columns: repeat(3, 1fr) !important; }
   }
+
+  /* ══ ABOUT — field notebook / научный дневник ═══════════════════════════ */
+  .lf-about-photo-card {
+    position: relative;
+    width: clamp(240px, 30vw, 320px);
+    background: #fff;
+    padding: 14px 14px 56px;
+    box-shadow:
+      0 2px 4px rgba(26,52,36,0.06),
+      0 20px 50px rgba(26,52,36,0.18);
+    border-radius: 3px;
+    transform: rotate(-2.5deg);
+    transition: transform 0.5s var(--ease), box-shadow 0.5s var(--ease);
+    margin: 0 0 44px;
+  }
+  .lf-about-photo-card::before {
+    content: "";
+    position: absolute;
+    top: -15px; left: 50%;
+    transform: translateX(-50%) rotate(-3deg);
+    width: 104px; height: 26px;
+    background: linear-gradient(180deg, rgba(244,162,97,0.58), rgba(244,162,97,0.38));
+    border-radius: 1px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    mix-blend-mode: multiply;
+    z-index: 2;
+  }
+  .lf-about-photo-card:hover {
+    transform: rotate(-0.8deg) translateY(-4px);
+    box-shadow:
+      0 4px 8px rgba(26,52,36,0.08),
+      0 30px 64px rgba(26,52,36,0.22);
+  }
+  .lf-about-photo-img {
+    width: 100%;
+    aspect-ratio: 3 / 3.6;
+    object-fit: cover;
+    display: block;
+    filter: sepia(0.06) saturate(1.04) contrast(1.02);
+  }
+  .lf-about-photo-caption {
+    position: absolute;
+    left: 14px; right: 14px; bottom: 14px;
+    font-family: var(--f-serif);
+    font-style: italic;
+    font-size: 13px;
+    color: var(--ink-700);
+    line-height: 1.3;
+    text-align: center;
+  }
+  .lf-about-photo-caption strong {
+    display: block;
+    font-variant: small-caps;
+    font-style: normal;
+    letter-spacing: 0.14em;
+    color: var(--green-800);
+    font-size: 10.5px;
+    font-weight: 700;
+    margin-bottom: 3px;
+  }
+
+  /* Drop cap */
+  .lf-dropcap::first-letter {
+    float: left;
+    font-family: var(--f-serif);
+    font-size: 82px;
+    line-height: 0.82;
+    padding: 8px 14px 0 0;
+    color: var(--green-800);
+    font-weight: 500;
+    font-style: italic;
+    text-shadow: 1px 1px 0 rgba(45,106,79,0.08);
+  }
+
+  /* Numbered paragraph */
+  .lf-about-para {
+    position: relative;
+    padding-left: 46px;
+    font-size: 17px;
+    line-height: 1.75;
+    color: var(--text-soft);
+    margin-bottom: 22px;
+  }
+  .lf-about-para[data-num]::before {
+    content: attr(data-num);
+    position: absolute;
+    left: 0; top: 10px;
+    font-family: var(--f-mono);
+    font-size: 10px;
+    letter-spacing: 0.22em;
+    color: var(--green-800);
+    font-weight: 700;
+    opacity: 0.75;
+  }
+
+  /* Pull quote */
+  .lf-pullquote {
+    position: relative;
+    margin: 44px 0 44px 16px;
+    padding: 4px 0 4px 30px;
+    border-left: 2px solid var(--green-800);
+    font-family: var(--f-serif);
+    font-style: italic;
+    font-size: clamp(19px, 1.6vw, 23px);
+    line-height: 1.42;
+    color: var(--green-900);
+    letter-spacing: -0.01em;
+  }
+  .lf-pullquote::before {
+    content: "\\201C";
+    position: absolute;
+    left: -4px; top: -40px;
+    font-family: var(--f-serif);
+    font-size: 96px;
+    line-height: 1;
+    color: var(--green-300);
+    font-style: normal;
+    pointer-events: none;
+  }
+  .lf-pullquote cite {
+    display: block;
+    margin-top: 12px;
+    font-size: 11px;
+    font-style: normal;
+    font-family: var(--f-mono);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--green-800);
+    opacity: 0.75;
+  }
+
+  /* Botanical fleuron divider */
+  .lf-fleuron {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    margin: 40px 0 32px;
+  }
+  .lf-fleuron::before, .lf-fleuron::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--green-300), transparent);
+  }
+  .lf-fleuron span {
+    color: var(--green-700);
+    font-size: 18px;
+    letter-spacing: 0.4em;
+    font-family: var(--f-serif);
+    opacity: 0.85;
+  }
+
+  /* Specimen label — signature card */
+  .lf-specimen {
+    position: relative;
+    border: 1.5px solid var(--ink-900);
+    background: #fcfbf5;
+    padding: 26px 28px 22px;
+    border-radius: 2px;
+    background-image:
+      repeating-linear-gradient(0deg, transparent 0 28px, rgba(45,106,79,0.055) 28px 29px);
+    box-shadow:
+      0 10px 28px rgba(26,52,36,0.1),
+      3px 3px 0 rgba(45,106,79,0.08);
+    margin: 8px 0 32px;
+  }
+  .lf-specimen::before {
+    content: "№ 001 · SPECIMEN · TSU";
+    position: absolute;
+    top: -9px; left: 22px;
+    background: var(--bg);
+    padding: 0 10px;
+    font-family: var(--f-mono);
+    font-size: 10px;
+    letter-spacing: 0.22em;
+    color: var(--green-800);
+    font-weight: 700;
+  }
+  .lf-specimen-stamp {
+    position: absolute;
+    top: 20px; right: 22px;
+    width: 54px; height: 54px;
+    border: 1.5px solid var(--green-700);
+    border-radius: 50%;
+    display: grid; place-items: center;
+    color: var(--green-800);
+    background: var(--green-50);
+    transform: rotate(-10deg);
+    font-family: var(--f-serif);
+    font-style: italic;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-align: center;
+    line-height: 1;
+    opacity: 0.9;
+  }
+  .lf-specimen-stamp::before {
+    content: "";
+    position: absolute;
+    inset: 3px;
+    border: 1px dashed var(--green-700);
+    border-radius: 50%;
+    opacity: 0.5;
+  }
+  .lf-specimen-name {
+    font-family: var(--f-serif);
+    font-size: 24px;
+    font-style: italic;
+    font-weight: 500;
+    color: var(--ink-900);
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+    padding-right: 66px;
+  }
+  .lf-specimen-role {
+    margin-top: 6px;
+    font-family: var(--f-mono);
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--green-800);
+    font-weight: 600;
+  }
+  .lf-specimen-meta {
+    display: flex; flex-wrap: wrap; gap: 14px 24px;
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px dashed var(--green-400);
+    font-size: 12px;
+    color: var(--text-muted);
+    font-family: var(--f-mono);
+    letter-spacing: 0.04em;
+  }
+  .lf-specimen-meta strong {
+    color: var(--ink-900);
+    font-weight: 700;
+    margin-right: 6px;
+  }
+
+  /* Feature cards — roman numerals */
+  .lf-feature-card { position: relative; overflow: hidden; }
+  .lf-feat-roman {
+    position: absolute;
+    top: 8px; right: 20px;
+    font-family: var(--f-serif);
+    font-size: 60px;
+    font-style: italic;
+    font-weight: 400;
+    color: var(--green-200);
+    line-height: 1;
+    pointer-events: none;
+    transition: color 0.35s, transform 0.35s var(--ease);
+    z-index: 0;
+  }
+  .lf-feature-card:hover .lf-feat-roman {
+    color: var(--green-400);
+    transform: translateY(-3px) scale(1.06);
+  }
+
+  @media (max-width: 900px) {
+    .lf-about-photo-card { margin: 0 auto 32px; width: min(280px, 80%); }
+    .lf-about-para { padding-left: 34px; }
+    .lf-dropcap::first-letter { font-size: 68px; padding: 6px 12px 0 0; }
+    .lf-pullquote { margin-left: 0; font-size: 18px; }
+    .lf-specimen-name { font-size: 20px; padding-right: 60px; }
+    .lf-diplomas-grid { grid-template-columns: 1fr !important; gap: 56px !important; }
+  }
 `;
 
 // ─── Хук: активная секция в навигации ────────────────────────────────────────
@@ -574,6 +832,211 @@ function Lightbox({ src, onClose }) {
   );
 }
 
+// ─── Правовые модалки + куки-баннер ─────────────────────────────────────────
+const LEGAL_CONTENT = {
+  cookies: {
+    title: "Политика использования cookies",
+    updated: "Редакция от 24 апреля 2026 г.",
+    body: [
+      ["Что такое cookies",
+        "Cookies — это небольшие текстовые файлы, которые сохраняются в вашем браузере при посещении Сайта. Они позволяют запомнить ваши действия и настройки (например, факт согласия с данной политикой) и обеспечить корректную работу сервиса."],
+      ["Какие cookies мы используем",
+        "Технические (необходимые): нужны для работы учебного кабинета и сохранения сессии. Функциональные: запоминают ваши предпочтения (например, выбранный режим, согласие на cookies). Аналитические: помогают понять, какие разделы Сайта востребованы, и улучшить их работу."],
+      ["Управление cookies",
+        "Вы можете удалить уже сохранённые cookies и запретить их сохранение в настройках вашего браузера. Обратите внимание: отключение части cookies может ограничить функциональность учебного кабинета."],
+      ["Согласие",
+        "При первом посещении Сайта отображается уведомление об использовании cookies. Нажимая «Принять», вы подтверждаете согласие на их использование в целях, описанных выше. Согласие хранится локально в вашем браузере."],
+      ["Изменения",
+        "Условия могут обновляться. Актуальная редакция всегда доступна по ссылке в футере Сайта."],
+    ],
+  },
+};
+
+function LegalModal({ kind, tutorName, onClose }) {
+  useEffect(() => {
+    const h = e => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("keydown", h);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", h);
+      document.body.style.overflow = prev;
+    };
+  }, [onClose]);
+
+  const data = LEGAL_CONTENT[kind];
+  if (!data) return null;
+
+  return (
+    <div onClick={onClose} style={{
+      position: "fixed", inset: 0, zIndex: 9999,
+      background: "rgba(10, 30, 20, 0.55)",
+      backdropFilter: "blur(10px)",
+      display: "grid", placeItems: "center",
+      padding: 24,
+      animation: "lf-in 0.22s ease both",
+    }}>
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{
+          position: "relative",
+          width: "min(720px, 100%)",
+          maxHeight: "85vh",
+          background: "var(--surface)",
+          borderRadius: 20,
+          boxShadow: "0 40px 90px -20px rgba(10, 40, 22, 0.45)",
+          border: "1px solid var(--border-soft)",
+          display: "flex", flexDirection: "column",
+          overflow: "hidden",
+        }}
+      >
+        {/* Шапка */}
+        <div style={{
+          padding: "28px 32px 20px",
+          background: "linear-gradient(180deg, var(--green-50) 0%, var(--surface) 100%)",
+          borderBottom: "1px solid var(--border-soft)",
+          position: "relative",
+        }}>
+          <div style={{
+            display: "inline-block",
+            background: "var(--green-100)", color: "var(--green-800)",
+            borderRadius: 999, padding: "4px 12px",
+            fontSize: 10, fontWeight: 700,
+            letterSpacing: "0.12em", textTransform: "uppercase",
+            marginBottom: 10,
+          }}>
+            Правовая информация
+          </div>
+          <h2 style={{
+            fontFamily: "var(--f-serif)",
+            fontSize: 26, fontWeight: 500,
+            lineHeight: 1.2, letterSpacing: "-0.01em",
+            marginBottom: 6,
+          }}>
+            {data.title}
+          </h2>
+          <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
+            {data.updated} · {tutorName}
+          </div>
+          <button
+            onClick={onClose}
+            aria-label="Закрыть"
+            style={{
+              position: "absolute", top: 18, right: 18,
+              width: 32, height: 32, borderRadius: "50%",
+              background: "#fff", border: "1px solid var(--border-soft)",
+              cursor: "pointer", fontSize: 18, lineHeight: 1,
+              display: "grid", placeItems: "center",
+              color: "var(--text-soft)",
+            }}
+          >
+            ×
+          </button>
+        </div>
+
+        {/* Текст */}
+        <div style={{
+          padding: "24px 32px 32px",
+          overflowY: "auto",
+          lineHeight: 1.65,
+          color: "var(--text-soft)",
+          fontSize: 14.5,
+        }}>
+          {data.body.map(([heading, text], i) => (
+            <section key={i} style={{ marginBottom: 22 }}>
+              <h3 style={{
+                fontFamily: "var(--f-serif)",
+                fontSize: 17, fontWeight: 600,
+                color: "var(--text)", marginBottom: 8,
+                display: "flex", alignItems: "baseline", gap: 10,
+              }}>
+                <span style={{
+                  fontSize: 12, color: "var(--green-800)", fontWeight: 700,
+                  fontFamily: "var(--f-sans)",
+                }}>
+                  {String(i + 1).padStart(2, "0")}
+                </span>
+                {heading}
+              </h3>
+              <p style={{ margin: 0 }}>{text}</p>
+            </section>
+          ))}
+        </div>
+
+        {/* Подвал */}
+        <div style={{
+          padding: "16px 32px",
+          borderTop: "1px solid var(--border-soft)",
+          background: "var(--green-50)",
+          display: "flex", justifyContent: "flex-end",
+        }}>
+          <button
+            onClick={onClose}
+            style={{
+              padding: "10px 22px",
+              background: "var(--green-800)", color: "#fff",
+              border: "none", borderRadius: 10,
+              fontSize: 14, fontWeight: 600,
+              cursor: "pointer",
+            }}
+          >
+            Понятно
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CookieBanner({ onAccept, onMore }) {
+  return (
+    <div style={{
+      position: "fixed",
+      left: 24, right: 24, bottom: 24,
+      zIndex: 9998,
+      maxWidth: 640, marginLeft: "auto", marginRight: "auto",
+      background: "var(--surface)",
+      border: "1px solid var(--border-soft)",
+      borderRadius: 16,
+      boxShadow: "0 24px 56px -12px rgba(10, 40, 22, 0.35)",
+      padding: "18px 22px",
+      display: "flex", alignItems: "center", gap: 16,
+      flexWrap: "wrap",
+      animation: "lf-in 0.3s ease 0.2s both",
+    }}>
+      <div style={{ fontSize: 22, lineHeight: 1 }}>🍪</div>
+      <div style={{ flex: 1, minWidth: 220, fontSize: 13.5, color: "var(--text-soft)", lineHeight: 1.5 }}>
+        Сайт использует cookies, чтобы запомнить ваше согласие и обеспечить работу учебного кабинета.{" "}
+        <button
+          type="button"
+          onClick={onMore}
+          style={{
+            background: "none", border: "none", padding: 0, cursor: "pointer",
+            color: "var(--green-800)", fontWeight: 600, textDecoration: "underline",
+            textUnderlineOffset: 3, fontSize: "inherit", fontFamily: "inherit",
+          }}
+        >
+          Подробнее
+        </button>
+      </div>
+      <button
+        type="button"
+        onClick={onAccept}
+        style={{
+          padding: "10px 20px",
+          background: "var(--green-800)", color: "#fff",
+          border: "none", borderRadius: 10,
+          fontSize: 13, fontWeight: 700, letterSpacing: "0.02em",
+          cursor: "pointer",
+          whiteSpace: "nowrap",
+        }}
+      >
+        Принять
+      </button>
+    </div>
+  );
+}
+
 // ─── Главный компонент ───────────────────────────────────────────────────────
 export function LandingPage() {
   const navigate = useNavigate();
@@ -593,6 +1056,14 @@ export function LandingPage() {
   const activeSection = useActiveSection(["about", "diplomas", "articles"]);
   const [lightbox, setLightbox] = useState(null);
   const [showContacts, setShowContacts] = useState(false);
+  const [legalModal, setLegalModal] = useState(null); // "privacy" | "cookies" | null
+  const [cookieConsent, setCookieConsent] = useState(() => {
+    try { return localStorage.getItem("cookie-consent"); } catch { return null; }
+  });
+  const acceptCookies = () => {
+    try { localStorage.setItem("cookie-consent", "accepted"); } catch {}
+    setCookieConsent("accepted");
+  };
   const contactsRef = React.useRef(null);
   useEffect(() => {
     const h = e => { if (contactsRef.current && !contactsRef.current.contains(e.target)) setShowContacts(false); };
@@ -992,19 +1463,51 @@ export function LandingPage() {
           <div className="lf-about-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 64, alignItems: "start" }}>
             {/* Текст */}
             <div className="lf-reveal-left">
-              <p style={{ fontSize: 17, lineHeight: 1.75, color: "var(--text-soft)", marginBottom: 24 }}>
+              {/* Полароид с фото — "Fig. II" */}
+              <figure className="lf-about-photo-card">
+                <img src={TUTOR_PHOTO} alt={TUTOR.name} className="lf-about-photo-img" />
+                <figcaption className="lf-about-photo-caption">
+                  <strong>Fig. II — Ritratto</strong>
+                  В. Ю. Никитенко, поле 2024
+                </figcaption>
+              </figure>
+
+              <p className="lf-about-para lf-dropcap" data-num="§ 01">
                 {TUTOR.bio}
               </p>
-              <p style={{ fontSize: 17, lineHeight: 1.75, color: "var(--text-soft)", marginBottom: 24 }}>
+
+              <p className="lf-about-para" data-num="§ 02">
                 Моя научная специализация — арахнология: систематика и морфология пауков. Участвовала
                 в полевых практиках общим объёмом более 1000 часов, выступала на всероссийских
                 и международных конференциях по зоологии и энтомологии.
               </p>
-              <p style={{ fontSize: 17, lineHeight: 1.75, color: "var(--text-soft)", marginBottom: 36 }}>
+
+              <blockquote className="lf-pullquote">
+                Хочу, чтобы биология стала для тебя не набором терминов, а живой системой —
+                понятной, связной и по-настоящему интересной.
+                <cite>— принцип работы</cite>
+              </blockquote>
+
+              <p className="lf-about-para" data-num="§ 03" style={{ marginBottom: 12 }}>
                 На занятиях использую интерактивные тесты прямо здесь, в «Живой клетке».
                 После каждого урока ты проходишь тест — я вижу результат и корректирую программу.
               </p>
-              {/* Ссылки */}
+
+              <div className="lf-fleuron"><span>❦ · ❦ · ❦</span></div>
+
+              {/* Specimen label — подпись */}
+              <div className="lf-specimen">
+                <div className="lf-specimen-stamp">Anno<br/>2025</div>
+                <div className="lf-specimen-name">Никитенко Виктория Юрьевна</div>
+                <div className="lf-specimen-role">Magistra biologiæ · Арахнолог · ТГУ</div>
+                <div className="lf-specimen-meta">
+                  <span><strong>Exp.</strong> 2+ года</span>
+                  <span><strong>Disc.</strong> 25+ учеников</span>
+                  <span><strong>Rating</strong> 5.0 / Профи.ру</span>
+                </div>
+              </div>
+
+              {/* Ссылка на Профи.ру */}
               <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginBottom: 24 }}>
                 <a
                   href="https://profi.ru/profile/NikitenkoVY"
@@ -1021,22 +1524,6 @@ export function LandingPage() {
                   onMouseLeave={e => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = ""; }}
                 >
                   <span style={{ fontSize: 16 }}>⭐</span> Профиль на Профи.ру
-                </a>
-                <a
-                  href="https://vital.lib.tsu.ru/vital/access/services/Download/vital:18585/SOURCE01"
-                  target="_blank" rel="noopener noreferrer"
-                  style={{
-                    display: "inline-flex", alignItems: "center", gap: 8,
-                    padding: "10px 18px", borderRadius: 999,
-                    background: "var(--bg-muted)", color: "var(--text-soft)",
-                    fontWeight: 600, fontSize: 14, textDecoration: "none",
-                    border: "1.5px solid var(--border-soft)",
-                    transition: "transform 0.2s, box-shadow 0.2s",
-                  }}
-                  onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 8px 20px rgba(0,0,0,0.08)"; }}
-                  onMouseLeave={e => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = ""; }}
-                >
-                  <span style={{ fontSize: 16 }}>📄</span> Бакалаврская работа
                 </a>
               </div>
 
@@ -1134,29 +1621,34 @@ export function LandingPage() {
 
             {/* Feature cards */}
             <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-              {FEATURES.map((item, i) => (
+              {FEATURES.map((item, i) => {
+                const romans = ["I", "II", "III", "IV"];
+                return (
                 <div
                   key={i}
                   className={`lf-feature-card lf-reveal`}
                   style={{
-                    padding: "20px 24px",
+                    padding: "22px 26px",
                     display: "flex", gap: 18, alignItems: "flex-start",
                     transitionDelay: `${i * 0.07}s`,
                   }}
                 >
+                  <span className="lf-feat-roman">{romans[i]}</span>
                   <div style={{
                     width: 44, height: 44, borderRadius: 12, flexShrink: 0,
                     background: "var(--green-100)",
                     display: "grid", placeItems: "center", fontSize: 20,
+                    position: "relative", zIndex: 1,
                   }}>
                     {item.icon}
                   </div>
-                  <div>
+                  <div style={{ position: "relative", zIndex: 1 }}>
                     <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 5 }}>{item.title}</div>
                     <div style={{ fontSize: 14, color: "var(--text-soft)", lineHeight: 1.55 }}>{item.text}</div>
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </div>
@@ -1192,61 +1684,122 @@ export function LandingPage() {
             </h2>
           </div>
 
-          <div className="lf-diplomas-grid" style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 24 }}>
+          <div className="lf-diplomas-grid" style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 40 }}>
             {DIPLOMAS.map((d, i) => (
               <div
                 key={i}
-                className="lf-card-hover lf-reveal"
+                className="lf-diploma-card lf-reveal"
                 style={{
-                  borderRadius: 24, overflow: "hidden",
-                  border: `1.5px solid ${d.isWork ? "#f5d9a0" : "var(--border-soft)"}`,
-                  background: "var(--surface)",
-                  boxShadow: "var(--sh-md)",
-                  transitionDelay: `${i * 0.1}s`,
+                  position: "relative",
+                  transitionDelay: `${i * 0.12}s`,
                 }}
               >
-                {/* Illustration */}
+                {/* Ботанический декор за карточкой */}
                 <div style={{
-                  height: 160,
-                  background: `linear-gradient(135deg, ${d.accent || "var(--green-100)"} 0%, ${d.accent2 || "var(--green-200)"} 100%)`,
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  position: "relative", overflow: "hidden",
+                  position: "absolute",
+                  top: -24, right: -24,
+                  color: "var(--green-700)", opacity: 0.08,
+                  pointerEvents: "none", zIndex: 0,
                 }}>
-                  {!d.isWork && (
-                    <div style={{ position: "absolute", inset: 0, color: "var(--green-700)", opacity: 0.13 }}>
-                      <Fern size={220} style={{ position: "absolute", top: -30, right: -30 }} />
-                    </div>
-                  )}
-                  <div style={{ position: "relative", textAlign: "center" }}>
-                    <div style={{ fontSize: 44, marginBottom: 6 }}>{d.icon || "🎓"}</div>
-                    <div style={{ fontSize: 11, color: d.isWork ? "#a07020" : "var(--green-800)", opacity: 0.7 }}>
-                      {d.isWork ? "опыт работы" : "диплом"}
-                    </div>
-                  </div>
+                  <Leaf size={140} />
+                </div>
+
+                {/* Фото-рамка (матовая паспарту) */}
+                <div className="lf-diploma-frame" style={{
+                  position: "relative", zIndex: 1,
+                  background: "#fff",
+                  padding: 14,
+                  borderRadius: 6,
+                  boxShadow: "0 20px 48px -20px rgba(20, 60, 30, 0.28), 0 4px 12px -4px rgba(20, 60, 30, 0.12)",
+                  border: "1px solid rgba(20, 60, 30, 0.06)",
+                  transition: "transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.6s",
+                }}>
+                  {/* Бейдж года */}
                   <div style={{
-                    position: "absolute", top: 16, left: 16,
-                    background: d.isWork ? "#d4900a" : "var(--green-800)", color: "#fff",
-                    borderRadius: 999, padding: "4px 14px",
-                    fontSize: 12, fontWeight: 700, letterSpacing: "0.04em",
+                    position: "absolute", top: -14, left: 24, zIndex: 2,
+                    background: "var(--green-800)", color: "#fff",
+                    borderRadius: 999, padding: "6px 18px",
+                    fontSize: 12, fontWeight: 700, letterSpacing: "0.06em",
+                    boxShadow: "0 6px 16px -4px rgba(20, 60, 30, 0.4)",
                   }}>
                     {d.year}
                   </div>
+
+                  {/* Бейдж степени */}
+                  <div style={{
+                    position: "absolute", top: -14, right: 24, zIndex: 2,
+                    background: "#fff", color: "var(--green-800)",
+                    border: "1.5px solid var(--green-200)",
+                    borderRadius: 999, padding: "5px 14px",
+                    fontSize: 11, fontWeight: 700, letterSpacing: "0.08em",
+                    textTransform: "uppercase",
+                  }}>
+                    {d.degree}
+                  </div>
+
+                  {/* Фото диплома */}
+                  <div style={{
+                    position: "relative",
+                    aspectRatio: "4 / 3",
+                    overflow: "hidden",
+                    borderRadius: 3,
+                    background: "linear-gradient(135deg, var(--green-50) 0%, var(--green-100) 100%)",
+                  }}>
+                    <img
+                      src={d.photo}
+                      alt={`Диплом: ${d.title}`}
+                      onError={(e) => { e.currentTarget.style.display = "none"; }}
+                      className="lf-diploma-img"
+                      style={{
+                        width: "100%", height: "100%",
+                        objectFit: "cover",
+                        display: "block",
+                        transition: "transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1)",
+                      }}
+                    />
+                    {/* Плейсхолдер, если фото ещё нет */}
+                    <div style={{
+                      position: "absolute", inset: 0,
+                      display: "flex", flexDirection: "column",
+                      alignItems: "center", justifyContent: "center",
+                      color: "var(--green-800)", opacity: 0.5,
+                      pointerEvents: "none", zIndex: -1,
+                    }}>
+                      <div style={{ fontSize: 56, marginBottom: 8 }}>🎓</div>
+                      <div style={{ fontSize: 12, letterSpacing: "0.1em", textTransform: "uppercase" }}>
+                        фото диплома
+                      </div>
+                    </div>
+
+                    {/* Лёгкое виньетирование для глубины */}
+                    <div style={{
+                      position: "absolute", inset: 0,
+                      pointerEvents: "none",
+                      boxShadow: "inset 0 0 60px rgba(0, 0, 0, 0.08)",
+                    }} />
+                  </div>
                 </div>
 
-                <div style={{ padding: "22px 24px" }}>
-                  <div style={{
-                    fontFamily: "var(--f-serif)", fontSize: 19,
-                    fontWeight: 500, marginBottom: 8, lineHeight: 1.2,
+                {/* Информация под рамкой */}
+                <div style={{ padding: "28px 6px 0", position: "relative", zIndex: 1 }}>
+                  <h3 style={{
+                    fontFamily: "var(--f-serif)", fontSize: 22,
+                    fontWeight: 500, marginBottom: 10, lineHeight: 1.25,
+                    letterSpacing: "-0.01em",
                   }}>
                     {d.title}
-                  </div>
+                  </h3>
                   <div style={{
                     fontSize: 14, fontWeight: 700,
                     color: "var(--green-800)", marginBottom: 5,
+                    display: "flex", alignItems: "center", gap: 8,
                   }}>
+                    <span style={{
+                      width: 18, height: 1, background: "var(--green-800)", opacity: 0.5,
+                    }} />
                     {d.institution}
                   </div>
-                  <div style={{ fontSize: 13, color: "var(--text-muted)", lineHeight: 1.4 }}>
+                  <div style={{ fontSize: 13, color: "var(--text-muted)", lineHeight: 1.5, paddingLeft: 26 }}>
                     {d.faculty}
                   </div>
                 </div>
@@ -1335,102 +1888,82 @@ export function LandingPage() {
         </div>
       </section>
 
-      {/* ══ CTA ════════════════════════════════════════════════════════════════ */}
-      <section className="lf-cta-section" style={{
-        padding: "96px 48px 112px",
-        background: "linear-gradient(160deg, #0a1f14 0%, #0f2a1e 50%, #1b4332 100%)",
-        position: "relative", overflow: "hidden",
-      }}>
-        <div style={{ position: "absolute", top: -60, right: -60, color: "#52b788", opacity: 0.06, animation: "lf-float 10s ease-in-out infinite", pointerEvents: "none" }}>
-          <Cell size={400} />
-        </div>
-        <div style={{ position: "absolute", bottom: -40, left: 40, color: "#74c69d", opacity: 0.05, animation: "lf-float2 8s ease-in-out infinite 2s", pointerEvents: "none" }}>
-          <Fern size={280} />
-        </div>
-        {/* Ambient glow */}
-        <div style={{
-          position: "absolute", top: "50%", left: "50%",
-          transform: "translate(-50%,-50%)",
-          width: 600, height: 300, borderRadius: "50%",
-          background: "radial-gradient(ellipse, rgba(82,183,136,0.1) 0%, transparent 70%)",
-          pointerEvents: "none",
-        }} />
-
-        <div style={{ maxWidth: 680, margin: "0 auto", textAlign: "center", position: "relative" }}>
-          <div className="lf-reveal" style={{
-            display: "inline-flex", alignItems: "center", gap: 8,
-            background: "rgba(183,228,199,0.1)",
-            border: "1px solid rgba(183,228,199,0.2)",
-            borderRadius: 999, padding: "6px 18px",
-            marginBottom: 28,
-          }}>
-            <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#74c69d", animation: "lf-pulse 2s infinite", display: "inline-block" }} />
-            <span style={{ fontSize: 11, color: "#b7e4c7", letterSpacing: "0.1em", fontWeight: 700 }}>
-              НАЧНИ ПРЯМО СЕЙЧАС
-            </span>
-          </div>
-
-          <h2 className="lf-reveal" style={{
-            fontFamily: "var(--f-serif)",
-            fontSize: "clamp(36px, 4vw, 56px)",
-            color: "#fff", lineHeight: 1.1,
-            letterSpacing: "-0.02em", marginBottom: 20,
-          }}>
-            Готов проверить<br/>
-            <em style={{
-              color: "transparent",
-              backgroundImage: "linear-gradient(135deg, #74c69d, #b7e4c7)",
-              WebkitBackgroundClip: "text", backgroundClip: "text",
-            }}>свои знания?</em>
-          </h2>
-
-          <p className="lf-reveal" style={{
-            fontSize: 17, color: "rgba(255,255,255,0.6)",
-            lineHeight: 1.7, marginBottom: 44,
-          }}>
-            Войди в кабинет и проходи тесты по биологии.<br/>
-            Результаты видит твой репетитор.
-          </p>
-
-          <div className="lf-reveal" style={{ display: "flex", gap: 14, justifyContent: "center" }}>
-            <button
-              className="lf-hero-btn lf-hero-btn-primary"
-              style={{ padding: "16px 36px", fontSize: 16 }}
-              onClick={() => navigate("/login")}
-            >
-              Войти в кабинет 🌱
-            </button>
-          </div>
-        </div>
-      </section>
-
       {/* ══ FOOTER ═════════════════════════════════════════════════════════════ */}
       <footer className="lf-footer" style={{
-        padding: "32px 48px",
+        padding: "36px 48px 28px",
         borderTop: "1px solid var(--border-soft)",
-        display: "flex", justifyContent: "space-between", alignItems: "center",
-        flexWrap: "wrap", gap: 16,
+        display: "flex", flexDirection: "column", gap: 18,
       }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <img src="/tutor2.jpg" alt="Vikokon" style={{ width: 30, height: 30, borderRadius: 8, objectFit: "cover" }} />
-          <span style={{ fontFamily: "var(--f-serif)", fontSize: 15, color: "var(--text-soft)" }}>
-            Vikokon · {TUTOR.name}
-          </span>
+        <div style={{
+          display: "flex", justifyContent: "space-between", alignItems: "center",
+          flexWrap: "wrap", gap: 16,
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <img src="/tutor2.jpg" alt="Vikokon" style={{ width: 30, height: 30, borderRadius: 8, objectFit: "cover" }} />
+            <span style={{ fontFamily: "var(--f-serif)", fontSize: 15, color: "var(--text-soft)" }}>
+              Vikokon · {TUTOR.name}
+            </span>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
+            <a href="https://profi.ru/profile/NikitenkoVY" target="_blank" rel="noopener noreferrer"
+              style={{ fontSize: 13, color: "var(--green-800)", textDecoration: "none", fontWeight: 600 }}>
+              ⭐ Профи.ру
+            </a>
+            <a href="https://vk.com/public219644318" target="_blank" rel="noopener noreferrer"
+              style={{ fontSize: 13, color: "#5181b8", textDecoration: "none", fontWeight: 600 }}>
+              🔗 ВКонтакте
+            </a>
+            <span style={{ fontSize: 13, color: "var(--text-muted)" }}>· Репетитор по биологии · ОГЭ и ЕГЭ</span>
+          </div>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-          <a href="https://profi.ru/profile/NikitenkoVY" target="_blank" rel="noopener noreferrer"
-            style={{ fontSize: 13, color: "var(--green-800)", textDecoration: "none", fontWeight: 600 }}>
-            ⭐ Профи.ру
-          </a>
-          <a href="https://vk.com/public219644318" target="_blank" rel="noopener noreferrer"
-            style={{ fontSize: 13, color: "#5181b8", textDecoration: "none", fontWeight: 600 }}>
-            🔗 ВКонтакте
-          </a>
-          <span style={{ fontSize: 13, color: "var(--text-muted)" }}>· Репетитор по биологии · ОГЭ и ЕГЭ</span>
+        <div style={{
+          display: "flex", justifyContent: "space-between", alignItems: "center",
+          flexWrap: "wrap", gap: 12,
+          paddingTop: 16, borderTop: "1px dashed var(--border-soft)",
+        }}>
+          <span style={{ fontSize: 12, color: "var(--text-muted)" }}>
+            © {new Date().getFullYear()} Vikokon. Все права защищены.
+          </span>
+          <div style={{ display: "flex", alignItems: "center", gap: 20, flexWrap: "wrap" }}>
+            <a
+              href="/privacy/"
+              onClick={(e) => { e.preventDefault(); navigate("/privacy"); }}
+              style={{
+                fontSize: 12, color: "var(--text-soft)", textDecoration: "underline",
+                textUnderlineOffset: 3,
+              }}
+            >
+              Политика конфиденциальности
+            </a>
+            <button
+              type="button"
+              onClick={() => setLegalModal("cookies")}
+              style={{
+                background: "none", border: "none", padding: 0, cursor: "pointer",
+                fontSize: 12, color: "var(--text-soft)", textDecoration: "underline",
+                textUnderlineOffset: 3, fontFamily: "inherit",
+              }}
+            >
+              Политика использования cookies
+            </button>
+          </div>
         </div>
       </footer>
 
       {lightbox && <Lightbox src={lightbox} onClose={() => setLightbox(null)} />}
+      {legalModal && (
+        <LegalModal
+          kind={legalModal}
+          tutorName={TUTOR.name}
+          onClose={() => setLegalModal(null)}
+        />
+      )}
+      {!cookieConsent && (
+        <CookieBanner
+          onAccept={acceptCookies}
+          onMore={() => setLegalModal("cookies")}
+        />
+      )}
     </div>
   );
 }
