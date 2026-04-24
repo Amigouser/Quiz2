@@ -39,6 +39,7 @@ studentRouter.get("/flashcard-sets", requireAuth, (req, res) => {
   const userId = req.session.user.id;
   const sets = all(`
     SELECT s.id, s.title, s.topic, s.description,
+           s.category, s.section, s.part, s.line, s.source,
            COUNT(c.id) AS cards_count,
            CASE WHEN fsa.id IS NOT NULL THEN 1 ELSE 0 END AS is_assigned
     FROM flashcard_sets s

@@ -30,7 +30,11 @@
       "Read(//c/Users/user/.claude/skills/**)",
       "Bash(mkdir -p .claude/skills)",
       "Bash(git clone *)",
-      "Bash(rtk npm *)"
+      "Bash(rtk npm *)",
+      "Bash(node -e ' *)",
+      "Bash(node -c routes/tests.js)",
+      "Bash(node -c routes/flashcards.js)",
+      "Bash(node -e \"require\\('@babel/parser'\\).parse\\(require\\('fs'\\).readFileSync\\('src/screens/landing.jsx','utf8'\\),{sourceType:'module',plugins:['jsx']}\\); console.log\\('OK'\\)\")"
     ]
   }
 }

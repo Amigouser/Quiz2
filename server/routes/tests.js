@@ -60,6 +60,7 @@ router.get("/tests", requireAuth, (req, res) => {
 
   const tests = all(`
     SELECT t.id, t.title, t.topic, t.description,
+           t.category, t.section, t.part, t.line, t.source,
            COUNT(q.id) AS questions_count,
            CASE WHEN ta.id IS NOT NULL THEN 1 ELSE 0 END AS is_assigned
     FROM tests t
@@ -88,6 +89,11 @@ router.get("/tests", requireAuth, (req, res) => {
       title: t.title,
       topic: t.topic || "Биология",
       description: t.description,
+      category: t.category || null,
+      section: t.section || null,
+      part: t.part || null,
+      line: t.line || null,
+      source: t.source || null,
       questions_count: t.questions_count,
       est_minutes,
       status: attempt ? "done" : "new",

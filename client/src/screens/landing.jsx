@@ -25,7 +25,7 @@ const DIPLOMAS = [
     title: "Бакалавр биологии",
     institution: "Томский государственный университет",
     faculty: "Направление 06.03.01 «Биология»",
-    photo: "/diploma-bachelor.jpg",
+    photo: "/tutor6.jpg",
   },
   {
     year: "2023–2025",
@@ -33,7 +33,7 @@ const DIPLOMAS = [
     title: "Магистр фундаментальной и прикладной биологии",
     institution: "Томский государственный университет",
     faculty: "Кафедра зоологии беспозвоночных · 06.04.01",
-    photo: "/diploma-master.jpg",
+    photo: "/tutor5.jpg",
   },
 ];
 
@@ -113,6 +113,111 @@ const FEATURES = [
   { icon: "🎯", title: "Подготовка к экзаменам", text: "Специализируюсь на ОГЭ и ЕГЭ по биологии. Разбираем типичные ошибки и отрабатываем слабые места." },
   { icon: "🌿", title: "Понятный язык",          text: "Сложные темы объясняю на живых примерах. Зоология, ботаника, генетика — без скуки и зубрёжки." },
   { icon: "📈", title: "Виден прогресс",         text: "Тесты после каждого урока прямо на этой платформе — и ты, и я видим твой результат в реальном времени." },
+];
+
+const SKILLS = [
+  "2 высших образования по направлению «Биология»",
+  "Опыт полевых исследований",
+  "Участие во всероссийских конференциях",
+  "Тематические занятия для классов с естественно-научным уклоном",
+  "Жизненные циклы паразитов и энтомология / арахнология — это ко мне 🕷",
+];
+
+const SERVICES_LIST = [
+  { icon: "📝", text: "ЕГЭ" },
+  { icon: "📘", text: "ОГЭ" },
+  { icon: "✅", text: "Проверка домашних заданий" },
+  { icon: "🎓", text: "Подготовка к ДВИ" },
+  { icon: "📄", text: "Написание курсовой / диплома" },
+];
+
+const FACTS = [
+  { icon: "🎓", value: "25+",    label: "учеников",              note: "индивидуально · онлайн" },
+  { icon: "⏳", value: "2+",     label: "года опыта",             note: "репетитор с января 2024" },
+  { icon: "🔬", value: "1000+",  label: "часов полевых",          note: "практики и экспедиции" },
+  { icon: "⭐", value: "5.0",    label: "рейтинг Профи.ру",       note: "средняя оценка учеников" },
+  { icon: "🧬", value: "2",      label: "высших образования",     note: "бакалавр + магистр ТГУ" },
+  { icon: "📖", value: "5",      label: "научных публикаций",     note: "всероссийские конференции" },
+];
+
+const TIMELINE = [
+  { year: "2019", title: "Поступила на биофак ТГУ",                desc: "Направление 06.03.01 «Биология»" },
+  { year: "2022", title: "Диплом I степени «Старт в науку»",       desc: "Лучший доклад в секции «Зоология и гидробиология»" },
+  { year: "2023", title: "Бакалавр биологии",                      desc: "Томский государственный университет" },
+  { year: "2024", title: "Начало работы репетитором",              desc: "Индивидуальные занятия · ОГЭ, ЕГЭ, ДВИ" },
+  { year: "2025", title: "Магистр фунд. и прикл. биологии",        desc: "Кафедра зоологии беспозвоночных · ТГУ" },
+  { year: "2025", title: "Зимняя школа Плавучего университета",    desc: "«Морская биология» · БФУ, Калининград" },
+];
+
+const ACHIEVEMENTS = [
+  {
+    year: "2022",
+    ribbon: "I степень",
+    title: "Диплом I степени — «Старт в науку»",
+    place: "ТГУ · LXXI научная студенческая конференция",
+    detail: "За лучший доклад в секции «Зоология и гидробиология» · Институт биологии, экологии, почвоведения, сельского и лесного хозяйства",
+    icon: "🏆",
+  },
+  {
+    year: "2023",
+    ribbon: "Благодарность",
+    title: "Благодарность от ТГУ",
+    place: "Национальный исследовательский Томский государственный университет",
+    detail: "За организацию и проведение акции «Ночь в музеях ТГУ. Истории ТГУ»",
+    icon: "✦",
+  },
+];
+
+const PRICES = [
+  {
+    title: "ВПР по биологии",
+    subtitle: "5–8 классы",
+    price: "600",
+    unit: "₽ / 60 мин",
+    tone: "soft",
+    note: "Стандартная программа школы",
+  },
+  {
+    title: "ОГЭ по биологии",
+    subtitle: "9 класс",
+    price: "800",
+    unit: "₽ / 60 мин",
+    tone: "mid",
+    note: "Систематическая подготовка к экзамену",
+  },
+  {
+    title: "ЕГЭ по биологии",
+    subtitle: "11 класс · профильный уровень",
+    price: "900",
+    unit: "₽ / 60 мин",
+    tone: "strong",
+    featured: true,
+    note: "Профильная подготовка и разбор заданий 2-й части",
+  },
+  {
+    title: "Общая биология",
+    subtitle: "Любой уровень и программа",
+    price: "по договорённости",
+    unit: null,
+    tone: "custom",
+    note: "Подбираем формат и нагрузку под ученика",
+  },
+  {
+    title: "Проверка домашнего задания",
+    subtitle: "Разбор ошибок и консультация",
+    price: "по договорённости",
+    unit: null,
+    tone: "custom",
+    note: "Короткие встречи или письменный разбор",
+  },
+  {
+    title: "Курсовая / диплом",
+    subtitle: "Помощь в написании научных работ",
+    price: "по договорённости",
+    unit: null,
+    tone: "custom",
+    note: "Поддержка по структуре, источникам и редактуре",
+  },
 ];
 
 // ─── CSS-анимации ────────────────────────────────────────────────────────────
@@ -649,13 +754,466 @@ const STYLES = `
     transform: translateY(-3px) scale(1.06);
   }
 
+  /* About — inline numbered list */
+  .lf-about-list {
+    position: relative;
+    padding: 18px 22px 18px 46px;
+    margin: 4px 0 22px;
+    background: linear-gradient(135deg, rgba(232,242,235,0.7) 0%, rgba(232,242,235,0.25) 100%);
+    border-left: 2px solid var(--green-400);
+    border-radius: 0 14px 14px 0;
+  }
+  .lf-about-list[data-num]::before {
+    content: attr(data-num);
+    position: absolute;
+    left: 14px; top: 22px;
+    font-family: var(--f-mono);
+    font-size: 10px;
+    letter-spacing: 0.22em;
+    color: var(--green-800);
+    font-weight: 700;
+    opacity: 0.75;
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+  }
+  .lf-about-list-title {
+    font-family: var(--f-serif);
+    font-size: 14px;
+    font-style: italic;
+    color: var(--green-800);
+    letter-spacing: 0.02em;
+    margin-bottom: 10px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .lf-about-list-title::after {
+    content: ""; flex: 1; height: 1px;
+    background: linear-gradient(90deg, var(--green-400), transparent);
+    opacity: 0.6;
+  }
+  .lf-about-list ul {
+    margin: 0; padding: 0; list-style: none;
+    display: flex; flex-direction: column; gap: 7px;
+  }
+  .lf-about-list ul:not(.lf-about-list-tags) li {
+    position: relative;
+    padding-left: 22px;
+    font-size: 15px;
+    line-height: 1.55;
+    color: var(--text-soft);
+  }
+  .lf-about-list ul:not(.lf-about-list-tags) li::before {
+    content: "❋";
+    position: absolute;
+    left: 0; top: 1px;
+    color: var(--green-700);
+    font-size: 12px;
+    opacity: 0.7;
+  }
+  .lf-about-list-tags {
+    flex-direction: row !important; flex-wrap: wrap;
+    gap: 8px !important;
+  }
+  .lf-about-list-tags li {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 7px 14px;
+    background: #fff;
+    border: 1.5px solid var(--green-200);
+    border-radius: 999px;
+    font-size: 13px; font-weight: 600;
+    color: var(--green-900);
+    transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+  }
+  .lf-about-list-tags li:hover {
+    transform: translateY(-2px);
+    border-color: var(--green-400);
+    box-shadow: 0 6px 16px rgba(45,106,79,0.12);
+  }
+  .lf-about-tag-icon { font-size: 14px; }
+
+  /* Achievements — medal cards */
+  .lf-achievements-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 28px;
+  }
+  .lf-achievement-card {
+    position: relative;
+    padding: 38px 32px 28px;
+    background: linear-gradient(145deg, #fcfbf5 0%, #f4efe0 100%);
+    border: 1.5px solid var(--green-200);
+    border-radius: 18px;
+    box-shadow: 0 12px 32px -16px rgba(26,52,36,0.18), 0 2px 6px rgba(26,52,36,0.05);
+    overflow: hidden;
+    transition: transform 0.35s var(--ease), box-shadow 0.35s;
+  }
+  .lf-achievement-card::before {
+    content: "";
+    position: absolute;
+    inset: 6px;
+    border: 1px dashed rgba(45,106,79,0.22);
+    border-radius: 14px;
+    pointer-events: none;
+  }
+  .lf-achievement-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 22px 44px -18px rgba(26,52,36,0.22), 0 4px 12px rgba(26,52,36,0.08);
+  }
+  .lf-achievement-ribbon {
+    position: absolute;
+    top: 22px; right: -34px;
+    transform: rotate(35deg);
+    background: linear-gradient(135deg, var(--green-700), var(--green-800));
+    color: #fff;
+    font-family: var(--f-mono);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    padding: 5px 44px;
+    box-shadow: 0 4px 10px rgba(26,52,36,0.2);
+  }
+  .lf-achievement-medal {
+    position: relative; z-index: 1;
+    display: flex; align-items: center; gap: 14px;
+    margin-bottom: 18px;
+  }
+  .lf-achievement-medal-icon {
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, #fff3c4, #e6c56a 60%, #b8922e);
+    display: grid; place-items: center;
+    font-size: 26px;
+    box-shadow: 0 4px 14px rgba(184,146,46,0.4), inset 0 -3px 8px rgba(0,0,0,0.12);
+    border: 2px solid rgba(255,255,255,0.7);
+  }
+  .lf-achievement-medal-year {
+    font-family: var(--f-serif);
+    font-size: 28px;
+    font-weight: 600;
+    font-style: italic;
+    color: var(--green-800);
+    letter-spacing: -0.01em;
+  }
+  .lf-achievement-title {
+    position: relative; z-index: 1;
+    font-family: var(--f-serif);
+    font-size: 20px;
+    line-height: 1.3;
+    font-weight: 500;
+    color: var(--ink-900);
+    margin: 0 0 8px;
+    letter-spacing: -0.01em;
+  }
+  .lf-achievement-place {
+    position: relative; z-index: 1;
+    font-size: 13px; font-weight: 700;
+    color: var(--green-800);
+    margin-bottom: 10px;
+    letter-spacing: 0.01em;
+  }
+  .lf-achievement-detail {
+    position: relative; z-index: 1;
+    font-size: 13px;
+    line-height: 1.55;
+    color: var(--text-soft);
+  }
+
+  /* Prices — service cards */
+  .lf-prices-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+  }
+  .lf-price-card {
+    position: relative;
+    padding: 32px 26px 26px;
+    background: var(--surface);
+    border: 1.5px solid var(--border-soft);
+    border-radius: 22px;
+    box-shadow: 0 8px 24px -14px rgba(26,52,36,0.14);
+    transition: transform 0.35s var(--ease), box-shadow 0.35s, border-color 0.25s;
+    display: flex; flex-direction: column;
+    min-height: 260px;
+  }
+  .lf-price-card:hover {
+    transform: translateY(-5px);
+    border-color: var(--green-300);
+    box-shadow: 0 18px 38px -16px rgba(26,52,36,0.2);
+  }
+  .lf-price-soft { background: #f4f9f5; }
+  .lf-price-mid  { background: linear-gradient(160deg, #eef6f0 0%, #ffffff 100%); }
+  .lf-price-strong {
+    background: linear-gradient(160deg, var(--green-800) 0%, var(--green-900, #1b3d2a) 100%);
+    color: #fff;
+    border-color: transparent;
+  }
+  .lf-price-strong .lf-price-title,
+  .lf-price-strong .lf-price-sub,
+  .lf-price-strong .lf-price-value,
+  .lf-price-strong .lf-price-unit,
+  .lf-price-strong .lf-price-note { color: #fff; }
+  .lf-price-strong .lf-price-sub { opacity: 0.75; }
+  .lf-price-strong .lf-price-note { opacity: 0.8; border-top-color: rgba(255,255,255,0.18); }
+  .lf-price-custom {
+    background: repeating-linear-gradient(135deg, #fcfbf5 0 10px, #f7f4e9 10px 20px);
+  }
+  .lf-price-featured {
+    transform: translateY(-8px);
+    box-shadow: 0 22px 48px -18px rgba(26,52,36,0.35);
+  }
+  .lf-price-featured:hover { transform: translateY(-12px); }
+  .lf-price-badge {
+    position: absolute;
+    top: -12px; left: 22px;
+    background: #fff;
+    color: var(--green-800);
+    border: 1.5px solid var(--green-300);
+    border-radius: 999px;
+    padding: 5px 14px;
+    font-family: var(--f-mono);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    box-shadow: 0 4px 12px rgba(26,52,36,0.12);
+  }
+  .lf-price-head { margin-bottom: 22px; }
+  .lf-price-title {
+    font-family: var(--f-serif);
+    font-size: 20px;
+    font-weight: 500;
+    line-height: 1.25;
+    color: var(--ink-900);
+    letter-spacing: -0.01em;
+    margin-bottom: 6px;
+  }
+  .lf-price-sub {
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.45;
+  }
+  .lf-price-amount {
+    display: flex; align-items: baseline; flex-wrap: wrap; gap: 8px;
+    margin-bottom: auto;
+    padding: 10px 0 16px;
+  }
+  .lf-price-value {
+    font-family: var(--f-serif);
+    font-size: clamp(30px, 3vw, 40px);
+    font-weight: 600;
+    line-height: 1;
+    color: var(--green-800);
+    letter-spacing: -0.02em;
+  }
+  .lf-price-custom .lf-price-value { font-size: clamp(20px, 2vw, 24px); font-style: italic; }
+  .lf-price-unit {
+    font-family: var(--f-mono);
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    font-weight: 600;
+  }
+  .lf-price-note {
+    font-size: 12px;
+    line-height: 1.55;
+    color: var(--text-muted);
+    padding-top: 14px;
+    border-top: 1px dashed var(--green-300);
+  }
+
+  /* Facts — tile grid */
+  .lf-facts-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 18px;
+    margin: 0 0 64px;
+  }
+  .lf-fact-card {
+    position: relative;
+    display: flex; align-items: center; gap: 16px;
+    padding: 20px 22px;
+    background: linear-gradient(150deg, #fff 0%, #f4f9f5 100%);
+    border: 1.5px solid var(--green-200);
+    border-radius: 18px;
+    box-shadow: 0 8px 22px -12px rgba(26,52,36,0.14);
+    overflow: hidden;
+    transition: transform 0.35s var(--ease), box-shadow 0.35s, border-color 0.25s;
+  }
+  .lf-fact-card::after {
+    content: "";
+    position: absolute;
+    top: -40%; right: -30%;
+    width: 140px; height: 140px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(116,198,157,0.25), transparent 70%);
+    pointer-events: none;
+  }
+  .lf-fact-card:hover {
+    transform: translateY(-4px);
+    border-color: var(--green-400);
+    box-shadow: 0 18px 36px -16px rgba(26,52,36,0.22);
+  }
+  .lf-fact-icon {
+    width: 54px; height: 54px; flex-shrink: 0;
+    border-radius: 16px;
+    background: var(--green-100);
+    display: grid; place-items: center;
+    font-size: 26px;
+    border: 1.5px solid var(--green-200);
+  }
+  .lf-fact-body { position: relative; z-index: 1; }
+  .lf-fact-value {
+    font-family: var(--f-serif);
+    font-size: 30px; font-weight: 600;
+    line-height: 1;
+    color: transparent;
+    background-image: linear-gradient(135deg, var(--green-700) 0%, var(--green-900, #1b3d2a) 100%);
+    -webkit-background-clip: text; background-clip: text;
+    letter-spacing: -0.02em;
+    margin-bottom: 3px;
+  }
+  .lf-fact-label {
+    font-size: 13px; font-weight: 700;
+    color: var(--ink-900);
+    letter-spacing: 0.01em;
+  }
+  .lf-fact-note {
+    margin-top: 2px;
+    font-size: 12px; color: var(--text-muted);
+    font-family: var(--f-mono);
+    letter-spacing: 0.02em;
+  }
+
+  /* Timeline — путь в биологии */
+  .lf-timeline-wrap { margin: 96px auto 0; max-width: 900px; }
+  .lf-timeline {
+    position: relative;
+    list-style: none; padding: 0; margin: 0;
+  }
+  .lf-timeline::before {
+    content: "";
+    position: absolute;
+    left: 50%; top: 0; bottom: 0;
+    width: 2px;
+    background: linear-gradient(180deg, transparent, var(--green-400) 8%, var(--green-400) 92%, transparent);
+    transform: translateX(-50%);
+  }
+  .lf-timeline-item {
+    position: relative;
+    display: grid;
+    grid-template-columns: 1fr 64px 1fr;
+    align-items: center;
+    margin-bottom: 28px;
+  }
+  .lf-timeline-item:last-child { margin-bottom: 0; }
+  .lf-timeline-node {
+    grid-column: 2;
+    display: grid; place-items: center;
+    position: relative;
+  }
+  .lf-timeline-dot {
+    width: 16px; height: 16px; border-radius: 50%;
+    background: var(--green-700);
+    border: 3px solid var(--bg);
+    box-shadow: 0 0 0 2px var(--green-400), 0 6px 14px rgba(26,52,36,0.22);
+    transition: transform 0.25s var(--ease), box-shadow 0.25s;
+  }
+  .lf-timeline-item:hover .lf-timeline-dot {
+    transform: scale(1.25);
+    box-shadow: 0 0 0 3px var(--green-500, var(--green-400)), 0 8px 18px rgba(26,52,36,0.3);
+  }
+  .lf-timeline-card {
+    padding: 16px 20px;
+    background: var(--surface);
+    border: 1.5px solid var(--border-soft);
+    border-radius: 16px;
+    box-shadow: 0 6px 18px -10px rgba(26,52,36,0.14);
+    transition: transform 0.3s var(--ease), box-shadow 0.3s, border-color 0.25s;
+    position: relative;
+  }
+  .lf-timeline-card::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    width: 10px; height: 10px;
+    background: var(--surface);
+    border: 1.5px solid var(--border-soft);
+    transform: translateY(-50%) rotate(45deg);
+  }
+  .lf-timeline-left .lf-timeline-card {
+    grid-column: 1;
+    text-align: right;
+  }
+  .lf-timeline-left .lf-timeline-card::before {
+    right: -6px;
+    border-left: none; border-bottom: none;
+  }
+  .lf-timeline-right .lf-timeline-card {
+    grid-column: 3;
+  }
+  .lf-timeline-right .lf-timeline-card::before {
+    left: -6px;
+    border-right: none; border-top: none;
+  }
+  .lf-timeline-item:hover .lf-timeline-card {
+    transform: translateY(-2px);
+    border-color: var(--green-300);
+    box-shadow: 0 14px 28px -14px rgba(26,52,36,0.22);
+  }
+  .lf-timeline-year {
+    font-family: var(--f-serif);
+    font-size: 22px; font-weight: 600;
+    font-style: italic;
+    color: var(--green-800);
+    letter-spacing: -0.01em;
+    margin-bottom: 4px;
+  }
+  .lf-timeline-title {
+    font-size: 15px; font-weight: 700;
+    color: var(--ink-900);
+    line-height: 1.3;
+    margin-bottom: 4px;
+  }
+  .lf-timeline-desc {
+    font-size: 13px; color: var(--text-soft);
+    line-height: 1.5;
+  }
+
   @media (max-width: 900px) {
     .lf-about-photo-card { margin: 0 auto 32px; width: min(280px, 80%); }
     .lf-about-para { padding-left: 34px; }
+    .lf-about-list { padding-left: 38px; }
+    .lf-about-list[data-num]::before { left: 10px; top: 18px; }
     .lf-dropcap::first-letter { font-size: 68px; padding: 6px 12px 0 0; }
     .lf-pullquote { margin-left: 0; font-size: 18px; }
     .lf-specimen-name { font-size: 20px; padding-right: 60px; }
     .lf-diplomas-grid { grid-template-columns: 1fr !important; gap: 56px !important; }
+    .lf-achievements-grid { grid-template-columns: 1fr; gap: 20px; }
+    .lf-prices-grid { grid-template-columns: 1fr; gap: 16px; }
+    .lf-price-featured { transform: none; }
+    .lf-price-featured:hover { transform: translateY(-5px); }
+    .lf-facts-grid { grid-template-columns: 1fr; gap: 12px; margin-bottom: 48px; }
+    .lf-fact-value { font-size: 26px; }
+    .lf-timeline-wrap { margin-top: 72px; }
+    .lf-timeline::before { left: 18px; }
+    .lf-timeline-item {
+      grid-template-columns: 36px 1fr;
+      gap: 0;
+    }
+    .lf-timeline-node { grid-column: 1; }
+    .lf-timeline-left .lf-timeline-card,
+    .lf-timeline-right .lf-timeline-card {
+      grid-column: 2;
+      text-align: left;
+      margin-left: 12px;
+    }
+    .lf-timeline-left .lf-timeline-card::before,
+    .lf-timeline-right .lf-timeline-card::before {
+      left: -6px; right: auto;
+      border-left: 1.5px solid var(--border-soft);
+      border-bottom: 1.5px solid var(--border-soft);
+      border-top: none; border-right: none;
+    }
   }
 `;
 
@@ -1053,7 +1611,7 @@ export function LandingPage() {
     else document.querySelector(target)?.scrollIntoView({ behavior: "smooth" });
   };
 
-  const activeSection = useActiveSection(["about", "diplomas", "articles"]);
+  const activeSection = useActiveSection(["about", "diplomas", "prices", "articles"]);
   const [lightbox, setLightbox] = useState(null);
   const [showContacts, setShowContacts] = useState(false);
   const [legalModal, setLegalModal] = useState(null); // "privacy" | "cookies" | null
@@ -1114,7 +1672,7 @@ export function LandingPage() {
         </a>
 
         <nav className="lf-nav" style={{ display: "flex", alignItems: "center", gap: 36 }}>
-          {[["Об авторе","about"],["Образование","diplomas"],["Конференции","articles"]].map(([l,id]) => (
+          {[["Об авторе","about"],["Образование","diplomas"],["Цены","prices"],["Конференции","articles"]].map(([l,id]) => (
             <a key={id} href={`#${id}`}
               onClick={e => { e.preventDefault(); scrollToTarget(`#${id}`); }}
               className={`lf-nav-link${activeSection === id ? " lf-nav-active" : ""}`}>{l}</a>
@@ -1460,52 +2018,67 @@ export function LandingPage() {
             </h2>
           </div>
 
+          {/* Плитка фактов */}
+          <div className="lf-facts-grid lf-reveal">
+            {FACTS.map((f, i) => (
+              <div
+                key={i}
+                className="lf-fact-card"
+                style={{ transitionDelay: `${i * 0.06}s` }}
+              >
+                <div className="lf-fact-icon">{f.icon}</div>
+                <div className="lf-fact-body">
+                  <div className="lf-fact-value">{f.value}</div>
+                  <div className="lf-fact-label">{f.label}</div>
+                  <div className="lf-fact-note">{f.note}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+
           <div className="lf-about-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 64, alignItems: "start" }}>
             {/* Текст */}
             <div className="lf-reveal-left">
-              {/* Полароид с фото — "Fig. II" */}
-              <figure className="lf-about-photo-card">
-                <img src={TUTOR_PHOTO} alt={TUTOR.name} className="lf-about-photo-img" />
-                <figcaption className="lf-about-photo-caption">
-                  <strong>Fig. II — Ritratto</strong>
-                  В. Ю. Никитенко, поле 2024
-                </figcaption>
-              </figure>
-
               <p className="lf-about-para lf-dropcap" data-num="§ 01">
-                {TUTOR.bio}
+                Меня зовут Виктория, и я — биолог по призванию. В 2025 году получила
+                <em> второе высшее </em> образование и готова делиться не только фундаментальными
+                знаниями по биологии, но и опытом проживания стрессового периода экзаменов.
               </p>
 
-              <p className="lf-about-para" data-num="§ 02">
-                Моя научная специализация — арахнология: систематика и морфология пауков. Участвовала
-                в полевых практиках общим объёмом более 1000 часов, выступала на всероссийских
-                и международных конференциях по зоологии и энтомологии.
+              <div className="lf-about-list" data-num="§ 02">
+                <div className="lf-about-list-title">Из моих умений</div>
+                <ul>
+                  {SKILLS.map((s, i) => (
+                    <li key={i}>{s}</li>
+                  ))}
+                </ul>
+              </div>
+
+              <p className="lf-about-para" data-num="§ 03">
+                На занятиях стараюсь объяснять просто и понятно, использую индивидуальный
+                подход с опорой на сильные стороны ученика и обязательно сверяюсь
+                с актуальностью научных данных по каждой теме.
               </p>
 
-              <blockquote className="lf-pullquote">
-                Хочу, чтобы биология стала для тебя не набором терминов, а живой системой —
-                понятной, связной и по-настоящему интересной.
-                <cite>— принцип работы</cite>
-              </blockquote>
+              <div className="lf-about-list" data-num="§ 04">
+                <div className="lf-about-list-title">С чем я могу помочь</div>
+                <ul className="lf-about-list-tags">
+                  {SERVICES_LIST.map((s, i) => (
+                    <li key={i}>
+                      <span className="lf-about-tag-icon">{s.icon}</span>
+                      {s.text}
+                    </li>
+                  ))}
+                </ul>
+              </div>
 
-              <p className="lf-about-para" data-num="§ 03" style={{ marginBottom: 12 }}>
-                На занятиях использую интерактивные тесты прямо здесь, в «Живой клетке».
-                После каждого урока ты проходишь тест — я вижу результат и корректирую программу.
+              <p className="lf-about-para" data-num="§ 05" style={{ marginBottom: 12 }}>
+                Преподаю <em>дистанционно</em>. Первое занятие пробное — на нём мы обсудим
+                организационные моменты и вместе построим учебный план. После каждого урока
+                ты проходишь короткий тест прямо здесь, в «Живой клетке», — так мы видим прогресс.
               </p>
 
               <div className="lf-fleuron"><span>❦ · ❦ · ❦</span></div>
-
-              {/* Specimen label — подпись */}
-              <div className="lf-specimen">
-                <div className="lf-specimen-stamp">Anno<br/>2025</div>
-                <div className="lf-specimen-name">Никитенко Виктория Юрьевна</div>
-                <div className="lf-specimen-role">Magistra biologiæ · Арахнолог · ТГУ</div>
-                <div className="lf-specimen-meta">
-                  <span><strong>Exp.</strong> 2+ года</span>
-                  <span><strong>Disc.</strong> 25+ учеников</span>
-                  <span><strong>Rating</strong> 5.0 / Профи.ру</span>
-                </div>
-              </div>
 
               {/* Ссылка на Профи.ру */}
               <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginBottom: 24 }}>
@@ -1650,6 +2223,46 @@ export function LandingPage() {
                 );
               })}
             </div>
+          </div>
+
+          {/* Путь в биологии — timeline */}
+          <div className="lf-timeline-wrap">
+            <div className="lf-reveal" style={{ textAlign: "center", marginBottom: 44 }}>
+              <div style={{
+                display: "inline-block", background: "var(--green-100)",
+                color: "var(--green-800)", borderRadius: 999,
+                padding: "5px 16px", fontSize: 11, fontWeight: 700,
+                letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 16,
+              }}>
+                Путь в биологии
+              </div>
+              <h3 style={{
+                fontFamily: "var(--f-serif)",
+                fontSize: "clamp(24px, 2.4vw, 34px)",
+                lineHeight: 1.15, letterSpacing: "-0.01em",
+              }}>
+                От первого курса до <em style={{ color: "var(--green-800)" }}>магистратуры</em>
+              </h3>
+            </div>
+
+            <ol className="lf-timeline">
+              {TIMELINE.map((t, i) => (
+                <li
+                  key={i}
+                  className={`lf-timeline-item lf-reveal ${i % 2 === 0 ? "lf-timeline-left" : "lf-timeline-right"}`}
+                  style={{ transitionDelay: `${i * 0.08}s` }}
+                >
+                  <div className="lf-timeline-node">
+                    <span className="lf-timeline-dot" />
+                  </div>
+                  <div className="lf-timeline-card">
+                    <div className="lf-timeline-year">{t.year}</div>
+                    <div className="lf-timeline-title">{t.title}</div>
+                    <div className="lf-timeline-desc">{t.desc}</div>
+                  </div>
+                </li>
+              ))}
+            </ol>
           </div>
         </div>
       </section>
@@ -1805,6 +2418,126 @@ export function LandingPage() {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ══ ДОСТИЖЕНИЯ ═════════════════════════════════════════════════════════ */}
+      <section id="achievements" className="lf-section-pad" style={{
+        padding: "96px 48px",
+        background: "var(--bg)",
+        position: "relative", overflow: "hidden",
+      }}>
+        <div style={{ position: "absolute", bottom: -40, left: -40, color: "var(--green-700)", opacity: 0.05, pointerEvents: "none" }}>
+          <Sprig size={360} />
+        </div>
+
+        <div style={{ maxWidth: 1280, margin: "0 auto", position: "relative" }}>
+          <div className="lf-reveal" style={{ marginBottom: 56 }}>
+            <div style={{
+              display: "inline-block", background: "var(--green-100)",
+              color: "var(--green-800)", borderRadius: 999,
+              padding: "5px 16px", fontSize: 11, fontWeight: 700,
+              letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 20,
+            }}>
+              Достижения
+            </div>
+            <h2 style={{
+              fontFamily: "var(--f-serif)", fontSize: "clamp(30px, 3vw, 46px)",
+              lineHeight: 1.1, letterSpacing: "-0.02em",
+            }}>
+              Награды и<br/>
+              <em style={{ color: "var(--green-800)" }}>благодарности</em>
+            </h2>
+          </div>
+
+          <div className="lf-achievements-grid">
+            {ACHIEVEMENTS.map((a, i) => (
+              <article
+                key={i}
+                className="lf-achievement-card lf-reveal"
+                style={{ transitionDelay: `${i * 0.1}s` }}
+              >
+                <div className="lf-achievement-ribbon">{a.ribbon}</div>
+                <div className="lf-achievement-medal">
+                  <span className="lf-achievement-medal-icon">{a.icon}</span>
+                  <span className="lf-achievement-medal-year">{a.year}</span>
+                </div>
+                <h3 className="lf-achievement-title">{a.title}</h3>
+                <div className="lf-achievement-place">{a.place}</div>
+                <div className="lf-achievement-detail">{a.detail}</div>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ══ УСЛУГИ И ЦЕНЫ ══════════════════════════════════════════════════════ */}
+      <section id="prices" className="lf-section-pad" style={{
+        padding: "96px 48px",
+        background: "linear-gradient(180deg, var(--bg) 0%, var(--green-50) 100%)",
+        position: "relative", overflow: "hidden",
+      }}>
+        <div style={{ position: "absolute", top: -30, right: -30, color: "var(--green-800)", opacity: 0.05, pointerEvents: "none" }}>
+          <Fern size={420} />
+        </div>
+
+        <div style={{ maxWidth: 1280, margin: "0 auto", position: "relative" }}>
+          <div className="lf-reveal" style={{ marginBottom: 56 }}>
+            <div style={{
+              display: "inline-block", background: "var(--green-100)",
+              color: "var(--green-800)", borderRadius: 999,
+              padding: "5px 16px", fontSize: 11, fontWeight: 700,
+              letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 20,
+            }}>
+              Услуги и цены
+            </div>
+            <h2 style={{
+              fontFamily: "var(--f-serif)", fontSize: "clamp(30px, 3vw, 46px)",
+              lineHeight: 1.1, letterSpacing: "-0.02em",
+            }}>
+              Форматы занятий<br/>
+              <em style={{ color: "var(--green-800)" }}>и стоимость</em>
+            </h2>
+            <p style={{
+              marginTop: 18, maxWidth: 620,
+              fontSize: 15, lineHeight: 1.6, color: "var(--text-soft)",
+            }}>
+              Занятия дистанционные, длительность — по запросу.
+              Первое занятие — пробное: знакомимся, обсуждаем цели и строим план.
+            </p>
+          </div>
+
+          <div className="lf-prices-grid">
+            {PRICES.map((p, i) => (
+              <div
+                key={i}
+                className={`lf-price-card lf-price-${p.tone}${p.featured ? " lf-price-featured" : ""} lf-reveal`}
+                style={{ transitionDelay: `${i * 0.07}s` }}
+              >
+                {p.featured && <div className="lf-price-badge">Популярное</div>}
+                <div className="lf-price-head">
+                  <div className="lf-price-title">{p.title}</div>
+                  <div className="lf-price-sub">{p.subtitle}</div>
+                </div>
+                <div className="lf-price-amount">
+                  <span className="lf-price-value">{p.price}</span>
+                  {p.unit && <span className="lf-price-unit">{p.unit}</span>}
+                </div>
+                <div className="lf-price-note">{p.note}</div>
+              </div>
+            ))}
+          </div>
+
+          <div className="lf-reveal" style={{ marginTop: 40, textAlign: "center" }}>
+            <a href="https://t.me/vikotiks" target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none" }}>
+              <button className="lf-hero-btn lf-hero-btn-primary" style={{ fontSize: 14, padding: "14px 32px" }}>
+                Записаться на пробное занятие
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                  <path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </button>
+            </a>
           </div>
         </div>
       </section>
