@@ -210,14 +210,6 @@ const PRICES = [
     tone: "custom",
     note: "Короткие встречи или письменный разбор",
   },
-  {
-    title: "Курсовая / диплом",
-    subtitle: "Помощь в написании научных работ",
-    price: "по договорённости",
-    unit: null,
-    tone: "custom",
-    note: "Поддержка по структуре, источникам и редактуре",
-  },
 ];
 
 // ─── CSS-анимации ────────────────────────────────────────────────────────────
@@ -921,9 +913,11 @@ const STYLES = `
   /* Prices — service cards */
   .lf-prices-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(6, 1fr);
     gap: 20px;
   }
+  .lf-prices-grid > .lf-price-card { grid-column: span 2; }
+  .lf-prices-grid > .lf-price-card:nth-child(4) { grid-column: 2 / span 2; }
   .lf-price-card {
     position: relative;
     padding: 32px 26px 26px;
@@ -1190,6 +1184,8 @@ const STYLES = `
     .lf-diplomas-grid { grid-template-columns: 1fr !important; gap: 56px !important; }
     .lf-achievements-grid { grid-template-columns: 1fr; gap: 20px; }
     .lf-prices-grid { grid-template-columns: 1fr; gap: 16px; }
+    .lf-prices-grid > .lf-price-card,
+    .lf-prices-grid > .lf-price-card:nth-child(4) { grid-column: auto; }
     .lf-price-featured { transform: none; }
     .lf-price-featured:hover { transform: translateY(-5px); }
     .lf-facts-grid { grid-template-columns: 1fr; gap: 12px; margin-bottom: 48px; }
