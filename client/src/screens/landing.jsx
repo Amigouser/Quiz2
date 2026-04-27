@@ -487,6 +487,59 @@ const STYLES = `
     .lf-stats-grid { grid-template-columns: repeat(3, 1fr) !important; }
   }
 
+  /* ══ ABOUT — photo hero блок ════════════════════════════════════════════ */
+  .lf-about-intro {
+    display: grid;
+    grid-template-columns: 420px 1fr;
+    gap: 64px;
+    align-items: end;
+    margin-bottom: 80px;
+  }
+  .lf-about-photo-wrap {
+    position: relative;
+    margin-top: -200px;
+    border-radius: 28px;
+    overflow: hidden;
+    box-shadow:
+      0 48px 96px rgba(15,40,20,0.22),
+      0 8px 24px rgba(15,40,20,0.1);
+    aspect-ratio: 3/4;
+    max-height: 620px;
+    z-index: 2;
+  }
+  .lf-about-photo-wrap img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    object-position: top center;
+    display: block;
+  }
+  .lf-about-photo-badge {
+    position: absolute;
+    bottom: 20px; left: 16px; right: 16px;
+    background: rgba(255,255,255,0.88);
+    backdrop-filter: blur(14px);
+    border-radius: 16px;
+    padding: 14px 18px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .lf-about-mini-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 28px;
+  }
+  .lf-about-mini-stat {
+    background: var(--surface);
+    border: 1.5px solid var(--border-soft);
+    border-radius: 16px;
+    padding: 16px 18px;
+  }
+  @media (max-width: 900px) {
+    .lf-about-intro { grid-template-columns: 1fr; gap: 32px; }
+    .lf-about-photo-wrap { margin-top: 0; max-height: 400px; aspect-ratio: 4/3; }
+    .lf-about-mini-stats { grid-template-columns: 1fr 1fr; }
+  }
+
   /* ══ ABOUT — field notebook / научный дневник ═══════════════════════════ */
   .lf-about-photo-card {
     position: relative;
@@ -1211,7 +1264,329 @@ const STYLES = `
       border-top: none; border-right: none;
     }
   }
+
+  /* ── Hero: featured DNA Helix ─────────────────────────────────────────── */
+  .lf-helix {
+    position: absolute;
+    pointer-events: none;
+    color: #b7e4c7;
+    filter: drop-shadow(0 0 28px rgba(116, 198, 157, 0.18));
+  }
+  .lf-helix-spin {
+    transform-origin: 50% 50%;
+    animation: lf-helix-spin 38s linear infinite;
+  }
+  @keyframes lf-helix-spin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+  }
+  .lf-helix-strand {
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-dasharray: 260;
+    stroke-dashoffset: 260;
+    animation: lf-helix-draw 2.4s cubic-bezier(0.22,0.8,0.32,1) 0.3s forwards;
+  }
+  .lf-helix-rung {
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-dasharray: 90;
+    stroke-dashoffset: 90;
+    animation: lf-helix-draw 0.9s cubic-bezier(0.22,0.8,0.32,1) forwards;
+  }
+  @keyframes lf-helix-draw {
+    to { stroke-dashoffset: 0; }
+  }
+
+  /* ── Hero: living cell (microscope feel) ──────────────────────────────── */
+  .lf-living-cell {
+    position: absolute;
+    pointer-events: none;
+    color: #95d5b2;
+    animation: lf-cell-living 4.2s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+    transform-origin: 50% 50%;
+    filter: drop-shadow(0 0 14px rgba(149, 213, 178, 0.16));
+  }
+  @keyframes lf-cell-living {
+    0%, 100% {
+      transform: scale(1);
+      filter: drop-shadow(0 0 12px rgba(149, 213, 178, 0.14));
+      opacity: 0.55;
+    }
+    50% {
+      transform: scale(1.04);
+      filter: drop-shadow(0 0 28px rgba(149, 213, 178, 0.34));
+      opacity: 0.78;
+    }
+  }
+  .lf-cell-orbit {
+    transform-origin: 60px 60px;
+    animation: lf-helix-spin 60s linear infinite reverse;
+  }
+
+  /* ── Hero: stagger reveal of БИОЛОГИИ letters ─────────────────────────── */
+  .lf-letter {
+    display: inline-block;
+    opacity: 0;
+    transform: translateY(48px) scale(0.92);
+    animation: lf-letter-rise 0.85s cubic-bezier(0.22, 0.8, 0.32, 1) forwards;
+    will-change: transform, opacity;
+    /* Each letter carries its own copy of the title gradient so background-clip: text
+       still works after splitting the title into spans. */
+    background-image: linear-gradient(135deg, #74c69d 0%, #b7e4c7 50%, #52b788 100%);
+    -webkit-background-clip: text;
+            background-clip: text;
+    color: transparent;
+  }
+  @keyframes lf-letter-rise {
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  /* ── Hero: ochre accent dot (Japandi warmth on dark bg) ───────────────── */
+  .lf-ochre-dot {
+    display: inline-block;
+    width: 6px; height: 6px;
+    border-radius: 999px;
+    background: var(--ochre, #c89b3c);
+    box-shadow: 0 0 12px rgba(200, 155, 60, 0.55);
+    animation: lf-cell-living 3.8s ease-in-out infinite;
+  }
+
+  /* ── Respect reduced motion ──────────────────────────────────────────── */
+  @media (prefers-reduced-motion: reduce) {
+    .lf-helix-spin,
+    .lf-living-cell,
+    .lf-cell-orbit,
+    .lf-ochre-dot,
+    .dna3d-spinner { animation: none !important; }
+    .lf-helix-strand,
+    .lf-helix-rung { stroke-dashoffset: 0 !important; animation: none !important; }
+    .lf-letter { opacity: 1 !important; transform: none !important; animation: none !important; }
+  }
+
+  /* ══ Hero — editorial two-column layout ════════════════════════════ */
+  .lf-hero-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 80px;
+    align-items: center;
+    width: min(96vw, 1200px);
+    padding: 0 40px;
+    position: relative;
+    z-index: 2;
+  }
+  .lf-hero-headline { max-width: 580px; display: flex; flex-direction: column; align-items: flex-start; }
+  .lf-hero-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px 6px 8px;
+    border: 1.5px solid rgba(45, 106, 79, 0.3);
+    border-radius: 999px;
+    font-family: var(--f-sans);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    color: var(--green-800);
+    text-transform: uppercase;
+    margin-bottom: 28px;
+    opacity: 0;
+    animation: lf-letter-rise 0.7s cubic-bezier(0.22, 0.8, 0.32, 1) 0.1s forwards;
+  }
+  .lf-hero-pill-icon {
+    width: 22px; height: 22px;
+    background: var(--green-800);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .lf-hero-main-headline {
+    font-family: var(--f-serif);
+    font-size: clamp(48px, 8vw, 88px);
+    font-weight: 700;
+    line-height: 1.07;
+    letter-spacing: -0.025em;
+    color: #1a2e1f;
+    margin: 0 0 20px 0;
+    opacity: 0;
+    animation: lf-letter-rise 0.85s cubic-bezier(0.22, 0.8, 0.32, 1) 0.3s forwards;
+  }
+  .lf-hero-main-headline em {
+    font-style: italic;
+    color: var(--green-800);
+  }
+  .lf-hero-tagline {
+    margin-top: 0;
+    font-size: 15px;
+    line-height: 1.65;
+    color: rgba(26, 46, 31, 0.62);
+    max-width: 420px;
+    opacity: 0;
+    animation: lf-letter-rise 0.9s cubic-bezier(0.22, 0.8, 0.32, 1) 0.55s forwards;
+  }
+  .lf-hero-actions {
+    margin-top: 36px;
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    opacity: 0;
+    animation: lf-letter-rise 0.9s cubic-bezier(0.22, 0.8, 0.32, 1) 0.75s forwards;
+  }
+  /* CTA buttons on light bg */
+  .lf-hero-cta-primary {
+    background: var(--green-800);
+    color: #fff;
+    font-size: 14px;
+    padding: 13px 24px;
+    border-radius: 999px;
+  }
+  .lf-hero-cta-primary:hover {
+    background: var(--green-900);
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 12px 32px rgba(45, 106, 79, 0.28);
+  }
+  .lf-hero-cta-ghost {
+    background: transparent;
+    color: var(--green-900);
+    border: 1.5px solid rgba(45, 106, 79, 0.25);
+    backdrop-filter: none;
+    font-size: 14px;
+    padding: 13px 24px;
+    border-radius: 999px;
+  }
+  .lf-hero-cta-ghost:hover {
+    background: rgba(45, 106, 79, 0.06);
+    border-color: var(--green-800);
+    transform: translateY(-2px);
+  }
+
+  @media (max-width: 900px) {
+    .lf-hero-row {
+      grid-template-columns: 1fr;
+      gap: 0;
+      padding: 0 24px;
+    }
+    .lf-hero-headline { max-width: none; align-items: flex-start; }
+    .lf-hero-main-headline { font-size: clamp(38px, 10vw, 64px); }
+    .lf-hero-tagline { max-width: none; }
+    .lf-hero-actions { flex-direction: column; width: 100%; }
+    .lf-hero-cta-primary, .lf-hero-cta-ghost { width: 100%; justify-content: center; }
+    .lf-hero-3d-wrap { display: none; }
+  }
+
+  /* ══ 3D DNA molecular model (CSS-only, rotates around Y) ══════════════ */
+  .dna3d-stage {
+    width: 260px;
+    height: 580px;
+    position: relative;
+    perspective: 1500px;
+    margin: 0 auto;
+  }
+  .dna3d-spinner {
+    position: absolute;
+    inset: 0;
+    transform-style: preserve-3d;
+    animation: dna3d-spin 16s linear infinite;
+    will-change: transform;
+  }
+  @keyframes dna3d-spin {
+    from { transform: rotateX(8deg) rotateY(0deg); }
+    to   { transform: rotateX(8deg) rotateY(360deg); }
+  }
+  .dna3d-rung {
+    position: absolute;
+    left: 50%;
+    width: 220px;
+    height: 14px;
+    margin-left: -110px;
+    display: flex;
+    align-items: center;
+    transform-style: preserve-3d;
+    opacity: 0;
+    animation: dna3d-rung-in 0.6s cubic-bezier(0.22, 0.8, 0.32, 1) forwards;
+  }
+  @keyframes dna3d-rung-in {
+    from { opacity: 0; transform: rotateY(var(--rot, 0deg)) translateZ(-30px); }
+    to   { opacity: 1; transform: rotateY(var(--rot, 0deg)) translateZ(0); }
+  }
+  .dna3d-ball {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    box-shadow:
+      inset -2.5px -2.5px 4px rgba(0, 0, 0, 0.28),
+      inset 2px 2px 2.5px rgba(255, 255, 255, 0.55),
+      0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+  .dna3d-ball-coral {
+    background: radial-gradient(circle at 32% 28%,
+      #f7b894 0%,
+      #e88865 35%,
+      #c46544 75%,
+      #8f4528 100%);
+  }
+  .dna3d-ball-sage {
+    background: radial-gradient(circle at 32% 28%,
+      #b8d2a9 0%,
+      #87ad7b 40%,
+      #5e8158 75%,
+      #3a5236 100%);
+  }
+  .dna3d-stick {
+    flex: 1;
+    height: 1.2px;
+    margin: 0 2px;
+    background: linear-gradient(90deg,
+      rgba(180, 160, 130, 0.1) 0%,
+      rgba(180, 160, 130, 0.55) 50%,
+      rgba(180, 160, 130, 0.1) 100%);
+    transform: translateZ(0);
+  }
+
+  @media (max-width: 900px) {
+    .dna3d-stage { width: 200px; height: 460px; }
+    .dna3d-rung { width: 170px; margin-left: -85px; }
+    .dna3d-ball { width: 14px; height: 14px; }
+  }
+  @media (max-width: 480px) {
+    .dna3d-stage { width: 170px; height: 380px; }
+    .dna3d-rung { width: 140px; margin-left: -70px; }
+  }
 `;
+
+// ─── Компонент: 3D DNA модель (CSS-only, вращается вокруг оси Y) ────────────
+function DNA3D({ rungs = 26, rise = 22, twist = 16 }) {
+  return (
+    <div className="dna3d-stage" aria-hidden="true">
+      <div className="dna3d-spinner">
+        {Array.from({ length: rungs }).map((_, i) => {
+          const rot = i * twist;
+          const top = i * rise;
+          const flipped = i % 2 === 1;
+          return (
+            <div
+              key={i}
+              className="dna3d-rung"
+              style={{
+                top: `${top}px`,
+                transform: `rotateY(${rot}deg)`,
+                animationDelay: `${0.05 * i}s`,
+                "--rot": `${rot}deg`,
+              }}
+            >
+              <div className={`dna3d-ball ${flipped ? "dna3d-ball-sage" : "dna3d-ball-coral"}`} />
+              <div className="dna3d-stick" />
+              <div className={`dna3d-ball ${flipped ? "dna3d-ball-coral" : "dna3d-ball-sage"}`} />
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 // ─── Хук: активная секция в навигации ────────────────────────────────────────
 function useActiveSection(ids) {
@@ -1610,6 +1985,7 @@ export function LandingPage() {
   const activeSection = useActiveSection(["about", "diplomas", "prices", "articles"]);
   const [lightbox, setLightbox] = useState(null);
   const [showContacts, setShowContacts] = useState(false);
+  const [contactPanel, setContactPanel] = useState(false);
   const [legalModal, setLegalModal] = useState(null); // "privacy" | "cookies" | null
   const [cookieConsent, setCookieConsent] = useState(() => {
     try { return localStorage.getItem("cookie-consent"); } catch { return null; }
@@ -1762,120 +2138,91 @@ export function LandingPage() {
       {/* ══ HERO ═══════════════════════════════════════════════════════════════ */}
       <section className="lf-hero-section" style={{
         minHeight: "100vh",
-        background: "linear-gradient(145deg, #0a1f14 0%, #0f2a1e 40%, #1b3d2a 70%, #2d5a40 100%)",
-        backgroundSize: "200% 200%",
-        animation: "lf-bg-shift 12s ease infinite",
+        background: "linear-gradient(160deg, #f8f6ef 0%, #f3f0e6 55%, #ece8d9 100%)",
         position: "relative", overflow: "hidden",
         display: "flex", alignItems: "center", justifyContent: "center",
         paddingTop: 64,
       }}>
-        {/* Floating botanical decorations (parallax-wrapped) */}
-        <div ref={setParallax(0)} data-speed="0.35" style={{ position: "absolute", top: "8%", right: "6%", pointerEvents: "none", willChange: "transform" }}>
-          <div style={{ color: "#52b788", opacity: 0.12, animation: "lf-float 8s ease-in-out infinite" }}>
-            <Fern size={340} />
-          </div>
-        </div>
-        <div ref={setParallax(1)} data-speed="0.2" style={{ position: "absolute", bottom: "5%", left: "2%", pointerEvents: "none", willChange: "transform" }}>
-          <div style={{ color: "#52b788", opacity: 0.08, animation: "lf-float2 10s ease-in-out infinite 2s" }}>
-            <Fern size={240} />
-          </div>
-        </div>
-        <div ref={setParallax(2)} data-speed="0.5" style={{ position: "absolute", top: "20%", left: "5%", pointerEvents: "none", willChange: "transform" }}>
-          <div style={{ color: "#74c69d", opacity: 0.07, animation: "lf-drift 14s ease-in-out infinite" }}>
-            <Sprig size={160} />
-          </div>
-        </div>
-        <div ref={setParallax(3)} data-speed="0.15" style={{ position: "absolute", bottom: "20%", right: "4%", pointerEvents: "none", willChange: "transform" }}>
-          <div style={{ color: "#52b788", opacity: 0.08, animation: "lf-pulse 7s ease-in-out infinite 1s" }}>
-            <Cell size={180} />
-          </div>
-        </div>
+        {/* Decorative corner lines */}
+        <svg style={{ position: "absolute", bottom: 0, right: 0, opacity: 0.12, pointerEvents: "none" }} width="260" height="180" viewBox="0 0 260 180" fill="none">
+          <line x1="260" y1="0" x2="0" y2="180" stroke="#2d6a4f" strokeWidth="1"/>
+          <line x1="260" y1="40" x2="40" y2="180" stroke="#2d6a4f" strokeWidth="1"/>
+          <line x1="260" y1="80" x2="80" y2="180" stroke="#2d6a4f" strokeWidth="1"/>
+        </svg>
+        <svg style={{ position: "absolute", top: 80, left: 0, opacity: 0.07, pointerEvents: "none" }} width="200" height="200" viewBox="0 0 200 200" fill="none">
+          <line x1="0" y1="200" x2="200" y2="0" stroke="#2d6a4f" strokeWidth="1"/>
+          <line x1="0" y1="160" x2="160" y2="0" stroke="#2d6a4f" strokeWidth="1"/>
+        </svg>
 
-        {/* Centered composition */}
-        <div className="lf-comp">
-          <div className="lf-comp-photo lf-comp-photo-1">
-            <img src="/tutor1.jpg" alt="" onError={e => { e.target.style.display = "none"; }} />
-          </div>
-
-          <div className="lf-comp-photo lf-comp-photo-2">
-            <img src="/tutor2.jpg" alt="" onError={e => { e.target.style.display = "none"; }} />
-          </div>
-
-          <div className="lf-comp-text">
-            <div style={{ fontSize: 18, marginBottom: 6, color: "#74c69d", opacity: 0.7 }}>✦</div>
-            <div className="lf-comp-sub">подготовка по</div>
-            <div className="lf-comp-title">БИОЛОГИИ</div>
-            <div style={{ display: "flex", justifyContent: "center", gap: 14, marginTop: 16, color: "#52b788" }}>
-              <span style={{ fontSize: 18, opacity: 0.55 }}>🌿</span>
-              <span style={{ fontSize: 16, color: "#74c69d", opacity: 0.65 }}>✦</span>
-              <span style={{ fontSize: 18, opacity: 0.55 }}>🌿</span>
+        <div className="lf-hero-row">
+          {/* Left: text */}
+          <div className="lf-hero-headline">
+            {/* Pill badge */}
+            <div className="lf-hero-pill">
+              <span className="lf-hero-pill-icon">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 2a10 10 0 0 1 0 20M12 2C6.5 2 2 6.5 2 12M12 2c2 4 2 12 0 20M2 12h20"/>
+                </svg>
+              </span>
+              ОГЭ · ЕГЭ · ВПР · ОЛИМПИАДЫ
             </div>
+
+            {/* Main headline */}
+            <h1 className="lf-hero-main-headline">
+              Подготовка<br />
+              по <em>биологии</em><br />
+              от клетки до<br />
+              100 баллов.
+            </h1>
+
+            {/* Tagline */}
+            <p className="lf-hero-tagline">
+              Виктория Никитенко — индивидуальные занятия с 5 по 11&nbsp;класс.
+              Очно и онлайн. Системно, без зубрёжки, с любовью к предмету.
+            </p>
+
+            {/* Actions */}
+            <div className="lf-hero-actions">
+              <button
+                className="lf-hero-btn lf-hero-cta-primary"
+                onClick={() => setContactPanel(true)}
+              >
+                Записаться на пробное
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M7 17L17 7M17 7H7M17 7v10"/>
+                </svg>
+              </button>
+              <button
+                className="lf-hero-btn lf-hero-cta-ghost"
+                onClick={() => document.getElementById("about")?.scrollIntoView({ behavior: "smooth" })}
+              >
+                Программы подготовки
+              </button>
+            </div>
+          </div>
+
+          {/* Right: rotating 3D DNA molecular model */}
+          <div className="lf-hero-3d-wrap">
+            <DNA3D />
           </div>
         </div>
 
         {/* Scroll indicator */}
         <div style={{
-          position: "absolute", bottom: 32, left: "50%", transform: "translateX(-50%)",
+          position: "absolute", bottom: 28, left: "50%", transform: "translateX(-50%)",
           display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
-          opacity: 0.4,
+          opacity: 0.35,
         }}>
-          <div style={{ fontSize: 11, color: "#b7e4c7", letterSpacing: "0.1em" }}>СКРОЛЛ</div>
-          <div style={{ width: 1, height: 40, background: "linear-gradient(180deg, #74c69d, transparent)" }} />
+          <div style={{ fontSize: 10, color: "var(--green-800)", letterSpacing: "0.18em", fontWeight: 600 }}>СКРОЛЛ</div>
+          <div style={{ width: 1, height: 36, background: "linear-gradient(180deg, var(--green-800), transparent)" }} />
         </div>
       </section>
 
-      <WaveDivider fill="var(--bg)" fromColor="#0f2a1e" />
+      <WaveDivider fill="var(--bg)" fromColor="#efeadd" />
 
-      {/* ══ СТАТИСТИКА ════════════════════════════════════════════════════════ */}
-      <section style={{ padding: "64px 48px 24px" }}>
-        <div style={{
-          maxWidth: 1100, margin: "0 auto",
-          display: "grid",
-          gridTemplateColumns: `repeat(${TUTOR.stats.length}, 1fr)`,
-          gap: 20,
-        }} className="lf-stats-grid">
-          {TUTOR.stats.map((s, i) => (
-            <div
-              key={i}
-              className="lf-stat-card lf-reveal"
-              style={{
-                background: "var(--surface)",
-                border: "1.5px solid var(--border-soft)",
-                borderRadius: 24,
-                padding: "32px 28px",
-                textAlign: "center",
-                boxShadow: "0 8px 32px rgba(26,52,36,0.06)",
-                transitionDelay: `${i * 0.1}s`,
-              }}
-            >
-              <div style={{
-                fontFamily: "var(--f-serif)",
-                fontSize: "clamp(44px, 5vw, 64px)",
-                fontWeight: 600,
-                lineHeight: 1,
-                letterSpacing: "-0.02em",
-                color: "transparent",
-                backgroundImage: "linear-gradient(135deg, var(--green-700) 0%, var(--green-800) 100%)",
-                WebkitBackgroundClip: "text",
-                backgroundClip: "text",
-                marginBottom: 10,
-              }}>
-                <CountUp value={s.value} suffix={s.suffix} />
-              </div>
-              <div style={{
-                fontSize: 13, fontWeight: 600,
-                letterSpacing: "0.05em", textTransform: "uppercase",
-                color: "var(--text-muted)",
-              }}>
-                {s.label}
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
 
       {/* ══ ТЕСТЫ + ЗАПИСЬ ════════════════════════════════════════════════════ */}
-      <section style={{ padding: "80px 48px 100px" }}>
+      <section style={{ padding: "80px 48px 160px" }}>
         <div style={{
           display: "grid",
           gridTemplateColumns: "1fr auto 1fr",
@@ -1993,43 +2340,76 @@ export function LandingPage() {
       </section>
 
       {/* ══ О РЕПЕТИТОРЕ ══════════════════════════════════════════════════════ */}
-      <section id="about" className="lf-section-pad" style={{ padding: "80px 48px 96px" }}>
+      <section id="about" className="lf-section-pad" style={{
+        padding: "120px 48px 96px",
+        overflow: "visible",
+        position: "relative",
+        background: "linear-gradient(160deg, #f8f6ef 0%, #f3f0e6 60%, #ece8d9 100%)",
+      }}>
         <div style={{ maxWidth: 1280, margin: "0 auto" }}>
 
-          <div className="lf-reveal" style={{ marginBottom: 56, maxWidth: 640 }}>
-            <div style={{
-              display: "inline-block", background: "var(--green-100)",
-              color: "var(--green-800)", borderRadius: 999,
-              padding: "5px 16px", fontSize: 11, fontWeight: 700,
-              letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 20,
-            }}>
-              Об авторе
-            </div>
-            <h2 style={{
-              fontFamily: "var(--f-serif)", fontSize: "clamp(30px, 3vw, 46px)",
-              lineHeight: 1.1, letterSpacing: "-0.02em",
-            }}>
-              Почему ученики<br/>
-              <em style={{ color: "var(--green-800)" }}>выбирают меня</em>
-            </h2>
-          </div>
-
-          {/* Плитка фактов */}
-          <div className="lf-facts-grid lf-reveal">
-            {FACTS.map((f, i) => (
-              <div
-                key={i}
-                className="lf-fact-card"
-                style={{ transitionDelay: `${i * 0.06}s` }}
-              >
-                <div className="lf-fact-icon">{f.icon}</div>
-                <div className="lf-fact-body">
-                  <div className="lf-fact-value">{f.value}</div>
-                  <div className="lf-fact-label">{f.label}</div>
-                  <div className="lf-fact-note">{f.note}</div>
+          {/* ── Фото + шапка ──────────────────────────────────────────── */}
+          <div className="lf-about-intro">
+            {/* Фото — вылетает за верхнюю границу секции */}
+            <div className="lf-about-photo-wrap lf-reveal-left">
+              <img src={TUTOR_PHOTO} alt={TUTOR.name} />
+              {/* Бейдж поверх фото */}
+              <div className="lf-about-photo-badge">
+                <div style={{
+                  width: 40, height: 40, borderRadius: 12, flexShrink: 0,
+                  background: "var(--green-800)",
+                  display: "grid", placeItems: "center",
+                }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 2a10 10 0 0 1 0 20M12 2c-2.5 3-4 7-4 10s1.5 7 4 10M12 2c2.5 3 4 7 4 10s-1.5 7-4 10M2 12h20"/>
+                  </svg>
+                </div>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: 14, color: "#1a2e1f" }}>{TUTOR.name}</div>
+                  <div style={{ fontSize: 12, color: "rgba(26,46,31,0.55)", marginTop: 2 }}>Репетитор по биологии · ТГУ</div>
                 </div>
               </div>
-            ))}
+            </div>
+
+            {/* Правая колонка — заголовок + мини-статистика */}
+            <div className="lf-reveal-right" style={{ paddingBottom: 20 }}>
+              <div style={{
+                display: "inline-block", background: "var(--green-100)",
+                color: "var(--green-800)", borderRadius: 999,
+                padding: "5px 16px", fontSize: 11, fontWeight: 700,
+                letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 20,
+              }}>
+                Об авторе
+              </div>
+              <h2 style={{
+                fontFamily: "var(--f-serif)", fontSize: "clamp(30px, 3vw, 48px)",
+                lineHeight: 1.1, letterSpacing: "-0.02em", marginBottom: 18,
+              }}>
+                Почему ученики<br/>
+                <em style={{ color: "var(--green-800)" }}>выбирают меня</em>
+              </h2>
+              <p style={{ fontSize: 15, lineHeight: 1.65, color: "var(--text-soft)", maxWidth: 420, marginBottom: 0 }}>
+                Студент-исследователь ТГУ и арахнолог. Готовлю к ОГЭ, ЕГЭ и ВПР — понятно, системно, с любовью к предмету и вниманием к каждому ученику.
+              </p>
+
+              {/* Мини-статистика */}
+              <div className="lf-about-mini-stats">
+                {FACTS.slice(0, 4).map((f, i) => (
+                  <div key={i} className="lf-about-mini-stat">
+                    <div style={{
+                      fontFamily: "var(--f-serif)",
+                      fontSize: "clamp(28px, 3vw, 36px)",
+                      fontWeight: 700, lineHeight: 1,
+                      letterSpacing: "-0.02em",
+                      color: "var(--green-800)",
+                      marginBottom: 4,
+                    }}>{f.value}</div>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>{f.label}</div>
+                    <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2, opacity: 0.7 }}>{f.note}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
 
           <div className="lf-about-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 64, alignItems: "start" }}>
@@ -2526,14 +2906,16 @@ export function LandingPage() {
           </div>
 
           <div className="lf-reveal" style={{ marginTop: 40, textAlign: "center" }}>
-            <a href="https://t.me/vikotiks" target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none" }}>
-              <button className="lf-hero-btn lf-hero-btn-primary" style={{ fontSize: 14, padding: "14px 32px" }}>
-                Записаться на пробное занятие
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                  <path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </button>
-            </a>
+            <button
+              className="lf-hero-btn lf-hero-btn-primary"
+              style={{ fontSize: 14, padding: "14px 32px" }}
+              onClick={() => setContactPanel(true)}
+            >
+              Записаться на пробное занятие
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
           </div>
         </div>
       </section>
@@ -2679,6 +3061,127 @@ export function LandingPage() {
       </footer>
 
       {lightbox && <Lightbox src={lightbox} onClose={() => setLightbox(null)} />}
+
+      {/* ══ ПАНЕЛЬ КОНТАКТОВ ══════════════════════════════════════════════════ */}
+      {contactPanel && (
+        <div
+          onClick={() => setContactPanel(false)}
+          style={{
+            position: "fixed", inset: 0, zIndex: 1000,
+            background: "rgba(15, 30, 20, 0.45)",
+            backdropFilter: "blur(6px)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            padding: "20px",
+            animation: "lf-in 0.25s cubic-bezier(0.22,0.8,0.32,1) forwards",
+          }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              background: "#fff",
+              borderRadius: 24,
+              padding: "40px 36px 32px",
+              maxWidth: 400,
+              width: "100%",
+              boxShadow: "0 24px 80px rgba(15,30,20,0.2)",
+              position: "relative",
+              animation: "lf-in 0.28s cubic-bezier(0.22,0.8,0.32,1) forwards",
+            }}
+          >
+            {/* Close */}
+            <button
+              onClick={() => setContactPanel(false)}
+              style={{
+                position: "absolute", top: 16, right: 16,
+                width: 32, height: 32, borderRadius: "50%",
+                border: "none", background: "#f3f0e6",
+                cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                color: "#2d6a4f",
+              }}
+            >
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <path d="M1 1l12 12M13 1L1 13"/>
+              </svg>
+            </button>
+
+            <div style={{ fontFamily: "var(--f-serif)", fontSize: 22, fontWeight: 700, color: "#1a2e1f", marginBottom: 6 }}>
+              Записаться на занятие
+            </div>
+            <div style={{ fontSize: 13, color: "rgba(26,46,31,0.55)", marginBottom: 28, lineHeight: 1.5 }}>
+              Выберите удобный способ связи — отвечу в течение дня
+            </div>
+
+            {/* Contacts */}
+            {[
+              {
+                icon: (
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 0C5.373 0 0 5.373 0 12c0 6.628 5.373 12 12 12s12-5.372 12-12C24 5.373 18.627 0 12 0zm5.562 8.248l-1.97 9.281c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12l-6.871 4.326-2.962-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.833.94z"/>
+                  </svg>
+                ),
+                label: "Telegram",
+                sub: "@vikotiks",
+                href: "https://t.me/vikotiks",
+                color: "#229ED9",
+                bg: "#E8F4FD",
+              },
+              {
+                icon: (
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M15.684 0H8.316C1.592 0 0 1.592 0 8.316v7.368C0 22.408 1.592 24 8.316 24h7.368C22.408 24 24 22.408 24 15.684V8.316C24 1.592 22.408 0 15.684 0zm3.692 7.2l-1.986 9.378c-.147.65-.537.808-1.087.504l-3-2.21-1.448 1.393c-.16.16-.295.296-.605.296l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12l-6.87 4.326-2.963-.924c-.643-.204-.657-.643.136-.953l11.568-4.463c.538-.194 1.007.131.855.85z"/>
+                  </svg>
+                ),
+                label: "ВКонтакте",
+                sub: "vk.com/vikotiks",
+                href: "https://vk.com/vikotiks",
+                color: "#0077FF",
+                bg: "#E8F0FD",
+              },
+              {
+                icon: (
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="2" y="4" width="20" height="16" rx="3"/>
+                    <path d="M2 7l10 7 10-7"/>
+                  </svg>
+                ),
+                label: "Email",
+                sub: "nikiviki@gmail.com",
+                href: "mailto:nikiviki@gmail.com",
+                color: "#2d6a4f",
+                bg: "#EAF3EE",
+              },
+            ].map((c) => (
+              <a
+                key={c.label}
+                href={c.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: "flex", alignItems: "center", gap: 14,
+                  padding: "14px 16px",
+                  borderRadius: 14,
+                  textDecoration: "none",
+                  background: c.bg,
+                  marginBottom: 10,
+                  transition: "transform 0.18s, box-shadow 0.18s",
+                }}
+                onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 6px 20px rgba(0,0,0,0.08)"; }}
+                onMouseLeave={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "none"; }}
+              >
+                <span style={{ color: c.color, flexShrink: 0 }}>{c.icon}</span>
+                <div>
+                  <div style={{ fontWeight: 600, fontSize: 14, color: "#1a2e1f" }}>{c.label}</div>
+                  <div style={{ fontSize: 12, color: "rgba(26,46,31,0.5)", marginTop: 1 }}>{c.sub}</div>
+                </div>
+                <svg style={{ marginLeft: "auto", color: "rgba(26,46,31,0.25)" }} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                  <path d="M7 17L17 7M17 7H7M17 7v10"/>
+                </svg>
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
+
       {legalModal && (
         <LegalModal
           kind={legalModal}

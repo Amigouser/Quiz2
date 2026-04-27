@@ -35,7 +35,11 @@
       "Bash(node -c routes/tests.js)",
       "Bash(node -c routes/flashcards.js)",
       "Bash(node -e \"require\\('@babel/parser'\\).parse\\(require\\('fs'\\).readFileSync\\('src/screens/landing.jsx','utf8'\\),{sourceType:'module',plugins:['jsx']}\\); console.log\\('OK'\\)\")",
-      "Bash(npx *)"
+      "Bash(npx *)",
+      "Bash(grep *)",
+      "Bash(npm run *)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5173)",
+      "Bash(curl -s http://localhost:5173)"
     ]
   }
 }
