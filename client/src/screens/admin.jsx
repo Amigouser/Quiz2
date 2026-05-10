@@ -266,6 +266,32 @@ const TopicPicker = ({ value, onChange }) => (
 
 const AdminSidebar = ({ active, onTab }) => {
   const navigate = useNavigate();
+  const fileRef = React.useRef();
+  const [restoring, setRestoring] = React.useState(false);
+
+  const handleRestore = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (!window.confirm("Восстановить базу из бэкапа? Текущие данные будут заменены. Сервер перезапустится автоматически.")) {
+      e.target.value = "";
+      return;
+    }
+    setRestoring(true);
+    const reader = new FileReader();
+    reader.onload = async (ev) => {
+      const base64 = ev.target.result.split(",")[1];
+      try {
+        await API.admin.restore(base64);
+        alert("База восстановлена! Перезагрузите страницу через 3–5 секунд.");
+      } catch (err) {
+        alert("Ошибка: " + err.message);
+        setRestoring(false);
+      }
+    };
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  };
+
   const items = [
     { id: "tests", label: "Тесты", icon: "📚" },
     { id: "cards", label: "Карточки", icon: "🃏" },
@@ -292,9 +318,23 @@ const AdminSidebar = ({ active, onTab }) => {
         </div>
       ))}
       <div style={{ marginTop: "auto" }}>
+        <div style={{ borderTop: "1px solid var(--border-soft)", padding: "12px 8px 8px" }}>
+          <div style={{ fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-muted)", padding: "0 6px 6px" }}>База данных</div>
+          <a href="/api/admin/backup" download style={{ textDecoration: "none", display: "block" }}>
+            <div className="btn btn-ghost btn-sm" style={{ width: "100%", justifyContent: "flex-start", gap: 8 }}>
+              💾 Скачать бэкап
+            </div>
+          </a>
+          <label style={{ cursor: restoring ? "default" : "pointer", display: "block", marginTop: 4 }}>
+            <div className="btn btn-ghost btn-sm" style={{ width: "100%", justifyContent: "flex-start", gap: 8, opacity: restoring ? 0.5 : 1 }}>
+              📤 {restoring ? "Восстановление…" : "Восстановить"}
+            </div>
+            <input ref={fileRef} type="file" accept=".db" style={{ display: "none" }} onChange={handleRestore} disabled={restoring} />
+          </label>
+        </div>
         <button
           className="btn btn-ghost btn-sm"
-          style={{ width: "100%", justifyContent: "center", marginTop: 16 }}
+          style={{ width: "100%", justifyContent: "center", marginTop: 4 }}
           onClick={() => navigate("/")}
         >
           ← На главную
@@ -399,43 +439,56 @@ const AdminTestsList = ({ onCreateNew, onImport, onEdit }) => {
 };
 
 // ── Универсальный импорт JSON ────────────────────────────────────────────────
-const TEST_PROMPT = `Создай тест по биологии и верни ТОЛЬКО JSON без пояснений:
+const TEST_PROMPT_BASE = `Ты генератор учебных тестов по биологии. Верни ТОЛЬКО валидный JSON — без markdown, без пояснений вне JSON, без лишних символов.
 
+Структура (строго):
 {
-  "title": "Название теста",
-  "topic": "Ботаника",
-  "description": "Краткое описание",
+  "title": "Короткое название теста",
+  "topic": "Раздел биологии",
+  "description": "1–2 предложения о чём тест",
   "questions": [
     {
       "text": "Текст вопроса?",
-      "hint": "Подсказка (или null)",
-      "explanation": "Пояснение к правильному ответу",
+      "hint": "Краткая подсказка для ученика (строка или null)",
+      "explanation": "Объяснение — почему ответ правильный (обязательно)",
       "answers": [
-        { "text": "Вариант А", "is_correct": true },
-        { "text": "Вариант Б", "is_correct": false },
-        { "text": "Вариант В", "is_correct": false },
-        { "text": "Вариант Г", "is_correct": false }
+        { "text": "Правильный ответ", "is_correct": true },
+        { "text": "Неверный вариант Б", "is_correct": false },
+        { "text": "Неверный вариант В", "is_correct": false },
+        { "text": "Неверный вариант Г", "is_correct": false }
       ]
     }
   ]
-}`;
+}
 
-const CARDS_PROMPT = `Создай набор карточек по биологии и верни ТОЛЬКО JSON без пояснений:
+Задание: сделай {count} вопросов по теме "{topic}"`;
 
+const CARDS_PROMPT_BASE = `Ты генератор учебных карточек по биологии. Верни ТОЛЬКО валидный JSON — без markdown, без пояснений вне JSON.
+
+Структура (строго):
 {
-  "title": "Название набора",
-  "topic": "Ботаника",
-  "description": "Краткое описание (или null)",
+  "title": "Короткое название набора",
+  "topic": "Раздел биологии",
+  "description": "1–2 предложения о чём набор (или null)",
   "cards": [
-    { "term": "Термин", "definition": "Определение" }
+    { "term": "Термин", "definition": "Чёткое определение" }
   ]
-}`;
+}
+
+Задание: сделай {count} карточек по теме "{topic}"`;
 
 function ImportJsonPanel({ type, onImport, onClose }) {
   const [text, setText] = React.useState("");
   const [err, setErr] = React.useState(null);
+  const [subject, setSubject] = React.useState("");
+  const [count, setCount] = React.useState(type === "test" ? 10 : 20);
+  const [copied, setCopied] = React.useState(false);
   const fileRef = React.useRef();
-  const prompt = type === "test" ? TEST_PROMPT : CARDS_PROMPT;
+
+  const baseTemplate = type === "test" ? TEST_PROMPT_BASE : CARDS_PROMPT_BASE;
+  const prompt = baseTemplate
+    .replace("{count}", count)
+    .replace("{topic}", subject.trim() || "...");
 
   const handleFile = (e) => {
     const file = e.target.files[0];
@@ -447,15 +500,24 @@ function ImportJsonPanel({ type, onImport, onClose }) {
 
   const handleApply = () => {
     setErr(null);
+    let raw = text.trim();
+    // strip markdown code fences if AI wrapped JSON
+    raw = raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
     try {
-      const data = JSON.parse(text.trim());
+      const data = JSON.parse(raw);
       onImport(data);
     } catch {
-      setErr("Неверный JSON. Проверь формат и попробуй снова.");
+      setErr("Неверный JSON. Убедись что нейросеть вернула чистый JSON без лишнего текста.");
     }
   };
 
-  const copyPrompt = () => navigator.clipboard.writeText(prompt);
+  const copyPrompt = () => {
+    navigator.clipboard.writeText(prompt);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const itemWord = type === "test" ? "вопросов" : "карточек";
 
   return (
     <div style={{
@@ -469,27 +531,50 @@ function ImportJsonPanel({ type, onImport, onClose }) {
         <button className="btn btn-ghost btn-sm" onClick={onClose}>✕</button>
       </div>
 
-      {/* Шаг 1 — промпт */}
+      {/* Шаг 1 — настройка и промпт */}
       <div style={{ marginBottom: 16 }}>
-        <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 6, color: "var(--text-soft)" }}>
-          Шаг 1 — скопируй этот промпт и вставь в ChatGPT / Claude / Gemini
+        <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 10, color: "var(--text-soft)" }}>
+          Шаг 1 — укажи тему и количество, затем скопируй промпт в ChatGPT / Claude / Gemini
+        </div>
+        <div style={{ display: "flex", gap: 10, marginBottom: 10, flexWrap: "wrap" }}>
+          <input
+            className="input"
+            style={{ flex: "1 1 200px", minWidth: 0 }}
+            placeholder="Тема, например: Фотосинтез"
+            value={subject}
+            onChange={e => setSubject(e.target.value)}
+          />
+          <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+            <span style={{ fontSize: 13, color: "var(--text-soft)", whiteSpace: "nowrap" }}>Кол-во {itemWord}:</span>
+            <input
+              className="input"
+              type="number"
+              min={1}
+              max={50}
+              style={{ width: 70 }}
+              value={count}
+              onChange={e => setCount(Math.max(1, Math.min(50, Number(e.target.value))))}
+            />
+          </div>
         </div>
         <div style={{
           background: "var(--surface)", border: "1px solid var(--border-soft)",
           borderRadius: "var(--r-md)", padding: "12px 14px",
           fontSize: 12, fontFamily: "monospace", color: "var(--text-soft)",
-          whiteSpace: "pre-wrap", maxHeight: 120, overflowY: "auto",
+          whiteSpace: "pre-wrap", maxHeight: 160, overflowY: "auto",
           marginBottom: 8,
         }}>
           {prompt}
         </div>
-        <button className="btn btn-ghost btn-sm" onClick={copyPrompt}>📋 Скопировать промпт</button>
+        <button className="btn btn-ghost btn-sm" onClick={copyPrompt}>
+          {copied ? "✅ Скопировано!" : "📋 Скопировать промпт"}
+        </button>
       </div>
 
       {/* Шаг 2 — вставить JSON */}
       <div>
         <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 6, color: "var(--text-soft)" }}>
-          Шаг 2 — вставь ответ нейросети (JSON) сюда или загрузи файл
+          Шаг 2 — вставь ответ нейросети сюда или загрузи .json файл
         </div>
         <textarea
           className="input"
@@ -1861,16 +1946,16 @@ const AdminResults = () => {
         <div className="card" style={{ padding: 0, overflow: "hidden" }}>
           <div style={{
             display: "grid",
-            gridTemplateColumns: "1.5fr 2fr 1fr 140px 40px",
+            gridTemplateColumns: "1.5fr 2fr 100px 100px 120px 40px",
             padding: "12px 20px", borderBottom: "1px solid var(--border-soft)",
             background: "var(--bg-muted)",
             fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-muted)", fontWeight: 600,
           }}>
-            <div>Ученик</div><div>Тест</div><div>Результат</div><div>Дата</div><div></div>
+            <div>Ученик</div><div>Тест</div><div>Баллы</div><div>Ответы</div><div>Дата</div><div></div>
           </div>
           {results.map((r, i) => (
             <div key={r.id} style={{
-              display: "grid", gridTemplateColumns: "1.5fr 2fr 1fr 140px 40px",
+              display: "grid", gridTemplateColumns: "1.5fr 2fr 100px 100px 120px 40px",
               padding: "14px 20px", alignItems: "center",
               borderBottom: i < results.length - 1 ? "1px solid var(--border-soft)" : "none",
             }}>
@@ -1879,11 +1964,17 @@ const AdminResults = () => {
                 <div>{r.test_title}</div>
                 <div style={{ fontSize: 12, color: "var(--text-muted)" }}>{r.topic}</div>
               </div>
-              <div style={{ fontFamily: "var(--f-serif)", fontSize: 18 }}>
-                {r.score}/{r.max_score}
-                <span style={{ fontSize: 12, color: "var(--text-muted)", marginLeft: 6 }}>
+              <div>
+                <div style={{ fontFamily: "var(--f-serif)", fontSize: 18 }}>
+                  {r.score}/{r.max_score}
+                </div>
+                <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
                   {r.max_score > 0 ? `${Math.round(r.score / r.max_score * 100)}%` : ""}
-                </span>
+                </div>
+              </div>
+              <div>
+                <div style={{ fontSize: 13, color: "#2d9e5f" }}>✓ {r.correct_count ?? 0} верно</div>
+                <div style={{ fontSize: 13, color: "#c0392b" }}>✗ {r.wrong_count ?? 0} неверно</div>
               </div>
               <div style={{ fontSize: 13, color: "var(--text-soft)" }}>
                 {new Date(r.completed_at).toLocaleDateString("ru-RU")}

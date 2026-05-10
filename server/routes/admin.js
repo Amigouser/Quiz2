@@ -1,5 +1,8 @@
 const router = require("express").Router();
+const fs = require("fs");
+const path = require("path");
 const { db, run, get, all } = require("../db");
+const DB_PATH = path.join(__dirname, "../../data/biology.db");
 
 function requireAdmin(req, res, next) {
   if (!req.session.user) return res.status(401).json({ error: "Не авторизован" });
@@ -307,10 +310,15 @@ router.delete("/students/:id/card-sets/:setId", (req, res) => {
 router.get("/results", (req, res) => {
   const results = all(`
     SELECT a.id, a.score, a.max_score, a.completed_at,
-           u.name AS user_name, t.title AS test_title, t.topic
+           u.name AS user_name, t.title AS test_title, t.topic,
+           SUM(CASE WHEN aa.is_correct = 1 THEN 1 ELSE 0 END) AS correct_count,
+           SUM(CASE WHEN aa.is_correct = 0 THEN 1 ELSE 0 END) AS wrong_count
     FROM attempts a
     JOIN users u ON u.id = a.user_id
     JOIN tests t ON t.id = a.test_id
+    LEFT JOIN attempt_answers aa ON aa.attempt_id = a.id
+    WHERE u.is_admin = 0
+    GROUP BY a.id
     ORDER BY a.completed_at DESC
   `);
   res.json(results);
@@ -324,6 +332,30 @@ router.delete("/results/:id", (req, res) => {
 router.delete("/results", (req, res) => {
   run("DELETE FROM attempts");
   res.json({ ok: true });
+});
+
+// ── Бэкап / Восстановление ────────────────────────────────────────────────────
+
+router.get("/backup", (req, res) => {
+  try { db.exec("PRAGMA wal_checkpoint(TRUNCATE)"); } catch (_) {}
+  const date = new Date().toISOString().slice(0, 10);
+  res.setHeader("Content-Disposition", `attachment; filename="biology-backup-${date}.db"`);
+  res.setHeader("Content-Type", "application/octet-stream");
+  fs.createReadStream(DB_PATH).pipe(res);
+});
+
+router.post("/restore", (req, res) => {
+  const { data } = req.body;
+  if (!data) return res.status(400).json({ error: "Нет данных" });
+  const buffer = Buffer.from(data, "base64");
+  if (buffer.length < 100) return res.status(400).json({ error: "Файл повреждён" });
+  try {
+    fs.copyFileSync(DB_PATH, DB_PATH + ".bak");
+  } catch (_) {}
+  try { db.close(); } catch (_) {}
+  fs.writeFileSync(DB_PATH, buffer);
+  res.json({ ok: true });
+  setTimeout(() => process.exit(0), 300);
 });
 
 // ── Разделы ───────────────────────────────────────────────────────────────────

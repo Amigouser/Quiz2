@@ -4,7 +4,7 @@ import Lenis from "lenis";
 import { Leaf, Fern, Sprig, Cell, Helix } from "../botanical";
 
 // ─── Настройки — отредактируй под своё ─────────────────────────────────────
-const TUTOR_PHOTO = "/tutor.png";
+const TUTOR_PHOTO = "/tutor.JPG";
 
 const TUTOR = {
   name:    "Никитенко Виктория Юрьевна",
@@ -2138,7 +2138,7 @@ export function LandingPage() {
       {/* ══ HERO ═══════════════════════════════════════════════════════════════ */}
       <section className="lf-hero-section" style={{
         minHeight: "100vh",
-        background: "linear-gradient(160deg, #f8f6ef 0%, #f3f0e6 55%, #ece8d9 100%)",
+        background: "linear-gradient(135deg, #b8d4b0 0%, #d4e8c8 30%, #ece4d0 65%, #e8c89a 100%)",
         position: "relative", overflow: "hidden",
         display: "flex", alignItems: "center", justifyContent: "center",
         paddingTop: 64,
@@ -2171,8 +2171,8 @@ export function LandingPage() {
             <h1 className="lf-hero-main-headline">
               Подготовка<br />
               по <em>биологии</em><br />
-              от клетки до<br />
-              100 баллов.
+              без стресса и<br />
+              с интересом
             </h1>
 
             {/* Tagline */}

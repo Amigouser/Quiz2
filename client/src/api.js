@@ -60,6 +60,7 @@ const API = {
       req(`/api/admin/students/${studentId}/card-sets`, { method: "POST", body: { set_id } }),
     unassignCardSet: (studentId, setId) =>
       req(`/api/admin/students/${studentId}/card-sets/${setId}`, { method: "DELETE" }),
+    restore: (data) => req("/api/admin/restore", { method: "POST", body: { data } }),
     getSections: () => req("/api/admin/sections"),
     createSection: (name) => req("/api/admin/sections", { method: "POST", body: { name } }),
     updateSection: (id, name) => req(`/api/admin/sections/${id}`, { method: "PUT", body: { name } }),
