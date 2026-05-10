@@ -35,15 +35,15 @@ router.get("/tests/:id", (req, res) => {
 });
 
 router.post("/tests", (req, res) => {
-  const { title, topic, description, category, section, part, line, source, questions = [], is_draft = 0 } = req.body;
+  const { title, topic, description, category, grade, section, part, line, source, questions = [], is_draft = 0 } = req.body;
   if (!title) return res.status(400).json({ error: "Название обязательно" });
 
   db.exec("BEGIN");
   let testId;
   try {
     testId = run(
-      "INSERT INTO tests (title, topic, description, category, section, part, line, source, is_draft) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-      title, topic || null, description || null, category || null, section || null, part || null, line || null, source || null, is_draft ? 1 : 0
+      "INSERT INTO tests (title, topic, description, category, grade, section, part, line, source, is_draft) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+      title, topic || null, description || null, category || null, grade || null, section || null, part || null, line || null, source || null, is_draft ? 1 : 0
     ).lastInsertRowid;
 
     questions.forEach((q, qi) => {
@@ -68,13 +68,13 @@ router.post("/tests", (req, res) => {
 });
 
 router.put("/tests/:id", (req, res) => {
-  const { title, topic, description, category, section, part, line, source, questions } = req.body;
+  const { title, topic, description, category, grade, section, part, line, source, questions } = req.body;
   if (!title) return res.status(400).json({ error: "Название обязательно" });
 
   db.exec("BEGIN");
   try {
-    run("UPDATE tests SET title = ?, topic = ?, description = ?, category = ?, section = ?, part = ?, line = ?, source = ? WHERE id = ?",
-      title, topic || null, description || null, category || null, section || null, part || null, line || null, source || null, req.params.id);
+    run("UPDATE tests SET title = ?, topic = ?, description = ?, category = ?, grade = ?, section = ?, part = ?, line = ?, source = ? WHERE id = ?",
+      title, topic || null, description || null, category || null, grade || null, section || null, part || null, line || null, source || null, req.params.id);
 
     if (Array.isArray(questions)) {
       run("DELETE FROM questions WHERE test_id = ?", req.params.id);
@@ -323,6 +323,56 @@ router.delete("/results/:id", (req, res) => {
 
 router.delete("/results", (req, res) => {
   run("DELETE FROM attempts");
+  res.json({ ok: true });
+});
+
+// ── Разделы ───────────────────────────────────────────────────────────────────
+router.get("/sections", (req, res) => {
+  res.json(all("SELECT * FROM sections ORDER BY name"));
+});
+router.post("/sections", (req, res) => {
+  const { name } = req.body;
+  if (!name?.trim()) return res.status(400).json({ error: "Название обязательно" });
+  try {
+    const r = run("INSERT INTO sections (name) VALUES (?)", name.trim());
+    res.json(get("SELECT * FROM sections WHERE id = ?", r.lastInsertRowid));
+  } catch { res.status(409).json({ error: "Раздел уже существует" }); }
+});
+router.put("/sections/:id", (req, res) => {
+  const { name } = req.body;
+  if (!name?.trim()) return res.status(400).json({ error: "Название обязательно" });
+  try {
+    run("UPDATE sections SET name = ? WHERE id = ?", name.trim(), req.params.id);
+    res.json({ ok: true });
+  } catch { res.status(409).json({ error: "Такой раздел уже существует" }); }
+});
+router.delete("/sections/:id", (req, res) => {
+  run("DELETE FROM sections WHERE id = ?", req.params.id);
+  res.json({ ok: true });
+});
+
+// ── Темы ──────────────────────────────────────────────────────────────────────
+router.get("/topics", (req, res) => {
+  res.json(all("SELECT * FROM topics ORDER BY name"));
+});
+router.post("/topics", (req, res) => {
+  const { name } = req.body;
+  if (!name?.trim()) return res.status(400).json({ error: "Название обязательно" });
+  try {
+    const r = run("INSERT INTO topics (name) VALUES (?)", name.trim());
+    res.json(get("SELECT * FROM topics WHERE id = ?", r.lastInsertRowid));
+  } catch { res.status(409).json({ error: "Тема уже существует" }); }
+});
+router.put("/topics/:id", (req, res) => {
+  const { name } = req.body;
+  if (!name?.trim()) return res.status(400).json({ error: "Название обязательно" });
+  try {
+    run("UPDATE topics SET name = ? WHERE id = ?", name.trim(), req.params.id);
+    res.json({ ok: true });
+  } catch { res.status(409).json({ error: "Такая тема уже существует" }); }
+});
+router.delete("/topics/:id", (req, res) => {
+  run("DELETE FROM topics WHERE id = ?", req.params.id);
   res.json({ ok: true });
 });
 

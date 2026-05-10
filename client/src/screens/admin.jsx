@@ -33,50 +33,236 @@ const SectionSelect = ({ value, onChange }) => (
   </select>
 );
 
-// Категории для тестов и наборов карточек
-const CATEGORIES = [
-  ["", "Без категории"],
-  ["9 класс", "9 класс"],
-  ["10 класс", "10 класс"],
-  ["11 класс", "11 класс"],
-  ["ОГЭ", "ОГЭ"],
-  ["ЕГЭ", "ЕГЭ"],
-  ["ВПР", "ВПР"],
-];
+// Классы и типы экзаменов — раздельно
+const GRADE_OPTIONS = ["5 класс", "6 класс", "7 класс", "8 класс", "9 класс", "10 класс", "11 класс"];
+const EXAM_OPTIONS = ["ОГЭ", "ЕГЭ", "ВПР"];
 
-const CategoryPicker = ({ value, onChange }) => (
-  <div style={{ display: "flex", gap: 8, marginTop: 6, flexWrap: "wrap" }}>
-    {CATEGORIES.map(([val, lbl]) => (
+const ChipPicker = ({ value, onChange, options, shortLabel }) => (
+  <div style={{ display: "flex", gap: 6, marginTop: 6, flexWrap: "wrap" }}>
+    {options.map(opt => (
       <button
-        key={val}
+        key={opt}
         type="button"
-        onClick={() => onChange(val)}
-        className={value === val ? "btn btn-primary btn-sm" : "btn btn-ghost btn-sm"}
+        onClick={() => onChange(value === opt ? "" : opt)}
+        className={value === opt ? "btn btn-primary btn-sm" : "btn btn-ghost btn-sm"}
       >
-        {lbl}
+        {shortLabel ? shortLabel(opt) : opt}
       </button>
     ))}
   </div>
 );
 
-// Часть экзамена — только для ОГЭ и ЕГЭ
+const GradePicker = ({ value, onChange }) => (
+  <ChipPicker value={value} onChange={onChange} options={GRADE_OPTIONS} shortLabel={g => g.replace(" класс", "")} />
+);
+
+const ExamPicker = ({ value, onChange }) => (
+  <ChipPicker value={value} onChange={onChange} options={EXAM_OPTIONS} />
+);
+
+// Часть экзамена
 const PART_OPTIONS = ["Часть 1", "Часть 2"];
 const isExamCategory = (cat) => cat === "ОГЭ" || cat === "ЕГЭ";
 
-const PartSelect = ({ value, onChange, category }) => {
-  if (!isExamCategory(category)) return null;
+const PartSelect = ({ value, onChange }) => (
+  <select
+    className="input"
+    value={value || ""}
+    onChange={e => onChange(e.target.value)}
+    style={{ cursor: "pointer" }}
+  >
+    <option value="">— выбери часть —</option>
+    {PART_OPTIONS.map(p => <option key={p} value={p}>{p}</option>)}
+  </select>
+);
+
+// ── Управляемый пикер разделов/тем ───────────────────────────────────────────
+function ManagedPicker({ value, onChange, loadItems, createItem, updateItem, deleteItem, placeholder }) {
+  const [open, setOpen] = React.useState(false);
+  const [items, setItems] = React.useState([]);
+  const [newName, setNewName] = React.useState("");
+  const [editId, setEditId] = React.useState(null);
+  const [editName, setEditName] = React.useState("");
+  const [err, setErr] = React.useState("");
+  const ref = React.useRef();
+
+  React.useEffect(() => {
+    loadItems().then(setItems).catch(() => {});
+  }, []);
+
+  React.useEffect(() => {
+    if (!open) return;
+    const handler = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
+  const handleToggle = () => setOpen(v => !v);
+
+  const reload = () => loadItems().then(setItems).catch(() => {});
+
+  const handleCreate = async () => {
+    if (!newName.trim()) return;
+    try {
+      const item = await createItem(newName.trim());
+      setItems(prev => [...prev, item].sort((a, b) => a.name.localeCompare(b.name, "ru")));
+      setNewName("");
+      setErr("");
+    } catch (e) { setErr(e.message); }
+  };
+
+  const handleUpdate = async (id) => {
+    if (!editName.trim()) return;
+    try {
+      await updateItem(id, editName.trim());
+      setItems(prev => prev.map(it => it.id === id ? { ...it, name: editName.trim() } : it));
+      if (value === items.find(it => it.id === id)?.name) onChange(editName.trim());
+      setEditId(null); setErr("");
+    } catch (e) { setErr(e.message); }
+  };
+
+  const handleDelete = async (id, name) => {
+    if (!confirm(`Удалить «${name}»?`)) return;
+    await deleteItem(id);
+    setItems(prev => prev.filter(it => it.id !== id));
+    if (value === name) onChange("");
+  };
+
   return (
-    <select
-      className="input"
-      value={value || ""}
-      onChange={e => onChange(e.target.value)}
-      style={{ cursor: "pointer" }}
-    >
-      <option value="">— выбери часть —</option>
-      {PART_OPTIONS.map(p => <option key={p} value={p}>{p}</option>)}
-    </select>
+    <div ref={ref} style={{ position: "relative" }}>
+      <div
+        onClick={handleToggle}
+        style={{
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          padding: "9px 12px", borderRadius: "var(--r-md)",
+          border: `1.5px solid ${value ? "var(--green-500)" : "var(--border-soft)"}`,
+          background: value ? "var(--green-50)" : "var(--surface)",
+          cursor: "pointer", fontSize: 14, color: value ? "var(--green-900)" : "var(--text-muted)",
+          userSelect: "none",
+        }}
+      >
+        <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          {value || placeholder}
+        </span>
+        <svg width="11" height="11" viewBox="0 0 11 11" fill="none" style={{ flexShrink: 0, marginLeft: 8, opacity: 0.5 }}>
+          <path d="M1.5 3.5l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      </div>
+
+      {open && (
+        <div style={{
+          position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0,
+          zIndex: 400,
+          background: "var(--surface)", border: "1.5px solid var(--border-soft)",
+          borderRadius: "var(--r-lg)", boxShadow: "0 8px 32px rgba(0,0,0,0.18)",
+          maxHeight: 340, overflow: "hidden", display: "flex", flexDirection: "column",
+        }}>
+          {/* Добавить новый */}
+          <div style={{ padding: "10px 12px", borderBottom: "1px solid var(--border-soft)", display: "flex", gap: 6 }}>
+            <input
+              className="input"
+              value={newName}
+              onChange={e => { setNewName(e.target.value); setErr(""); }}
+              onKeyDown={e => e.key === "Enter" && handleCreate()}
+              placeholder="Новый..."
+              style={{ flex: 1, fontSize: 13, padding: "6px 10px" }}
+            />
+            <button className="btn btn-primary btn-sm" onClick={handleCreate} disabled={!newName.trim()}>
+              + Добавить
+            </button>
+          </div>
+          {err && <div style={{ padding: "4px 12px", fontSize: 12, color: "var(--wrong)" }}>{err}</div>}
+
+          {/* Список */}
+          <div style={{ overflowY: "auto", flex: 1 }}>
+            {value && (
+              <div
+                onClick={() => { onChange(""); setOpen(false); }}
+                style={{ padding: "8px 12px", fontSize: 13, color: "var(--text-muted)", cursor: "pointer", borderBottom: "1px solid var(--border-soft)", fontStyle: "italic" }}
+              >
+                — Не выбрано —
+              </div>
+            )}
+            {items.map(item => (
+              <div key={item.id} style={{
+                display: "flex", alignItems: "center",
+                background: item.name === value ? "var(--green-100)" : "transparent",
+                borderBottom: "1px solid var(--border-soft)",
+              }}>
+                {editId === item.id ? (
+                  <div style={{ display: "flex", flex: 1, gap: 4, padding: "6px 8px" }}>
+                    <input
+                      className="input"
+                      value={editName}
+                      onChange={e => setEditName(e.target.value)}
+                      onKeyDown={e => { if (e.key === "Enter") handleUpdate(item.id); if (e.key === "Escape") setEditId(null); }}
+                      autoFocus
+                      style={{ flex: 1, fontSize: 13, padding: "5px 8px" }}
+                    />
+                    <button className="btn btn-primary btn-sm" onClick={() => handleUpdate(item.id)}>✓</button>
+                    <button className="btn btn-ghost btn-sm" onClick={() => setEditId(null)}>✕</button>
+                  </div>
+                ) : (
+                  <>
+                    <div
+                      onClick={() => { onChange(item.name); setOpen(false); }}
+                      style={{ flex: 1, padding: "9px 12px", cursor: "pointer", fontSize: 13, lineHeight: 1.4 }}
+                    >
+                      {item.name}
+                    </div>
+                    <button
+                      className="btn btn-ghost btn-sm"
+                      style={{ padding: "4px 7px", flexShrink: 0, color: "var(--text-muted)" }}
+                      onClick={e => { e.stopPropagation(); setEditId(item.id); setEditName(item.name); }}
+                      title="Переименовать"
+                    >✏️</button>
+                    <button
+                      className="btn btn-ghost btn-sm"
+                      style={{ padding: "4px 7px", flexShrink: 0, color: "var(--wrong)", marginRight: 4 }}
+                      onClick={e => { e.stopPropagation(); handleDelete(item.id, item.name); }}
+                      title="Удалить"
+                    >✕</button>
+                  </>
+                )}
+              </div>
+            ))}
+            {items.length === 0 && (
+              <div style={{ padding: "16px 12px", fontSize: 13, color: "var(--text-muted)", textAlign: "center" }}>
+                Пусто — добавь первый
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
   );
-};
+}
+
+const SectionPicker = ({ value, onChange }) => (
+  <ManagedPicker
+    value={value}
+    onChange={onChange}
+    placeholder="— выбери раздел —"
+    loadItems={() => API.admin.getSections()}
+    createItem={(name) => API.admin.createSection(name)}
+    updateItem={(id, name) => API.admin.updateSection(id, name)}
+    deleteItem={(id) => API.admin.deleteSection(id)}
+  />
+);
+
+const TopicPicker = ({ value, onChange }) => (
+  <ManagedPicker
+    value={value}
+    onChange={onChange}
+    placeholder="— выбери тему —"
+    loadItems={() => API.admin.getTopics()}
+    createItem={(name) => API.admin.createTopic(name)}
+    updateItem={(id, name) => API.admin.updateTopic(id, name)}
+    deleteItem={(id) => API.admin.deleteTopic(id)}
+  />
+);
 
 const AdminSidebar = ({ active, onTab }) => {
   const navigate = useNavigate();
@@ -352,6 +538,7 @@ const AdminCreateTest = ({ onCreated, autoImport = false }) => {
   const [section, setSection] = React.useState("");
   const [topic, setTopic] = React.useState("");
   const [description, setDescription] = React.useState("");
+  const [grade, setGrade] = React.useState("");
   const [category, setCategory] = React.useState("");
   const [part, setPart] = React.useState("");
   const [line, setLine] = React.useState("");
@@ -422,6 +609,7 @@ const AdminCreateTest = ({ onCreated, autoImport = false }) => {
         section: section.trim() || null,
         topic: topic.trim() || null,
         description: description.trim() || null,
+        grade: grade || null,
         category: category || null,
         part: part.trim() || null,
         line: line.trim() || null,
@@ -466,50 +654,48 @@ const AdminCreateTest = ({ onCreated, autoImport = false }) => {
           </div>
         )}
 
-        <div className="card" style={{ padding: 24, marginBottom: 20 }}>
-          <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 16, marginBottom: 16 }}>
-            <div className="field">
-              <label>Название теста</label>
-              <input className="input input-lg" value={title} onChange={e => setTitle(e.target.value)} placeholder="Например: Фотосинтез" />
-            </div>
+        <div className="card" style={{ padding: 24, marginBottom: 20, overflow: "visible", transform: "none" }}>
+          <div className="field" style={{ marginBottom: 16 }}>
+            <label>Название теста</label>
+            <input className="input input-lg" value={title} onChange={e => setTitle(e.target.value)} placeholder="Например: Фотосинтез" />
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
-            <div className="field">
-              <label>Раздел</label>
-              <SectionSelect value={section} onChange={setSection} />
-            </div>
-            <div className="field">
-              <label>Тема</label>
-              <input className="input" value={topic} onChange={e => setTopic(e.target.value)} placeholder="Напр.: Строение ДНК" />
-            </div>
-          </div>
-          <div className="field">
+          <div className="field" style={{ marginBottom: 16 }}>
             <label>Краткое описание (необязательно)</label>
             <textarea className="input" rows={2} value={description} onChange={e => setDescription(e.target.value)}
               placeholder="Что проверяет этот тест?" style={{ resize: "vertical", fontFamily: "var(--f-sans)" }}/>
           </div>
-          <div className="field" style={{ marginTop: 16 }}>
-            <label>Категория</label>
-            <CategoryPicker value={category} onChange={(val) => { setCategory(val); if (!isExamCategory(val)) setPart(""); }} />
-          </div>
-          <div style={{
-            display: "grid",
-            gridTemplateColumns: isExamCategory(category) ? "1fr 1fr 1fr" : "1fr 1fr",
-            gap: 12, marginTop: 16,
-          }}>
-            {isExamCategory(category) && (
-              <div className="field">
-                <label>Часть</label>
-                <PartSelect value={part} onChange={setPart} category={category} />
-              </div>
-            )}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginTop: 16 }}>
             <div className="field">
-              <label>Линия</label>
-              <input className="input" value={line} onChange={e => setLine(e.target.value)} placeholder="Напр.: 5" />
+              <label>Класс</label>
+              <GradePicker value={grade} onChange={setGrade} />
             </div>
+            <div className="field">
+              <label>Экзамен</label>
+              <ExamPicker value={category} onChange={(val) => { setCategory(val); if (!isExamCategory(val)) setPart(""); }} />
+            </div>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginTop: 16 }}>
+            <div className="field">
+              <label>Часть</label>
+              <PartSelect value={part} onChange={setPart} category={category} />
+            </div>
+            <div className="field">
+              <label>Раздел</label>
+              <SectionPicker value={section} onChange={setSection} />
+            </div>
+            <div className="field">
+              <label>Тема</label>
+              <TopicPicker value={topic} onChange={setTopic} />
+            </div>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 12 }}>
             <div className="field">
               <label>Источник</label>
               <input className="input" value={source} onChange={e => setSource(e.target.value)} placeholder="Напр.: ФИПИ" />
+            </div>
+            <div className="field">
+              <label>Линия</label>
+              <input className="input" value={line} onChange={e => setLine(e.target.value)} placeholder="Напр.: 5" />
             </div>
           </div>
         </div>
@@ -624,6 +810,7 @@ const AdminEditTest = ({ testId, onSaved }) => {
   const [section, setSection] = React.useState("");
   const [topic, setTopic] = React.useState("");
   const [description, setDescription] = React.useState("");
+  const [grade, setGrade] = React.useState("");
   const [category, setCategory] = React.useState("");
   const [part, setPart] = React.useState("");
   const [line, setLine] = React.useState("");
@@ -639,6 +826,7 @@ const AdminEditTest = ({ testId, onSaved }) => {
       setSection(data.section || "");
       setTopic(data.topic || "");
       setDescription(data.description || "");
+      setGrade(data.grade || "");
       setCategory(data.category || "");
       setPart(data.part || "");
       setLine(data.line || "");
@@ -685,7 +873,7 @@ const AdminEditTest = ({ testId, onSaved }) => {
     try {
       await API.admin.updateTest(testId, {
         title: title.trim(), section: section.trim() || null, topic: topic.trim() || null,
-        description: description.trim() || null, category: category || null,
+        description: description.trim() || null, grade: grade || null, category: category || null,
         part: part.trim() || null, line: line.trim() || null, source: source.trim() || null,
         questions: questions.map(q => ({
           text: q.text.trim(), hint: q.hint.trim() || null, explanation: q.explanation.trim() || null,
@@ -716,48 +904,48 @@ const AdminEditTest = ({ testId, onSaved }) => {
           </div>
         )}
 
-        <div className="card" style={{ padding: 24, marginBottom: 20 }}>
+        <div className="card" style={{ padding: 24, marginBottom: 20, overflow: "visible", transform: "none" }}>
           <div className="field" style={{ marginBottom: 16 }}>
             <label>Название теста</label>
             <input className="input input-lg" value={title} onChange={e => setTitle(e.target.value)} />
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
-            <div className="field">
-              <label>Раздел</label>
-              <SectionSelect value={section} onChange={setSection} />
-            </div>
-            <div className="field">
-              <label>Тема</label>
-              <input className="input" value={topic} onChange={e => setTopic(e.target.value)} placeholder="Напр.: Строение ДНК" />
-            </div>
-          </div>
-          <div className="field">
+          <div className="field" style={{ marginBottom: 16 }}>
             <label>Описание</label>
             <textarea className="input" rows={2} value={description} onChange={e => setDescription(e.target.value)}
               style={{ resize: "vertical", fontFamily: "var(--f-sans)" }}/>
           </div>
-          <div className="field" style={{ marginTop: 16 }}>
-            <label>Категория</label>
-            <CategoryPicker value={category} onChange={(val) => { setCategory(val); if (!isExamCategory(val)) setPart(""); }} />
-          </div>
-          <div style={{
-            display: "grid",
-            gridTemplateColumns: isExamCategory(category) ? "1fr 1fr 1fr" : "1fr 1fr",
-            gap: 12, marginTop: 16,
-          }}>
-            {isExamCategory(category) && (
-              <div className="field">
-                <label>Часть</label>
-                <PartSelect value={part} onChange={setPart} category={category} />
-              </div>
-            )}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginTop: 16 }}>
             <div className="field">
-              <label>Линия</label>
-              <input className="input" value={line} onChange={e => setLine(e.target.value)} placeholder="Напр.: 5" />
+              <label>Класс</label>
+              <GradePicker value={grade} onChange={setGrade} />
             </div>
+            <div className="field">
+              <label>Экзамен</label>
+              <ExamPicker value={category} onChange={(val) => { setCategory(val); if (!isExamCategory(val)) setPart(""); }} />
+            </div>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginTop: 16 }}>
+            <div className="field">
+              <label>Часть</label>
+              <PartSelect value={part} onChange={setPart} category={category} />
+            </div>
+            <div className="field">
+              <label>Раздел</label>
+              <SectionPicker value={section} onChange={setSection} />
+            </div>
+            <div className="field">
+              <label>Тема</label>
+              <TopicPicker value={topic} onChange={setTopic} />
+            </div>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 12 }}>
             <div className="field">
               <label>Источник</label>
               <input className="input" value={source} onChange={e => setSource(e.target.value)} placeholder="Напр.: ФИПИ" />
+            </div>
+            <div className="field">
+              <label>Линия</label>
+              <input className="input" value={line} onChange={e => setLine(e.target.value)} placeholder="Напр.: 5" />
             </div>
           </div>
         </div>
@@ -1299,6 +1487,7 @@ const AdminEditCardSet = ({ editId, onSaved, autoImport = false }) => {
   const [section, setSection] = React.useState("");
   const [topic, setTopic] = React.useState("");
   const [description, setDescription] = React.useState("");
+  const [grade, setGrade] = React.useState("");
   const [category, setCategory] = React.useState("");
   const [part, setPart] = React.useState("");
   const [line, setLine] = React.useState("");
@@ -1331,6 +1520,7 @@ const AdminEditCardSet = ({ editId, onSaved, autoImport = false }) => {
       setSection(data.section || "");
       setTopic(data.topic || "");
       setDescription(data.description || "");
+      setGrade(data.grade || "");
       setCategory(data.category || "");
       setPart(data.part || "");
       setLine(data.line || "");
@@ -1366,7 +1556,7 @@ const AdminEditCardSet = ({ editId, onSaved, autoImport = false }) => {
     try {
       const payload = {
         title: title.trim(), section: section.trim() || null, topic: topic.trim() || null,
-        description: description.trim() || null, category: category || null,
+        description: description.trim() || null, grade: grade || null, category: category || null,
         part: part.trim() || null, line: line.trim() || null, source: source.trim() || null,
         cards: validCards.map(c => ({ term: c.term.trim(), definition: c.definition.trim() })),
       };
@@ -1402,48 +1592,48 @@ const AdminEditCardSet = ({ editId, onSaved, autoImport = false }) => {
         )}
 
         {/* Meta */}
-        <div className="card" style={{ padding: 24, marginBottom: 20 }}>
+        <div className="card" style={{ padding: 24, marginBottom: 20, overflow: "visible", transform: "none" }}>
           <div className="field" style={{ marginBottom: 16 }}>
             <label>Название набора</label>
             <input className="input input-lg" value={title} onChange={e => setTitle(e.target.value)} placeholder="Например: Термины по генетике" />
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
-            <div className="field">
-              <label>Раздел</label>
-              <SectionSelect value={section} onChange={setSection} />
-            </div>
-            <div className="field">
-              <label>Тема</label>
-              <input className="input" value={topic} onChange={e => setTopic(e.target.value)} placeholder="Напр.: Строение ДНК" />
-            </div>
-          </div>
-          <div className="field">
+          <div className="field" style={{ marginBottom: 16 }}>
             <label>Описание (необязательно)</label>
             <textarea className="input" rows={2} value={description} onChange={e => setDescription(e.target.value)}
               placeholder="Что будем учить?" style={{ resize: "vertical", fontFamily: "var(--f-sans)" }} />
           </div>
-          <div className="field" style={{ marginTop: 16 }}>
-            <label>Категория</label>
-            <CategoryPicker value={category} onChange={(val) => { setCategory(val); if (!isExamCategory(val)) setPart(""); }} />
-          </div>
-          <div style={{
-            display: "grid",
-            gridTemplateColumns: isExamCategory(category) ? "1fr 1fr 1fr" : "1fr 1fr",
-            gap: 12, marginTop: 16,
-          }}>
-            {isExamCategory(category) && (
-              <div className="field">
-                <label>Часть</label>
-                <PartSelect value={part} onChange={setPart} category={category} />
-              </div>
-            )}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginTop: 16 }}>
             <div className="field">
-              <label>Линия</label>
-              <input className="input" value={line} onChange={e => setLine(e.target.value)} placeholder="Напр.: 5" />
+              <label>Класс</label>
+              <GradePicker value={grade} onChange={setGrade} />
             </div>
+            <div className="field">
+              <label>Экзамен</label>
+              <ExamPicker value={category} onChange={(val) => { setCategory(val); if (!isExamCategory(val)) setPart(""); }} />
+            </div>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginTop: 16 }}>
+            <div className="field">
+              <label>Часть</label>
+              <PartSelect value={part} onChange={setPart} category={category} />
+            </div>
+            <div className="field">
+              <label>Раздел</label>
+              <SectionPicker value={section} onChange={setSection} />
+            </div>
+            <div className="field">
+              <label>Тема</label>
+              <TopicPicker value={topic} onChange={setTopic} />
+            </div>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 12 }}>
             <div className="field">
               <label>Источник</label>
               <input className="input" value={source} onChange={e => setSource(e.target.value)} placeholder="Напр.: ФИПИ" />
+            </div>
+            <div className="field">
+              <label>Линия</label>
+              <input className="input" value={line} onChange={e => setLine(e.target.value)} placeholder="Напр.: 5" />
             </div>
           </div>
         </div>

@@ -60,6 +60,14 @@ const API = {
       req(`/api/admin/students/${studentId}/card-sets`, { method: "POST", body: { set_id } }),
     unassignCardSet: (studentId, setId) =>
       req(`/api/admin/students/${studentId}/card-sets/${setId}`, { method: "DELETE" }),
+    getSections: () => req("/api/admin/sections"),
+    createSection: (name) => req("/api/admin/sections", { method: "POST", body: { name } }),
+    updateSection: (id, name) => req(`/api/admin/sections/${id}`, { method: "PUT", body: { name } }),
+    deleteSection: (id) => req(`/api/admin/sections/${id}`, { method: "DELETE" }),
+    getTopics: () => req("/api/admin/topics"),
+    createTopic: (name) => req("/api/admin/topics", { method: "POST", body: { name } }),
+    updateTopic: (id, name) => req(`/api/admin/topics/${id}`, { method: "PUT", body: { name } }),
+    deleteTopic: (id) => req(`/api/admin/topics/${id}`, { method: "DELETE" }),
   },
 };
 

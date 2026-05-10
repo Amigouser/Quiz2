@@ -8,7 +8,7 @@ function requireAuth(req, res, next) {
 
 router.get("/tests/public", (req, res) => {
   const tests = all(`
-    SELECT t.id, t.title, t.topic, t.description, t.category, t.section, t.part, t.line, t.source,
+    SELECT t.id, t.title, t.topic, t.description, t.category, t.grade, t.section, t.part, t.line, t.source,
            COUNT(q.id) AS questions_count
     FROM tests t
     LEFT JOIN questions q ON q.test_id = t.id
@@ -23,6 +23,7 @@ router.get("/tests/public", (req, res) => {
     topic: t.topic || "Биология",
     description: t.description,
     category: t.category || null,
+    grade: t.grade || null,
     section: t.section || null,
     part: t.part || null,
     line: t.line || null,
@@ -60,7 +61,7 @@ router.get("/tests", requireAuth, (req, res) => {
 
   const tests = all(`
     SELECT t.id, t.title, t.topic, t.description,
-           t.category, t.section, t.part, t.line, t.source,
+           t.category, t.grade, t.section, t.part, t.line, t.source,
            COUNT(q.id) AS questions_count,
            CASE WHEN ta.id IS NOT NULL THEN 1 ELSE 0 END AS is_assigned
     FROM tests t
@@ -90,6 +91,7 @@ router.get("/tests", requireAuth, (req, res) => {
       topic: t.topic || "Биология",
       description: t.description,
       category: t.category || null,
+      grade: t.grade || null,
       section: t.section || null,
       part: t.part || null,
       line: t.line || null,

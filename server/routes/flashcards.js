@@ -16,7 +16,7 @@ const adminRouter = require("express").Router();
 // ── Public: list active card sets (no auth) ─────────────────────────────────
 studentRouter.get("/flashcard-sets/public", (req, res) => {
   const sets = all(`
-    SELECT s.id, s.title, s.topic, s.description, s.category, s.section, s.part, s.line, s.source, COUNT(c.id) AS cards_count
+    SELECT s.id, s.title, s.topic, s.description, s.category, s.grade, s.section, s.part, s.line, s.source, COUNT(c.id) AS cards_count
     FROM flashcard_sets s
     LEFT JOIN flashcard_cards c ON c.set_id = s.id
     WHERE s.is_active = 1
@@ -39,7 +39,7 @@ studentRouter.get("/flashcard-sets", requireAuth, (req, res) => {
   const userId = req.session.user.id;
   const sets = all(`
     SELECT s.id, s.title, s.topic, s.description,
-           s.category, s.section, s.part, s.line, s.source,
+           s.category, s.grade, s.section, s.part, s.line, s.source,
            COUNT(c.id) AS cards_count,
            CASE WHEN fsa.id IS NOT NULL THEN 1 ELSE 0 END AS is_assigned
     FROM flashcard_sets s
@@ -89,15 +89,15 @@ adminRouter.get("/flashcard-sets/:id", requireAuth, requireAdmin, (req, res) => 
 
 // ── Admin: create set ────────────────────────────────────────────────────────
 adminRouter.post("/flashcard-sets", requireAuth, requireAdmin, (req, res) => {
-  const { title, topic, description, category, section, part, line, source, cards = [] } = req.body;
+  const { title, topic, description, category, grade, section, part, line, source, cards = [] } = req.body;
   if (!title) return res.status(400).json({ error: "Нужно название" });
 
   db.exec("BEGIN");
   let setId;
   try {
     setId = run(
-      "INSERT INTO flashcard_sets (title, topic, description, category, section, part, line, source) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-      title, topic || null, description || null, category || null, section || null, part || null, line || null, source || null
+      "INSERT INTO flashcard_sets (title, topic, description, category, grade, section, part, line, source) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+      title, topic || null, description || null, category || null, grade || null, section || null, part || null, line || null, source || null
     ).lastInsertRowid;
     cards.forEach((c, i) => {
       run(
@@ -115,14 +115,14 @@ adminRouter.post("/flashcard-sets", requireAuth, requireAdmin, (req, res) => {
 
 // ── Admin: update set ────────────────────────────────────────────────────────
 adminRouter.put("/flashcard-sets/:id", requireAuth, requireAdmin, (req, res) => {
-  const { title, topic, description, category, section, part, line, source, cards } = req.body;
+  const { title, topic, description, category, grade, section, part, line, source, cards } = req.body;
   const id = req.params.id;
 
   db.exec("BEGIN");
   try {
     run(
-      "UPDATE flashcard_sets SET title = ?, topic = ?, description = ?, category = ?, section = ?, part = ?, line = ?, source = ? WHERE id = ?",
-      title, topic || null, description || null, category || null, section || null, part || null, line || null, source || null, id
+      "UPDATE flashcard_sets SET title = ?, topic = ?, description = ?, category = ?, grade = ?, section = ?, part = ?, line = ?, source = ? WHERE id = ?",
+      title, topic || null, description || null, category || null, grade || null, section || null, part || null, line || null, source || null, id
     );
     if (Array.isArray(cards)) {
       run("DELETE FROM flashcard_cards WHERE set_id = ?", id);

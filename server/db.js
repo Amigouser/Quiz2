@@ -127,6 +127,42 @@ try { db.exec("ALTER TABLE flashcard_sets ADD COLUMN part TEXT"); } catch (_) {}
 try { db.exec("ALTER TABLE flashcard_sets ADD COLUMN line TEXT"); } catch (_) {}
 try { db.exec("ALTER TABLE flashcard_sets ADD COLUMN source TEXT"); } catch (_) {}
 try { db.exec("ALTER TABLE flashcard_sets ADD COLUMN section TEXT"); } catch (_) {}
+// Таблицы разделов и тем
+db.exec(`
+  CREATE TABLE IF NOT EXISTS sections (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL UNIQUE,
+    created_at TEXT DEFAULT (datetime('now'))
+  );
+  CREATE TABLE IF NOT EXISTS topics (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL UNIQUE,
+    created_at TEXT DEFAULT (datetime('now'))
+  );
+`);
+
+// Заполняем разделы если пусто
+(function seedSections() {
+  const existing = db.prepare("SELECT COUNT(*) as c FROM sections").get();
+  if (existing.c > 0) return;
+  const names = [
+    "Биология как наука. Методы. Уровни организации",
+    "Строение клетки", "Биохимия клетки", "Метаболизм клетки",
+    "Клеточный цикл", "Размножение и развитие", "Прокариоты и вирусы",
+    "Грибы и лишайники", "Растения", "Животные", "Человек",
+    "Эволюция", "Экология", "Генетика",
+  ];
+  const ins = db.prepare("INSERT OR IGNORE INTO sections (name) VALUES (?)");
+  for (const n of names) ins.run(n);
+})();
+
+try { db.exec("ALTER TABLE tests ADD COLUMN grade TEXT"); } catch (_) {}
+try { db.exec("ALTER TABLE flashcard_sets ADD COLUMN grade TEXT"); } catch (_) {}
+// Перенести классы из category в grade (если category содержит "N класс")
+try {
+  db.exec("UPDATE tests SET grade = category, category = NULL WHERE category LIKE '% класс'");
+  db.exec("UPDATE flashcard_sets SET grade = category, category = NULL WHERE category LIKE '% класс'");
+} catch (_) {}
 // Создать коды для существующих учеников без кода
 (function generateMissingCodes() {
   const users = all("SELECT id FROM users WHERE code IS NULL AND is_admin = 0");

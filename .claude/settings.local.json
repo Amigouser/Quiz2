@@ -39,7 +39,12 @@
       "Bash(grep *)",
       "Bash(npm run *)",
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5173)",
-      "Bash(curl -s http://localhost:5173)"
+      "Bash(curl -s http://localhost:5173)",
+      "Bash(node -e \"require\\('./server/db.js'\\)\")",
+      "Bash(node -e \"require\\('./server/routes/admin.js'\\)\")",
+      "Bash(node -e \"require\\('./server/db.js'\\); console.log\\('DB OK'\\)\")",
+      "Bash(node -e \"require\\('./server/routes/admin.js'\\); console.log\\('Admin routes OK'\\)\")",
+      "Bash(node -e \"require\\('./server/db.js'\\); require\\('./server/routes/admin.js'\\); console.log\\('OK'\\)\")"
     ]
   }
 }

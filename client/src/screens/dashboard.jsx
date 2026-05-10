@@ -8,7 +8,8 @@ const TOPIC_ICONS = {
   "Биология": "🌱", "Анатомия": "🫀", "Экология": "🌍",
 };
 
-const CATEGORY_OPTIONS = ["9 класс", "10 класс", "11 класс", "ОГЭ", "ЕГЭ", "ВПР"];
+const GRADE_OPTIONS = ["5 класс", "6 класс", "7 класс", "8 класс", "9 класс", "10 класс", "11 класс"];
+const EXAM_OPTIONS = ["ОГЭ", "ЕГЭ", "ВПР"];
 const PART_OPTIONS = ["Часть 1", "Часть 2"];
 const SECTION_OPTIONS = [
   "Биология как наука. Методы. Уровни организации",
@@ -182,37 +183,34 @@ function CardSetTile({ s, onStart }) {
 export const StudentDashboard = ({ name = "Аня", quizzes = [], cardSets = [], onOpenQuiz, onOpenCards, onAdmin, onLogout }) => {
   const navigate = useNavigate();
 
-  const [catFilter, setCatFilter] = useState("");
+  const [gradeFilter, setGradeFilter] = useState("");
+  const [examFilter, setExamFilter] = useState("");
+  const [partFilter, setPartFilter] = useState("");
   const [sectionFilter, setSectionFilter] = useState("");
   const [topicFilter, setTopicFilter] = useState("");
-  const [partFilter, setPartFilter] = useState("");
-  const [lineFilter, setLineFilter] = useState("");
   const [sourceFilter, setSourceFilter] = useState("");
   const [search, setSearch] = useState("");
 
-  const { uniqueCategories, uniqueSections, uniqueTopics, uniqueParts, uniqueLines, uniqueSources } = useMemo(() => {
-    const dataSections   = [...new Set([...quizzes.map(t => t.section),  ...cardSets.map(c => c.section)].filter(Boolean))];
-    const dataCategories = [...new Set([...quizzes.map(t => t.category), ...cardSets.map(c => c.category)].filter(Boolean))];
-    const dataParts      = [...new Set([...quizzes.map(t => t.part),     ...cardSets.map(c => c.part)].filter(Boolean))];
+  const { uniqueSections, uniqueParts, uniqueTopics, uniqueSources } = useMemo(() => {
+    const dataSections = [...new Set([...quizzes.map(t => t.section), ...cardSets.map(c => c.section)].filter(Boolean))];
+    const dataParts    = [...new Set([...quizzes.map(t => t.part),    ...cardSets.map(c => c.part)].filter(Boolean))];
     return {
-      uniqueCategories: [...CATEGORY_OPTIONS, ...dataCategories.filter(c => !CATEGORY_OPTIONS.includes(c)).sort()],
-      uniqueSections:   [...SECTION_OPTIONS,  ...dataSections.filter(s => !SECTION_OPTIONS.includes(s)).sort()],
-      uniqueTopics:     [...new Set([...quizzes.map(t => t.topic),  ...cardSets.map(c => c.topic)].filter(Boolean))].sort(),
-      uniqueParts:      [...PART_OPTIONS,     ...dataParts.filter(p => !PART_OPTIONS.includes(p)).sort()],
-      uniqueLines:      [...new Set([...quizzes.map(t => t.line),   ...cardSets.map(c => c.line)].filter(Boolean))].sort((a, b) => +a - +b),
-      uniqueSources:    [...new Set([...quizzes.map(t => t.source), ...cardSets.map(c => c.source)].filter(Boolean))].sort(),
+      uniqueSections: [...SECTION_OPTIONS, ...dataSections.filter(s => !SECTION_OPTIONS.includes(s)).sort()],
+      uniqueParts:    [...PART_OPTIONS,    ...dataParts.filter(p => !PART_OPTIONS.includes(p)).sort()],
+      uniqueTopics:   [...new Set([...quizzes.map(t => t.topic),  ...cardSets.map(c => c.topic)].filter(Boolean))].sort(),
+      uniqueSources:  [...new Set([...quizzes.map(t => t.source), ...cardSets.map(c => c.source)].filter(Boolean))].sort(),
     };
   }, [quizzes, cardSets]);
 
-  const hasFilters = catFilter || sectionFilter || topicFilter || partFilter || lineFilter || sourceFilter || search;
+  const hasFilters = gradeFilter || examFilter || partFilter || sectionFilter || topicFilter || sourceFilter || search;
 
   function applyFilters(items) {
     return items.filter(item => {
-      if (catFilter && item.category !== catFilter) return false;
+      if (gradeFilter && item.grade !== gradeFilter) return false;
+      if (examFilter && item.category !== examFilter) return false;
+      if (partFilter && item.part !== partFilter) return false;
       if (sectionFilter && item.section !== sectionFilter) return false;
       if (topicFilter && item.topic !== topicFilter) return false;
-      if (partFilter && item.part !== partFilter) return false;
-      if (lineFilter && item.line !== lineFilter) return false;
       if (sourceFilter && item.source !== sourceFilter) return false;
       if (search && !item.title.toLowerCase().includes(search.toLowerCase())) return false;
       return true;
@@ -220,8 +218,8 @@ export const StudentDashboard = ({ name = "Аня", quizzes = [], cardSets = [],
   }
 
   function resetFilters() {
-    setCatFilter(""); setSectionFilter(""); setTopicFilter(""); setPartFilter("");
-    setLineFilter(""); setSourceFilter(""); setSearch("");
+    setGradeFilter(""); setExamFilter(""); setPartFilter(""); setSectionFilter("");
+    setTopicFilter(""); setSourceFilter(""); setSearch("");
   }
 
   const filteredQuizzes = applyFilters(quizzes);
@@ -312,14 +310,14 @@ export const StudentDashboard = ({ name = "Аня", quizzes = [], cardSets = [],
         {/* Filters */}
         {(quizzes.length > 0 || cardSets.length > 0) && (
           <div style={{ marginBottom: 32, display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center" }}>
-            <FilterSelect label="Категория" value={catFilter} onChange={setCatFilter} options={uniqueCategories} />
+            <FilterSelect label="Класс" value={gradeFilter} onChange={setGradeFilter} options={GRADE_OPTIONS} />
+            <FilterSelect label="Экзамен" value={examFilter} onChange={setExamFilter} options={EXAM_OPTIONS} />
+            {uniqueParts.length > 0 && (
+              <FilterSelect label="Часть" value={partFilter} onChange={setPartFilter} options={uniqueParts} />
+            )}
             <FilterSelect label="Раздел" value={sectionFilter} onChange={setSectionFilter} options={uniqueSections} />
             {uniqueTopics.length > 0 && (
               <FilterSelect label="Тема" value={topicFilter} onChange={setTopicFilter} options={uniqueTopics} />
-            )}
-            <FilterSelect label="Часть" value={partFilter} onChange={setPartFilter} options={uniqueParts} />
-            {uniqueLines.length > 0 && (
-              <FilterSelect label="Линия" value={lineFilter} onChange={setLineFilter} options={uniqueLines} />
             )}
             {uniqueSources.length > 0 && (
               <FilterSelect label="Источник" value={sourceFilter} onChange={setSourceFilter} options={uniqueSources} />
