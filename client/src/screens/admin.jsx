@@ -604,17 +604,37 @@ function ImportJsonPanel({ type, onImport, onClose }) {
   );
 }
 
+function pasteImage(e, onLoad) {
+  const items = e.clipboardData?.items;
+  if (!items) return;
+  for (const item of items) {
+    if (item.type.startsWith("image/")) {
+      e.preventDefault();
+      const file = item.getAsFile();
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = ev => onLoad(ev.target.result);
+      reader.readAsDataURL(file);
+      return;
+    }
+  }
+}
+
 const EMPTY_QUESTION = () => ({
   id: Date.now() + Math.random(),
   text: "",
   hint: "",
   explanation: "",
+  question_type: "single",
+  image_data: null,
+  correct_text: "",
+  match_options: ["1", "2"],
   expand: true,
   answers: [
-    { id: 1, text: "", is_correct: true },
-    { id: 2, text: "", is_correct: false },
-    { id: 3, text: "", is_correct: false },
-    { id: 4, text: "", is_correct: false },
+    { id: 1, text: "", is_correct: true,  match_value: "" },
+    { id: 2, text: "", is_correct: false, match_value: "" },
+    { id: 3, text: "", is_correct: false, match_value: "" },
+    { id: 4, text: "", is_correct: false, match_value: "" },
   ],
 });
 
@@ -644,11 +664,16 @@ const AdminCreateTest = ({ onCreated, autoImport = false }) => {
         text: q.text || q.question_text || "",
         hint: q.hint || "",
         explanation: q.explanation || "",
+        question_type: q.question_type || "single",
+        image_data: q.image_data || null,
+        correct_text: q.correct_text || "",
+        match_options: q.match_options || ["1", "2"],
         expand: true,
         answers: (q.answers || []).map((a, i) => ({
           id: Date.now() + Math.random() + i,
           text: a.text || a.answer_text || "",
           is_correct: !!(a.is_correct),
+          match_value: a.match_value || "",
         })),
       })));
     }
@@ -704,7 +729,11 @@ const AdminCreateTest = ({ onCreated, autoImport = false }) => {
           text: q.text.trim(),
           hint: q.hint.trim() || null,
           explanation: q.explanation.trim() || null,
-          answers: q.answers.map(a => ({ text: a.text.trim(), is_correct: a.is_correct ? 1 : 0 })),
+          question_type: q.question_type || "single",
+          image_data: q.image_data || null,
+          correct_text: q.correct_text?.trim() || null,
+          match_options: q.match_options || ["1", "2"],
+          answers: q.answers.map(a => ({ text: a.text.trim(), is_correct: a.is_correct ? 1 : 0, match_value: a.match_value || null })),
         })),
       });
       onCreated?.();
@@ -814,6 +843,42 @@ const AdminCreateTest = ({ onCreated, autoImport = false }) => {
               </div>
               {q.expand && (
                 <div style={{ padding: "20px 24px", display: "flex", flexDirection: "column", gap: 14 }}>
+                  {/* Image */}
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-soft)", marginBottom: 8 }}>Иллюстрация к вопросу</div>
+                    {q.image_data ? (
+                      <div style={{ position: "relative", display: "inline-block" }}>
+                        <img src={q.image_data} alt="" style={{ maxHeight: 180, maxWidth: "100%", borderRadius: 8, border: "1px solid var(--border-soft)", display: "block" }} />
+                        <button onClick={() => updateQ(qi, "image_data", null)}
+                          style={{ position: "absolute", top: 6, right: 6, width: 26, height: 26, borderRadius: "50%", border: "none", background: "rgba(0,0,0,0.55)", color: "#fff", cursor: "pointer", fontSize: 14, display: "grid", placeItems: "center" }}>✕</button>
+                      </div>
+                    ) : (
+                      <label tabIndex={0}
+                        onPaste={e => pasteImage(e, data => updateQ(qi, "image_data", data))}
+                        style={{ display: "inline-flex", alignItems: "center", gap: 8, cursor: "pointer", padding: "8px 14px", border: "1.5px dashed var(--border)", borderRadius: 8, fontSize: 13, color: "var(--text-soft)", outline: "none" }}
+                        onFocus={e => e.currentTarget.style.borderColor = "var(--green-600)"}
+                        onBlur={e => e.currentTarget.style.borderColor = "var(--border)"}>
+                        <input type="file" accept="image/*" style={{ display: "none" }} onChange={e => {
+                          const file = e.target.files[0]; if (!file) return;
+                          if (file.size > 5 * 1024 * 1024) { alert("Файл слишком большой (макс. 5 МБ)"); return; }
+                          const reader = new FileReader();
+                          reader.onload = ev => updateQ(qi, "image_data", ev.target.result);
+                          reader.readAsDataURL(file); e.target.value = "";
+                        }} />
+                        📎 Файл или <kbd style={{ padding: "1px 5px", borderRadius: 4, border: "1px solid var(--border)", fontSize: 11, fontFamily: "monospace", background: "var(--bg-muted)" }}>Ctrl+V</kbd> для вставки
+                      </label>
+                    )}
+                  </div>
+                  {/* Question type */}
+                  <div className="field">
+                    <label>Тип вопроса</label>
+                    <div style={{ display: "flex", gap: 8 }}>
+                      {[["single", "Один ответ"], ["text_input", "Ввод числа/текста"], ["matching", "Соответствие"]].map(([type, label]) => (
+                        <button key={type} className={`btn btn-sm ${q.question_type === type ? "btn-primary" : "btn-ghost"}`}
+                          onClick={() => updateQ(qi, "question_type", type)}>{label}</button>
+                      ))}
+                    </div>
+                  </div>
                   <div className="field">
                     <label>Текст вопроса</label>
                     <input className="input" value={q.text} onChange={e => updateQ(qi, "text", e.target.value)} placeholder="Введи вопрос…" />
@@ -822,34 +887,92 @@ const AdminCreateTest = ({ onCreated, autoImport = false }) => {
                     <label>Подсказка (необязательно)</label>
                     <input className="input" value={q.hint} onChange={e => updateQ(qi, "hint", e.target.value)} placeholder="Направление для размышления…" />
                   </div>
-                  <div>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-soft)", letterSpacing: "0.02em", marginBottom: 10 }}>
-                      Варианты ответа · отметь правильный
+                  {/* Single */}
+                  {q.question_type === "single" && (
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-soft)", letterSpacing: "0.02em", marginBottom: 10 }}>
+                        Варианты ответа · отметь правильный
+                      </div>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                        {q.answers.map((a, ai) => (
+                          <label key={a.id} style={{
+                            display: "flex", alignItems: "center", gap: 12, padding: "12px 14px",
+                            background: a.is_correct ? "var(--correct-bg)" : "var(--bg-muted)",
+                            border: `1.5px solid ${a.is_correct ? "var(--correct)" : "transparent"}`,
+                            borderRadius: "var(--r-md)", cursor: "pointer",
+                          }}>
+                            <input type="radio" checked={a.is_correct} onChange={() => updateA(qi, ai, "is_correct", true)}
+                              style={{ accentColor: "var(--green-800)", width: 18, height: 18 }}/>
+                            <input value={a.text} onChange={e => updateA(qi, ai, "text", e.target.value)}
+                              placeholder={`Вариант ${String.fromCharCode(65 + ai)}`}
+                              style={{ flex: 1, background: "transparent", border: "none", outline: "none", fontSize: 15, fontFamily: "var(--f-sans)" }}/>
+                            {a.is_correct && <span className="pill" style={{ background: "var(--green-800)", color: "#fff" }}>верный</span>}
+                            {q.answers.length > 2 && (
+                              <button className="btn btn-ghost btn-sm" style={{ padding: "4px 8px" }} onClick={() => removeAnswer(qi, ai)}>✕</button>
+                            )}
+                          </label>
+                        ))}
+                      </div>
+                      <button className="btn btn-ghost btn-sm" style={{ marginTop: 10 }} onClick={() => addAnswer(qi)}>+ Добавить вариант</button>
                     </div>
-                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                      {q.answers.map((a, ai) => (
-                        <label key={a.id} style={{
-                          display: "flex", alignItems: "center", gap: 12,
-                          padding: "12px 14px",
-                          background: a.is_correct ? "var(--correct-bg)" : "var(--bg-muted)",
-                          border: `1.5px solid ${a.is_correct ? "var(--correct)" : "transparent"}`,
-                          borderRadius: "var(--r-md)",
-                          cursor: "pointer",
-                        }}>
-                          <input type="radio" checked={a.is_correct} onChange={() => updateA(qi, ai, "is_correct", true)}
-                            style={{ accentColor: "var(--green-800)", width: 18, height: 18 }}/>
-                          <input value={a.text} onChange={e => updateA(qi, ai, "text", e.target.value)}
-                            placeholder={`Вариант ${String.fromCharCode(65 + ai)}`}
-                            style={{ flex: 1, background: "transparent", border: "none", outline: "none", fontSize: 15, fontFamily: "var(--f-sans)" }}/>
-                          {a.is_correct && <span className="pill" style={{ background: "var(--green-800)", color: "#fff" }}>верный</span>}
-                          {q.answers.length > 2 && (
-                            <button className="btn btn-ghost btn-sm" style={{ padding: "4px 8px" }} onClick={() => removeAnswer(qi, ai)}>✕</button>
-                          )}
-                        </label>
-                      ))}
+                  )}
+                  {/* Text input */}
+                  {q.question_type === "text_input" && (
+                    <div className="field">
+                      <label>Правильный ответ (число или слово)</label>
+                      <input className="input" value={q.correct_text} onChange={e => updateQ(qi, "correct_text", e.target.value)}
+                        placeholder="Например: 2" style={{ maxWidth: 200 }} />
+                      <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 4 }}>Ученик введёт этот ответ в текстовое поле</div>
                     </div>
-                    <button className="btn btn-ghost btn-sm" style={{ marginTop: 10 }} onClick={() => addAnswer(qi)}>+ Добавить вариант</button>
-                  </div>
+                  )}
+                  {/* Matching */}
+                  {q.question_type === "matching" && (
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-soft)", marginBottom: 10 }}>
+                        Правые варианты (кнопки выбора)
+                      </div>
+                      <div style={{ display: "flex", gap: 8, marginBottom: 14, flexWrap: "wrap" }}>
+                        {(q.match_options || ["1", "2"]).map((opt, oi) => (
+                          <div key={oi} style={{ display: "flex", gap: 4, alignItems: "center" }}>
+                            <input value={opt} onChange={e => {
+                              const newOpts = [...(q.match_options || ["1", "2"])];
+                              newOpts[oi] = e.target.value;
+                              updateQ(qi, "match_options", newOpts);
+                            }} style={{ width: 60, textAlign: "center", padding: "4px 8px", border: "1.5px solid var(--border)", borderRadius: 8, fontWeight: 700 }} />
+                            {(q.match_options || []).length > 2 && (
+                              <button className="btn btn-ghost btn-sm" style={{ padding: "2px 6px" }} onClick={() => {
+                                updateQ(qi, "match_options", (q.match_options || []).filter((_, i) => i !== oi));
+                              }}>✕</button>
+                            )}
+                          </div>
+                        ))}
+                        <button className="btn btn-ghost btn-sm" onClick={() => updateQ(qi, "match_options", [...(q.match_options || ["1", "2"]), String((q.match_options || []).length + 1)])}>+ вариант</button>
+                      </div>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-soft)", marginBottom: 8 }}>
+                        Левые элементы + правильный ответ
+                      </div>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                        {q.answers.map((a, ai) => (
+                          <div key={a.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", background: "var(--bg-muted)", borderRadius: 10 }}>
+                            <div style={{ fontSize: 13, color: "var(--text-muted)", minWidth: 20 }}>{String.fromCharCode(1040 + ai)})</div>
+                            <input value={a.text} onChange={e => updateA(qi, ai, "text", e.target.value)}
+                              placeholder="Характеристика или элемент…"
+                              style={{ flex: 1, background: "transparent", border: "none", outline: "none", fontSize: 14, fontFamily: "var(--f-sans)" }}/>
+                            <span style={{ fontSize: 12, color: "var(--text-muted)" }}>→</span>
+                            <select value={a.match_value || ""} onChange={e => updateA(qi, ai, "match_value", e.target.value)}
+                              style={{ padding: "4px 8px", border: "1.5px solid var(--border)", borderRadius: 8, fontWeight: 700, minWidth: 60 }}>
+                              <option value="">?</option>
+                              {(q.match_options || ["1", "2"]).map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                            </select>
+                            {q.answers.length > 2 && (
+                              <button className="btn btn-ghost btn-sm" style={{ padding: "4px 8px" }} onClick={() => removeAnswer(qi, ai)}>✕</button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                      <button className="btn btn-ghost btn-sm" style={{ marginTop: 10 }} onClick={() => addAnswer(qi)}>+ Добавить строку</button>
+                    </div>
+                  )}
                   <div className="field">
                     <label>Пояснение к правильному ответу</label>
                     <textarea className="input" rows={2} value={q.explanation} onChange={e => updateQ(qi, "explanation", e.target.value)}
@@ -921,8 +1044,12 @@ const AdminEditTest = ({ testId, onSaved }) => {
         text: q.question_text,
         hint: q.hint || "",
         explanation: q.explanation || "",
+        question_type: q.question_type || "single",
+        image_data: q.image_data || null,
+        correct_text: q.correct_text || "",
+        match_options: q.match_options || ["1", "2"],
         expand: false,
-        answers: q.answers.map(a => ({ id: a.id, text: a.answer_text, is_correct: !!a.is_correct })),
+        answers: q.answers.map(a => ({ id: a.id, text: a.answer_text, is_correct: !!a.is_correct, match_value: a.match_value || "" })),
       })));
       setLoading(false);
     });
@@ -962,7 +1089,11 @@ const AdminEditTest = ({ testId, onSaved }) => {
         part: part.trim() || null, line: line.trim() || null, source: source.trim() || null,
         questions: questions.map(q => ({
           text: q.text.trim(), hint: q.hint.trim() || null, explanation: q.explanation.trim() || null,
-          answers: q.answers.map(a => ({ text: a.text.trim(), is_correct: a.is_correct ? 1 : 0 })),
+          question_type: q.question_type || "single",
+          image_data: q.image_data || null,
+          correct_text: q.correct_text?.trim() || null,
+          match_options: q.match_options || ["1", "2"],
+          answers: q.answers.map(a => ({ text: a.text.trim(), is_correct: a.is_correct ? 1 : 0, match_value: a.match_value || null })),
         })),
       });
       onSaved?.();
@@ -1063,6 +1194,42 @@ const AdminEditTest = ({ testId, onSaved }) => {
               </div>
               {q.expand && (
                 <div style={{ padding: "20px 24px", display: "flex", flexDirection: "column", gap: 14 }}>
+                  {/* Image */}
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-soft)", marginBottom: 8 }}>Иллюстрация к вопросу</div>
+                    {q.image_data ? (
+                      <div style={{ position: "relative", display: "inline-block" }}>
+                        <img src={q.image_data} alt="" style={{ maxHeight: 180, maxWidth: "100%", borderRadius: 8, border: "1px solid var(--border-soft)", display: "block" }} />
+                        <button onClick={() => updateQ(qi, "image_data", null)}
+                          style={{ position: "absolute", top: 6, right: 6, width: 26, height: 26, borderRadius: "50%", border: "none", background: "rgba(0,0,0,0.55)", color: "#fff", cursor: "pointer", fontSize: 14, display: "grid", placeItems: "center" }}>✕</button>
+                      </div>
+                    ) : (
+                      <label tabIndex={0}
+                        onPaste={e => pasteImage(e, data => updateQ(qi, "image_data", data))}
+                        style={{ display: "inline-flex", alignItems: "center", gap: 8, cursor: "pointer", padding: "8px 14px", border: "1.5px dashed var(--border)", borderRadius: 8, fontSize: 13, color: "var(--text-soft)", outline: "none" }}
+                        onFocus={e => e.currentTarget.style.borderColor = "var(--green-600)"}
+                        onBlur={e => e.currentTarget.style.borderColor = "var(--border)"}>
+                        <input type="file" accept="image/*" style={{ display: "none" }} onChange={e => {
+                          const file = e.target.files[0]; if (!file) return;
+                          if (file.size > 5 * 1024 * 1024) { alert("Файл слишком большой (макс. 5 МБ)"); return; }
+                          const reader = new FileReader();
+                          reader.onload = ev => updateQ(qi, "image_data", ev.target.result);
+                          reader.readAsDataURL(file); e.target.value = "";
+                        }} />
+                        📎 Файл или <kbd style={{ padding: "1px 5px", borderRadius: 4, border: "1px solid var(--border)", fontSize: 11, fontFamily: "monospace", background: "var(--bg-muted)" }}>Ctrl+V</kbd> для вставки
+                      </label>
+                    )}
+                  </div>
+                  {/* Question type */}
+                  <div className="field">
+                    <label>Тип вопроса</label>
+                    <div style={{ display: "flex", gap: 8 }}>
+                      {[["single", "Один ответ"], ["text_input", "Ввод числа/текста"], ["matching", "Соответствие"]].map(([type, label]) => (
+                        <button key={type} className={`btn btn-sm ${q.question_type === type ? "btn-primary" : "btn-ghost"}`}
+                          onClick={() => updateQ(qi, "question_type", type)}>{label}</button>
+                      ))}
+                    </div>
+                  </div>
                   <div className="field">
                     <label>Текст вопроса</label>
                     <input className="input" value={q.text} onChange={e => updateQ(qi, "text", e.target.value)} />
@@ -1071,29 +1238,85 @@ const AdminEditTest = ({ testId, onSaved }) => {
                     <label>Подсказка</label>
                     <input className="input" value={q.hint} onChange={e => updateQ(qi, "hint", e.target.value)} />
                   </div>
-                  <div>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-soft)", marginBottom: 10 }}>Варианты ответа</div>
-                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                      {q.answers.map((a, ai) => (
-                        <label key={a.id} style={{
-                          display: "flex", alignItems: "center", gap: 12, padding: "12px 14px",
-                          background: a.is_correct ? "var(--correct-bg)" : "var(--bg-muted)",
-                          border: `1.5px solid ${a.is_correct ? "var(--correct)" : "transparent"}`,
-                          borderRadius: "var(--r-md)", cursor: "pointer",
-                        }}>
-                          <input type="radio" checked={a.is_correct} onChange={() => updateA(qi, ai, "is_correct", true)}
-                            style={{ accentColor: "var(--green-800)", width: 18, height: 18 }}/>
-                          <input value={a.text} onChange={e => updateA(qi, ai, "text", e.target.value)}
-                            style={{ flex: 1, background: "transparent", border: "none", outline: "none", fontSize: 15, fontFamily: "var(--f-sans)" }}/>
-                          {a.is_correct && <span className="pill" style={{ background: "var(--green-800)", color: "#fff" }}>верный</span>}
-                          {q.answers.length > 2 && (
-                            <button className="btn btn-ghost btn-sm" style={{ padding: "4px 8px" }} onClick={() => removeAnswer(qi, ai)}>✕</button>
-                          )}
-                        </label>
-                      ))}
+                  {/* Single */}
+                  {q.question_type === "single" && (
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-soft)", marginBottom: 10 }}>Варианты ответа · отметь правильный</div>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                        {q.answers.map((a, ai) => (
+                          <label key={a.id} style={{
+                            display: "flex", alignItems: "center", gap: 12, padding: "12px 14px",
+                            background: a.is_correct ? "var(--correct-bg)" : "var(--bg-muted)",
+                            border: `1.5px solid ${a.is_correct ? "var(--correct)" : "transparent"}`,
+                            borderRadius: "var(--r-md)", cursor: "pointer",
+                          }}>
+                            <input type="radio" checked={a.is_correct} onChange={() => updateA(qi, ai, "is_correct", true)}
+                              style={{ accentColor: "var(--green-800)", width: 18, height: 18 }}/>
+                            <input value={a.text} onChange={e => updateA(qi, ai, "text", e.target.value)}
+                              style={{ flex: 1, background: "transparent", border: "none", outline: "none", fontSize: 15, fontFamily: "var(--f-sans)" }}/>
+                            {a.is_correct && <span className="pill" style={{ background: "var(--green-800)", color: "#fff" }}>верный</span>}
+                            {q.answers.length > 2 && (
+                              <button className="btn btn-ghost btn-sm" style={{ padding: "4px 8px" }} onClick={() => removeAnswer(qi, ai)}>✕</button>
+                            )}
+                          </label>
+                        ))}
+                      </div>
+                      <button className="btn btn-ghost btn-sm" style={{ marginTop: 10 }} onClick={() => addAnswer(qi)}>+ Добавить вариант</button>
                     </div>
-                    <button className="btn btn-ghost btn-sm" style={{ marginTop: 10 }} onClick={() => addAnswer(qi)}>+ Добавить вариант</button>
-                  </div>
+                  )}
+                  {/* Text input */}
+                  {q.question_type === "text_input" && (
+                    <div className="field">
+                      <label>Правильный ответ (число или слово)</label>
+                      <input className="input" value={q.correct_text} onChange={e => updateQ(qi, "correct_text", e.target.value)}
+                        placeholder="Например: 2" style={{ maxWidth: 200 }} />
+                      <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 4 }}>Ученик введёт этот ответ в текстовое поле</div>
+                    </div>
+                  )}
+                  {/* Matching */}
+                  {q.question_type === "matching" && (
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-soft)", marginBottom: 10 }}>Правые варианты (кнопки выбора)</div>
+                      <div style={{ display: "flex", gap: 8, marginBottom: 14, flexWrap: "wrap" }}>
+                        {(q.match_options || ["1", "2"]).map((opt, oi) => (
+                          <div key={oi} style={{ display: "flex", gap: 4, alignItems: "center" }}>
+                            <input value={opt} onChange={e => {
+                              const newOpts = [...(q.match_options || ["1", "2"])];
+                              newOpts[oi] = e.target.value;
+                              updateQ(qi, "match_options", newOpts);
+                            }} style={{ width: 60, textAlign: "center", padding: "4px 8px", border: "1.5px solid var(--border)", borderRadius: 8, fontWeight: 700 }} />
+                            {(q.match_options || []).length > 2 && (
+                              <button className="btn btn-ghost btn-sm" style={{ padding: "2px 6px" }} onClick={() => {
+                                updateQ(qi, "match_options", (q.match_options || []).filter((_, i) => i !== oi));
+                              }}>✕</button>
+                            )}
+                          </div>
+                        ))}
+                        <button className="btn btn-ghost btn-sm" onClick={() => updateQ(qi, "match_options", [...(q.match_options || ["1", "2"]), String((q.match_options || []).length + 1)])}>+ вариант</button>
+                      </div>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-soft)", marginBottom: 8 }}>Левые элементы + правильный ответ</div>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                        {q.answers.map((a, ai) => (
+                          <div key={a.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", background: "var(--bg-muted)", borderRadius: 10 }}>
+                            <div style={{ fontSize: 13, color: "var(--text-muted)", minWidth: 20 }}>{String.fromCharCode(1040 + ai)})</div>
+                            <input value={a.text} onChange={e => updateA(qi, ai, "text", e.target.value)}
+                              placeholder="Характеристика или элемент…"
+                              style={{ flex: 1, background: "transparent", border: "none", outline: "none", fontSize: 14, fontFamily: "var(--f-sans)" }}/>
+                            <span style={{ fontSize: 12, color: "var(--text-muted)" }}>→</span>
+                            <select value={a.match_value || ""} onChange={e => updateA(qi, ai, "match_value", e.target.value)}
+                              style={{ padding: "4px 8px", border: "1.5px solid var(--border)", borderRadius: 8, fontWeight: 700, minWidth: 60 }}>
+                              <option value="">?</option>
+                              {(q.match_options || ["1", "2"]).map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                            </select>
+                            {q.answers.length > 2 && (
+                              <button className="btn btn-ghost btn-sm" style={{ padding: "4px 8px" }} onClick={() => removeAnswer(qi, ai)}>✕</button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                      <button className="btn btn-ghost btn-sm" style={{ marginTop: 10 }} onClick={() => addAnswer(qi)}>+ Добавить строку</button>
+                    </div>
+                  )}
                   <div className="field">
                     <label>Пояснение к правильному ответу</label>
                     <textarea className="input" rows={2} value={q.explanation} onChange={e => updateQ(qi, "explanation", e.target.value)}

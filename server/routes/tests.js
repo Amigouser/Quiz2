@@ -132,8 +132,12 @@ router.get("/tests/:id", requireAuth, (req, res) => {
         text: q.question_text,
         hint: q.hint,
         explanation: q.explanation,
+        question_type: q.question_type || "single",
+        image_data: q.image_data || null,
+        correct_text: q.correct_text || null,
+        match_options: q.match_options ? JSON.parse(q.match_options) : ["1", "2"],
         correct_index: correctIndex,
-        answers: answers.map((a) => ({ id: a.id, text: a.answer_text })),
+        answers: answers.map((a) => ({ id: a.id, text: a.answer_text, match_value: a.match_value || null })),
       };
     }),
   };
@@ -172,25 +176,49 @@ router.post("/attempts/:id/submit", requireAuth, (req, res) => {
   db.exec("BEGIN");
   try {
     for (const ans of answers) {
-      const { question_id, answer_id } = ans;
-      const correctAnswer = get(
-        "SELECT id FROM answers WHERE question_id = ? AND is_correct = 1",
-        question_id
-      );
-      const isCorrect = correctAnswer && Number(correctAnswer.id) === Number(answer_id) ? 1 : 0;
-      if (isCorrect) score++;
+      const { question_id, answer_id, answer_text, matches } = ans;
+      const question = get("SELECT question_type, correct_text FROM questions WHERE id = ?", question_id);
+      const qType = question?.question_type || "single";
 
-      run(
-        "INSERT INTO attempt_answers (attempt_id, question_id, answer_id, is_correct) VALUES (?, ?, ?, ?)",
-        attemptId, question_id, answer_id, isCorrect
-      );
+      if (qType === "text_input") {
+        const expected = (question?.correct_text || "").trim().toLowerCase();
+        const given = (answer_text || "").trim().toLowerCase();
+        const isCorrect = expected && given === expected ? 1 : 0;
+        if (isCorrect) score++;
+        run(
+          "INSERT INTO attempt_answers (attempt_id, question_id, answer_id, answer_text, is_correct) VALUES (?, ?, ?, ?, ?)",
+          attemptId, question_id, null, answer_text || "", isCorrect
+        );
+        results.push({ question_id, answer_text, is_correct: isCorrect, correct_text: question?.correct_text });
 
-      results.push({
-        question_id,
-        answer_id,
-        is_correct: isCorrect,
-        correct_answer_id: correctAnswer ? correctAnswer.id : null,
-      });
+      } else if (qType === "matching") {
+        const matchEntries = Object.entries(matches || {});
+        let allCorrect = matchEntries.length > 0;
+        for (const [aid, selectedVal] of matchEntries) {
+          const expected = get("SELECT match_value FROM answers WHERE id = ?", Number(aid));
+          const itemCorrect = expected && expected.match_value === selectedVal ? 1 : 0;
+          if (!itemCorrect) allCorrect = false;
+          run(
+            "INSERT INTO attempt_answers (attempt_id, question_id, answer_id, answer_text, is_correct) VALUES (?, ?, ?, ?, ?)",
+            attemptId, question_id, Number(aid), selectedVal, itemCorrect
+          );
+        }
+        if (allCorrect) score++;
+        results.push({ question_id, matches, is_correct: allCorrect ? 1 : 0 });
+
+      } else {
+        const correctAnswer = get(
+          "SELECT id FROM answers WHERE question_id = ? AND is_correct = 1",
+          question_id
+        );
+        const isCorrect = correctAnswer && Number(correctAnswer.id) === Number(answer_id) ? 1 : 0;
+        if (isCorrect) score++;
+        run(
+          "INSERT INTO attempt_answers (attempt_id, question_id, answer_id, is_correct) VALUES (?, ?, ?, ?)",
+          attemptId, question_id, answer_id, isCorrect
+        );
+        results.push({ question_id, answer_id, is_correct: isCorrect, correct_answer_id: correctAnswer?.id ?? null });
+      }
     }
     run("UPDATE attempts SET score = ?, completed_at = datetime('now') WHERE id = ?", score, attemptId);
     db.exec("COMMIT");

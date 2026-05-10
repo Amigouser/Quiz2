@@ -156,6 +156,12 @@ db.exec(`
   for (const n of names) ins.run(n);
 })();
 
+try { db.exec("ALTER TABLE questions ADD COLUMN image_data TEXT"); } catch (_) {}
+try { db.exec("ALTER TABLE questions ADD COLUMN question_type TEXT DEFAULT 'single'"); } catch (_) {}
+try { db.exec("ALTER TABLE questions ADD COLUMN correct_text TEXT"); } catch (_) {}
+try { db.exec("ALTER TABLE questions ADD COLUMN match_options TEXT"); } catch (_) {}
+try { db.exec("ALTER TABLE answers ADD COLUMN match_value TEXT"); } catch (_) {}
+try { db.exec("ALTER TABLE attempt_answers ADD COLUMN answer_text TEXT"); } catch (_) {}
 try { db.exec("ALTER TABLE tests ADD COLUMN grade TEXT"); } catch (_) {}
 try { db.exec("ALTER TABLE flashcard_sets ADD COLUMN grade TEXT"); } catch (_) {}
 // Перенести классы из category в grade (если category содержит "N класс")

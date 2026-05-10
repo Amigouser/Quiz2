@@ -154,8 +154,13 @@ function QuizPage() {
           options: q.answers.map((a) => a.text),
           correct: q.correct_index,
           explain: q.explanation,
+          question_type: q.question_type || "single",
+          image_data: q.image_data || null,
+          correct_text: q.correct_text || null,
+          match_options: q.match_options || ["1", "2"],
           _questionId: q.id,
           _answerIds: q.answers.map((a) => a.id),
+          _matchAnswers: q.answers,
         })),
       });
     });
@@ -186,10 +191,13 @@ function QuizPage() {
       return;
     }
 
-    const payload = answers.map((a, i) => ({
-      question_id: quiz.questions[i]._questionId,
-      answer_id: quiz.questions[i]._answerIds[a.picked],
-    }));
+    const payload = answers.map((a, i) => {
+      const q = quiz.questions[i];
+      const qType = q.question_type || "single";
+      if (qType === "text_input") return { question_id: q._questionId, answer_text: a.typed || "" };
+      if (qType === "matching")   return { question_id: q._questionId, matches: a.matches || {} };
+      return { question_id: q._questionId, answer_id: q._answerIds[a.picked] };
+    });
 
     try {
       const r = await API.submitAttempt(attemptId, payload);

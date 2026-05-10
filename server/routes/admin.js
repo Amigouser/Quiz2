@@ -51,13 +51,15 @@ router.post("/tests", (req, res) => {
 
     questions.forEach((q, qi) => {
       const qId = run(
-        "INSERT INTO questions (test_id, question_text, hint, explanation, order_index) VALUES (?, ?, ?, ?, ?)",
-        testId, q.text, q.hint || null, q.explanation || null, qi
+        "INSERT INTO questions (test_id, question_text, hint, explanation, order_index, image_data, question_type, correct_text, match_options) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        testId, q.text, q.hint || null, q.explanation || null, qi,
+        q.image_data || null, q.question_type || "single", q.correct_text || null,
+        q.match_options ? JSON.stringify(q.match_options) : null
       ).lastInsertRowid;
 
       (q.answers || []).forEach((a, ai) =>
-        run("INSERT INTO answers (question_id, answer_text, is_correct, order_index) VALUES (?, ?, ?, ?)",
-          qId, a.text, a.is_correct ? 1 : 0, ai)
+        run("INSERT INTO answers (question_id, answer_text, is_correct, order_index, match_value) VALUES (?, ?, ?, ?, ?)",
+          qId, a.text, a.is_correct ? 1 : 0, ai, a.match_value || null)
       );
     });
 
@@ -83,12 +85,14 @@ router.put("/tests/:id", (req, res) => {
       run("DELETE FROM questions WHERE test_id = ?", req.params.id);
       questions.forEach((q, qi) => {
         const qId = run(
-          "INSERT INTO questions (test_id, question_text, hint, explanation, order_index) VALUES (?, ?, ?, ?, ?)",
-          req.params.id, q.text, q.hint || null, q.explanation || null, qi
+          "INSERT INTO questions (test_id, question_text, hint, explanation, order_index, image_data, question_type, correct_text, match_options) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+          req.params.id, q.text, q.hint || null, q.explanation || null, qi,
+          q.image_data || null, q.question_type || "single", q.correct_text || null,
+          q.match_options ? JSON.stringify(q.match_options) : null
         ).lastInsertRowid;
         (q.answers || []).forEach((a, ai) =>
-          run("INSERT INTO answers (question_id, answer_text, is_correct, order_index) VALUES (?, ?, ?, ?)",
-            qId, a.text, a.is_correct ? 1 : 0, ai)
+          run("INSERT INTO answers (question_id, answer_text, is_correct, order_index, match_value) VALUES (?, ?, ?, ?, ?)",
+            qId, a.text, a.is_correct ? 1 : 0, ai, a.match_value || null)
         );
       });
     }

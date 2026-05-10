@@ -8,26 +8,63 @@ export const QuizClassic = ({ quiz, onFinish, onExit }) => {
   const [locked, setLocked] = React.useState(false);
   const [burst, setBurst] = React.useState(false);
   const [answers, setAnswers] = React.useState([]);
+  const [typedText, setTypedText] = React.useState("");
+  const [matchState, setMatchState] = React.useState({});
 
   const q = quiz.questions[idx];
+  const qType = q.question_type || "single";
   const isLast = idx === quiz.questions.length - 1;
 
+  React.useEffect(() => {
+    setTypedText("");
+    setMatchState({});
+    setSelected(null);
+  }, [idx]);
+
+  React.useEffect(() => { if (burst) { const t = setTimeout(() => setBurst(false), 2500); return () => clearTimeout(t); } }, [burst]);
+
   const pick = (i) => {
-    if (locked) return;
+    if (locked || qType !== "single") return;
     setSelected(i);
     setLocked(true);
     const correct = i === q.correct;
     setAnswers(a => [...a, { picked: i, correct }]);
     if (correct) setTimeout(() => setBurst(true), 120);
   };
-  React.useEffect(() => { if (burst) { const t = setTimeout(() => setBurst(false), 2500); return () => clearTimeout(t); } }, [burst]);
+
+  const lockTextInput = () => {
+    if (locked || !typedText.trim()) return;
+    const correct = typedText.trim().toLowerCase() === (q.correct_text || "").trim().toLowerCase();
+    setLocked(true);
+    setAnswers(a => [...a, { typed: typedText, correct }]);
+    if (correct) setTimeout(() => setBurst(true), 120);
+  };
+
+  const lockMatching = () => {
+    if (locked) return;
+    const items = q._matchAnswers || [];
+    const allCorrect = items.length > 0 && items.every(ma => matchState[ma.id] === ma.match_value);
+    setLocked(true);
+    setAnswers(a => [...a, { matches: matchState, correct: allCorrect }]);
+    if (allCorrect) setTimeout(() => setBurst(true), 120);
+  };
+
+  const allMatchesFilled = (q._matchAnswers || []).every(ma => matchState[ma.id]);
 
   const next = () => {
     if (isLast) { onFinish?.(answers); return; }
-    setIdx(i => i + 1); setSelected(null); setLocked(false);
+    setIdx(i => i + 1); setLocked(false);
   };
 
   const pct = ((idx + (locked ? 1 : 0)) / quiz.questions.length) * 100;
+  const lastAnswer = locked && answers.length > 0 ? answers[answers.length - 1] : null;
+  const isCurrentCorrect = lastAnswer?.correct;
+
+  const ArrowIcon = () => (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+      <path d="M3 8 H13 M9 4 L 13 8 L 9 12" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  );
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg)", position: "relative", overflow: "hidden" }}>
@@ -51,43 +88,133 @@ export const QuizClassic = ({ quiz, onFinish, onExit }) => {
       {/* Question body */}
       <div className="quiz-body" style={{ position: "relative", maxWidth: 760, margin: "0 auto", padding: "56px 40px 80px" }}>
         <div className="eyebrow" style={{ marginBottom: 14 }}>Вопрос {String(idx + 1).padStart(2, "0")}</div>
+
+        {/* Image */}
+        {q.image_data && (
+          <div style={{ marginBottom: 20 }}>
+            <img src={q.image_data} alt="Иллюстрация" style={{
+              maxWidth: "100%", maxHeight: 340, borderRadius: 12,
+              objectFit: "contain", border: "1px solid var(--border-soft)",
+              background: "#fff",
+            }} />
+          </div>
+        )}
+
         <h2 className="quiz-h2" style={{ fontFamily: "var(--f-serif)", fontSize: 34, lineHeight: 1.2, marginBottom: 10, letterSpacing: "-0.01em" }}>
           {q.q}
         </h2>
         {q.note && <p style={{ color: "var(--text-muted)", fontSize: 14, fontStyle: "italic", marginBottom: 28 }}>{q.note}</p>}
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 28 }}>
-          {q.options.map((opt, i) => {
-            const letter = String.fromCharCode(65 + i);
-            let cls = "answer";
-            if (locked) {
-              if (i === q.correct) cls += " correct";
-              else if (i === selected) cls += " wrong";
-              cls += " locked";
-            } else if (i === selected) cls += " selected";
-            return (
-              <div key={i} className={cls} onClick={() => pick(i)}>
-                <div className="letter">{letter}</div>
-                <div style={{ flex: 1 }}>{opt}</div>
-                {locked && i === q.correct && <span style={{ fontSize: 20 }}>🌱</span>}
-                {locked && i === selected && i !== q.correct && <span style={{ fontSize: 18, color: "var(--wrong)" }}>✕</span>}
-              </div>
-            );
-          })}
-        </div>
+        {/* ── Single choice ── */}
+        {qType === "single" && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 28 }}>
+            {q.options.map((opt, i) => {
+              const letter = String.fromCharCode(65 + i);
+              let cls = "answer";
+              if (locked) {
+                if (i === q.correct) cls += " correct";
+                else if (i === selected) cls += " wrong";
+                cls += " locked";
+              } else if (i === selected) cls += " selected";
+              return (
+                <div key={i} className={cls} onClick={() => pick(i)}>
+                  <div className="letter">{letter}</div>
+                  <div style={{ flex: 1 }}>{opt}</div>
+                  {locked && i === q.correct && <span style={{ fontSize: 20 }}>🌱</span>}
+                  {locked && i === selected && i !== q.correct && <span style={{ fontSize: 18, color: "var(--wrong)" }}>✕</span>}
+                </div>
+              );
+            })}
+          </div>
+        )}
 
-        {locked && (
+        {/* ── Text input ── */}
+        {qType === "text_input" && (
+          <div style={{ marginTop: 28 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+              <span style={{ fontSize: 15, color: "var(--text-soft)" }}>Ответ:</span>
+              <input
+                className="input"
+                style={{ width: 100, textAlign: "center", fontSize: 22, fontFamily: "var(--f-serif)", fontWeight: 700,
+                  border: locked ? `2px solid ${isCurrentCorrect ? "var(--correct)" : "var(--wrong)"}` : undefined }}
+                value={typedText}
+                onChange={e => !locked && setTypedText(e.target.value)}
+                onKeyDown={e => e.key === "Enter" && lockTextInput()}
+                disabled={locked}
+                autoFocus={!locked}
+                placeholder="?"
+              />
+              {!locked && (
+                <button className="btn btn-primary" onClick={lockTextInput} disabled={!typedText.trim()}>
+                  Проверить
+                </button>
+              )}
+            </div>
+            {locked && (
+              <div style={{ marginTop: 14, fontSize: 14, color: isCurrentCorrect ? "var(--correct)" : "var(--wrong)", fontWeight: 600 }}>
+                {isCurrentCorrect ? "🌱 Верно!" : `🍂 Верный ответ: ${q.correct_text}`}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── Matching ── */}
+        {qType === "matching" && (
+          <div style={{ marginTop: 28 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {(q._matchAnswers || []).map((ma) => {
+                const chosen = matchState[ma.id];
+                const itemLocked = locked;
+                const itemCorrect = itemLocked && chosen === ma.match_value;
+                const itemWrong = itemLocked && chosen !== ma.match_value;
+                return (
+                  <div key={ma.id} style={{
+                    display: "flex", alignItems: "center", gap: 12, padding: "12px 16px",
+                    background: "var(--surface)", borderRadius: 12,
+                    border: `1.5px solid ${itemCorrect ? "var(--correct)" : itemWrong ? "var(--wrong)" : "var(--border-soft)"}`,
+                  }}>
+                    <div style={{ flex: 1, fontSize: 15 }}>{ma.text}</div>
+                    <div style={{ display: "flex", gap: 6 }}>
+                      {(q.match_options || ["1", "2"]).map(opt => (
+                        <button key={opt} onClick={() => !locked && setMatchState(s => ({ ...s, [ma.id]: opt }))}
+                          style={{
+                            width: 44, height: 44, borderRadius: 10, fontWeight: 700, fontSize: 17,
+                            cursor: locked ? "default" : "pointer",
+                            border: `2px solid ${chosen === opt ? (itemCorrect ? "var(--correct)" : itemWrong ? "var(--wrong)" : "var(--green-700)") : "var(--border)"}`,
+                            background: chosen === opt ? (itemCorrect ? "var(--correct-bg)" : itemWrong ? "var(--wrong-bg)" : "var(--green-100)") : "transparent",
+                            color: chosen === opt ? (itemCorrect ? "var(--correct)" : itemWrong ? "var(--wrong)" : "var(--green-800)") : "var(--text-muted)",
+                          }}>{opt}</button>
+                      ))}
+                    </div>
+                    {itemLocked && (itemCorrect
+                      ? <span style={{ fontSize: 18, color: "var(--correct)" }}>✓</span>
+                      : <span style={{ fontSize: 13, color: "var(--wrong)", minWidth: 36, textAlign: "center" }}>→{ma.match_value}</span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+            {!locked && (
+              <button className="btn btn-primary" style={{ marginTop: 14 }}
+                disabled={!allMatchesFilled} onClick={lockMatching}>
+                Проверить соответствие
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Feedback block (all types) */}
+        {locked && q.explain && (
           <div style={{
             marginTop: 24, padding: "16px 20px",
-            background: selected === q.correct ? "var(--correct-bg)" : "var(--wrong-bg)",
-            border: `1px solid ${selected === q.correct ? "var(--correct)" : "var(--wrong)"}`,
-            borderRadius: "var(--r-md)",
-            display: "flex", gap: 14, alignItems: "flex-start",
+            background: isCurrentCorrect ? "var(--correct-bg)" : "var(--wrong-bg)",
+            border: `1px solid ${isCurrentCorrect ? "var(--correct)" : "var(--wrong)"}`,
+            borderRadius: "var(--r-md)", display: "flex", gap: 14, alignItems: "flex-start",
           }}>
-            <div style={{ fontSize: 24, lineHeight: 1 }}>{selected === q.correct ? "🌱" : "🍂"}</div>
+            <div style={{ fontSize: 24, lineHeight: 1 }}>{isCurrentCorrect ? "🌱" : "🍂"}</div>
             <div>
-              <div style={{ fontWeight: 600, marginBottom: 4, color: selected === q.correct ? "var(--correct)" : "var(--wrong)" }}>
-                {selected === q.correct ? "Отлично!" : "Не совсем так."}
+              <div style={{ fontWeight: 600, marginBottom: 4, color: isCurrentCorrect ? "var(--correct)" : "var(--wrong)" }}>
+                {isCurrentCorrect ? "Отлично!" : "Не совсем так."}
               </div>
               <div style={{ fontSize: 14, color: "var(--text-soft)", lineHeight: 1.55 }}>{q.explain}</div>
             </div>
@@ -96,11 +223,11 @@ export const QuizClassic = ({ quiz, onFinish, onExit }) => {
 
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 40 }}>
           <span style={{ fontSize: 13, color: "var(--text-muted)" }}>
-            {locked ? "Продолжай — следующий вопрос готов" : "Выбери один ответ"}
+            {locked ? "Продолжай — следующий вопрос готов" : qType === "matching" ? "Выбери соответствие для каждой строки" : qType === "text_input" ? "Введи ответ и нажми Проверить" : "Выбери один ответ"}
           </span>
           <button className="btn btn-primary btn-lg" onClick={next} disabled={!locked} style={{ opacity: locked ? 1 : 0.4 }}>
             {isLast ? "Посмотреть результат" : "Следующий вопрос"}
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8 H13 M9 4 L 13 8 L 9 12" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            <ArrowIcon />
           </button>
         </div>
       </div>
