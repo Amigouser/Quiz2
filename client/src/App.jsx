@@ -136,6 +136,9 @@ function DashboardPage() {
 function QuizPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const isAdmin = user?.is_admin;
+
   const [quiz, setQuiz] = useState(null);
   const [attemptId, setAttemptId] = useState(null);
   const [result, setResult] = useState(null);
@@ -159,8 +162,13 @@ function QuizPage() {
   }, [id]);
 
   const handleStart = async () => {
-    const d = await API.createAttempt(Number(id));
-    setAttemptId(d.attempt_id);
+    if (isAdmin) return;
+    try {
+      const d = await API.createAttempt(Number(id));
+      setAttemptId(d.attempt_id);
+    } catch (err) {
+      console.error("createAttempt failed:", err);
+    }
   };
 
   useEffect(() => {
@@ -168,13 +176,28 @@ function QuizPage() {
   }, [quiz]);
 
   const handleFinish = async (answers) => {
-    if (!attemptId || !quiz) return;
+    if (!quiz) return;
+
+    const localScore = answers.filter((a) => a.correct).length;
+    const localMax = quiz.questions.length;
+
+    if (isAdmin || !attemptId) {
+      setResult({ score: localScore, max_score: localMax });
+      return;
+    }
+
     const payload = answers.map((a, i) => ({
       question_id: quiz.questions[i]._questionId,
       answer_id: quiz.questions[i]._answerIds[a.picked],
     }));
-    const r = await API.submitAttempt(attemptId, payload);
-    setResult(r);
+
+    try {
+      const r = await API.submitAttempt(attemptId, payload);
+      setResult(r);
+    } catch (err) {
+      console.error("submitAttempt failed:", err);
+      setResult({ score: localScore, max_score: localMax });
+    }
   };
 
   if (!quiz) return <Spinner />;
@@ -185,8 +208,9 @@ function QuizPage() {
         total={result.max_score}
         correct={result.score}
         quizTitle={quiz.title}
+        isPreview={isAdmin}
         onRetry={() => { setResult(null); setAttemptId(null); handleStart(); }}
-        onHome={() => navigate("/dashboard")}
+        onHome={() => navigate(isAdmin ? "/admin" : "/dashboard")}
       />
     );
   }
@@ -195,7 +219,7 @@ function QuizPage() {
     <QuizClassic
       quiz={quiz}
       onFinish={handleFinish}
-      onExit={() => navigate("/dashboard")}
+      onExit={() => navigate(isAdmin ? "/admin" : "/dashboard")}
     />
   );
 }

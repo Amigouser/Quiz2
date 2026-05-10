@@ -228,7 +228,7 @@ export const QuizFocused = ({ quiz, onFinish }) => {
 };
 
 // ── Results screen ──
-export const QuizResults = ({ total = 0, correct = 0, quizTitle, onRetry, onHome }) => {
+export const QuizResults = ({ total = 0, correct = 0, quizTitle, onRetry, onHome, isPreview = false }) => {
   const [burst, setBurst] = React.useState(false);
   React.useEffect(() => { const t = setTimeout(() => setBurst(true), 300); return () => clearTimeout(t); }, []);
 
@@ -240,13 +240,22 @@ export const QuizResults = ({ total = 0, correct = 0, quizTitle, onRetry, onHome
     "Давай вернёмся к теории — это нормально, биология требует времени.";
 
   return (
-    <div style={{ minHeight: "100vh", background: "var(--bg)", padding: "48px 48px 80px", position: "relative", overflow: "hidden" }}>
+    <div className="quiz-result-wrap" style={{ minHeight: "100vh", background: "var(--bg)", padding: "48px 48px 80px", position: "relative", overflow: "hidden" }}>
       <LeafBurst go={burst} count={40} />
       <BotanicalBg intensity={0.4} pattern="mix" />
 
       <div style={{ maxWidth: 920, margin: "0 auto", position: "relative" }}>
+        {isPreview && (
+          <div style={{
+            marginBottom: 20, padding: "10px 16px",
+            background: "var(--green-100)", border: "1px solid var(--green-300)",
+            borderRadius: 10, fontSize: 13, color: "var(--green-800)",
+          }}>
+            Предпросмотр репетитора — результат не сохраняется в журнал
+          </div>
+        )}
         <div className="eyebrow" style={{ marginBottom: 14 }}>Результат теста</div>
-        <h1 style={{ fontFamily: "var(--f-serif)", fontSize: 52, lineHeight: 1.05, letterSpacing: "-0.02em", marginBottom: 10 }}>
+        <h1 className="quiz-result-h1" style={{ fontFamily: "var(--f-serif)", fontSize: 52, lineHeight: 1.05, letterSpacing: "-0.02em", marginBottom: 10 }}>
           {grade}
         </h1>
         {quizTitle && (
@@ -256,7 +265,7 @@ export const QuizResults = ({ total = 0, correct = 0, quizTitle, onRetry, onHome
         )}
         <p style={{ color: "var(--text-soft)", fontSize: 17, maxWidth: 560, marginBottom: 36 }}>{message}</p>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
+        <div className="quiz-results-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
           {/* Big score card */}
           <div className="card" style={{ padding: 36, display: "flex", flexDirection: "column", gap: 28, position: "relative", overflow: "hidden" }}>
             <div style={{ position: "absolute", top: -30, right: -30, color: "var(--green-200)" }}>
@@ -264,10 +273,10 @@ export const QuizResults = ({ total = 0, correct = 0, quizTitle, onRetry, onHome
             </div>
             <div style={{ position: "relative" }}>
               <div style={{ display: "flex", alignItems: "baseline", gap: 12 }}>
-                <div style={{ fontFamily: "var(--f-serif)", fontSize: 96, fontWeight: 400, lineHeight: 1, color: "var(--green-800)", letterSpacing: "-0.03em" }}>
+                <div className="quiz-result-score" style={{ fontFamily: "var(--f-serif)", fontSize: 96, fontWeight: 400, lineHeight: 1, color: "var(--green-800)", letterSpacing: "-0.03em" }}>
                   {correct}
                 </div>
-                <div style={{ fontFamily: "var(--f-serif)", fontSize: 36, color: "var(--text-muted)" }}>/ {total}</div>
+                <div className="quiz-result-total" style={{ fontFamily: "var(--f-serif)", fontSize: 36, color: "var(--text-muted)" }}>/ {total}</div>
               </div>
               <div style={{ fontSize: 13, color: "var(--text-muted)", letterSpacing: "0.04em", marginTop: 6 }}>
                 {pct}% правильных ответов
@@ -280,7 +289,7 @@ export const QuizResults = ({ total = 0, correct = 0, quizTitle, onRetry, onHome
               </div>
             </div>
 
-            <div style={{ display: "flex", gap: 10 }}>
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
               <button className="btn btn-primary" onClick={onRetry}>Пройти ещё раз</button>
               <button className="btn btn-ghost" onClick={onHome}>К списку тестов</button>
             </div>

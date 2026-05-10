@@ -177,7 +177,7 @@ router.post("/attempts/:id/submit", requireAuth, (req, res) => {
         "SELECT id FROM answers WHERE question_id = ? AND is_correct = 1",
         question_id
       );
-      const isCorrect = correctAnswer && correctAnswer.id === answer_id ? 1 : 0;
+      const isCorrect = correctAnswer && Number(correctAnswer.id) === Number(answer_id) ? 1 : 0;
       if (isCorrect) score++;
 
       run(
@@ -192,14 +192,14 @@ router.post("/attempts/:id/submit", requireAuth, (req, res) => {
         correct_answer_id: correctAnswer ? correctAnswer.id : null,
       });
     }
-    run("UPDATE attempts SET score = ? WHERE id = ?", score, attemptId);
+    run("UPDATE attempts SET score = ?, completed_at = datetime('now') WHERE id = ?", score, attemptId);
     db.exec("COMMIT");
   } catch (e) {
     db.exec("ROLLBACK");
     return res.status(500).json({ error: e.message });
   }
 
-  res.json({ score, max_score: attempt.max_score, results });
+  res.json({ score, max_score: Number(attempt.max_score), results });
 });
 
 module.exports = router;
