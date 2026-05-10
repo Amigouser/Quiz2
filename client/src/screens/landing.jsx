@@ -478,10 +478,21 @@ const STYLES = `
   }
 
   @media (max-width: 640px) {
-    .lf-header { padding: 0 20px !important; }
+    .lf-header { padding: 0 16px !important; }
     .lf-nav { display: none !important; }
     .lf-hero-section { padding-left: 0 !important; }
     .lf-stats-grid { grid-template-columns: 1fr !important; }
+
+    /* Хедер: скрываем только Контакты, Задания остаётся */
+    .lf-header-contacts-btn { display: none !important; }
+    /* Войти в кабинет — скрываем полный текст, показываем короткий */
+    .lf-btn-login-full  { display: none !important; }
+    .lf-btn-login-short { display: inline !important; }
+
+    /* Секция Тесты+Запись — стак в колонку */
+    .lf-duo-section { padding: 60px 20px 80px !important; }
+    .lf-duo-grid    { grid-template-columns: 1fr !important; }
+    .lf-duo-divider { display: none !important; }
   }
   @media (max-width: 900px) and (min-width: 641px) {
     .lf-stats-grid { grid-template-columns: repeat(3, 1fr) !important; }
@@ -2053,7 +2064,7 @@ export function LandingPage() {
 
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           {/* Контакты */}
-          <div ref={contactsRef} style={{ position: "relative" }}>
+          <div ref={contactsRef} className="lf-header-contacts-btn" style={{ position: "relative" }}>
             <button
               className="lf-hero-btn lf-hero-btn-ghost lf-header-btn"
               style={{ padding: "10px 22px", fontSize: 14 }}
@@ -2127,7 +2138,8 @@ export function LandingPage() {
             style={{ padding: "10px 22px", fontSize: 14 }}
             onClick={() => navigate("/login")}
           >
-            Войти в кабинет
+            <span className="lf-btn-login-full">Войти в кабинет</span>
+            <span className="lf-btn-login-short" style={{ display: "none" }}>Войти</span>
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
               <path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
@@ -2222,8 +2234,8 @@ export function LandingPage() {
 
 
       {/* ══ ТЕСТЫ + ЗАПИСЬ ════════════════════════════════════════════════════ */}
-      <section style={{ padding: "80px 48px 160px" }}>
-        <div style={{
+      <section className="lf-duo-section" style={{ padding: "80px 48px 160px" }}>
+        <div className="lf-duo-grid" style={{
           display: "grid",
           gridTemplateColumns: "1fr auto 1fr",
           gap: 0,
@@ -2280,7 +2292,7 @@ export function LandingPage() {
           </div>
 
           {/* Center — divider with leaf */}
-          <div style={{
+          <div className="lf-duo-divider" style={{
             display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
             padding: "0 32px", gap: 10,
           }}>
@@ -2326,14 +2338,16 @@ export function LandingPage() {
             }}>
               Индивидуальные занятия с репетитором — пиши в Telegram
             </p>
-            <a href="https://t.me/vikotiks" target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none", marginTop: "auto" }}>
-              <button className="lf-hero-btn lf-hero-btn-primary" style={{ fontSize: 14, padding: "13px 30px" }}>
-                Записаться
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                  <path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </button>
-            </a>
+            <button
+              className="lf-hero-btn lf-hero-btn-primary"
+              style={{ fontSize: 14, padding: "13px 30px", marginTop: "auto" }}
+              onClick={() => setContactPanel(true)}
+            >
+              Записаться
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
           </div>
 
         </div>

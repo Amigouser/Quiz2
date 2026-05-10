@@ -355,7 +355,7 @@ export const StudentDashboard = ({ name = "Аня", quizzes = [], cardSets = [],
         {filteredQuizzes.length > 0 && (
           <div style={{ marginBottom: 64 }}>
             <h2 style={{ fontFamily: "var(--f-serif)", fontSize: 24, marginBottom: 24, letterSpacing: "-0.01em" }}>Тесты</h2>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 20 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(280px, 100%), 1fr))", gap: 20 }}>
               {filteredQuizzes.map(q => (
                 <QuizTile key={q.id} q={q} onStart={() => onOpenQuiz?.(q)} />
               ))}
@@ -367,7 +367,7 @@ export const StudentDashboard = ({ name = "Аня", quizzes = [], cardSets = [],
         {filteredCards.length > 0 && (
           <div>
             <h2 style={{ fontFamily: "var(--f-serif)", fontSize: 24, marginBottom: 24, letterSpacing: "-0.01em" }}>Карточки</h2>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 20 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(280px, 100%), 1fr))", gap: 20 }}>
               {filteredCards.map(s => (
                 <CardSetTile key={s.id} s={s} onStart={() => onOpenCards?.(s)} />
               ))}

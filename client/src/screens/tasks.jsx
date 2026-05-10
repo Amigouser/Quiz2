@@ -55,7 +55,7 @@ function LimitModal() {
         background: "var(--surface)", borderRadius: 28,
         border: "1.5px solid var(--border-soft)",
         boxShadow: "0 32px 80px rgba(0,0,0,0.35)",
-        maxWidth: 480, width: "100%", padding: "40px 40px 36px",
+        maxWidth: 480, width: "100%", padding: "32px 24px 28px",
         textAlign: "center",
       }}>
         <div style={{ fontSize: 52, marginBottom: 16 }}>🌿</div>
@@ -143,7 +143,7 @@ function GuestQuiz({ quiz, onFinish, onClose }) {
     const finalScore = answers.filter(Boolean).length;
     return (
       <div style={overlayStyle}>
-        <div style={panelStyle}>
+        <div className="quiz-modal-panel" style={panelStyle}>
           <div style={{ textAlign: "center", marginBottom: 28 }}>
             <div style={{ fontSize: 52, marginBottom: 12 }}>
               {finalScore === total ? "🏆" : finalScore >= total / 2 ? "👍" : "📚"}
@@ -172,7 +172,7 @@ function GuestQuiz({ quiz, onFinish, onClose }) {
 
   return (
     <div style={overlayStyle}>
-      <div style={{ ...panelStyle, maxWidth: 600 }}>
+      <div className="quiz-modal-panel" style={{ ...panelStyle, maxWidth: 600 }}>
         {/* Progress */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
           <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", fontSize: 22 }}>✕</button>
@@ -263,7 +263,7 @@ function GuestCards({ set, onFinish, onClose }) {
   if (done) {
     return (
       <div style={overlayStyle}>
-        <div style={panelStyle}>
+        <div className="quiz-modal-panel" style={panelStyle}>
           <div style={{ textAlign: "center", marginBottom: 28 }}>
             <div style={{ fontSize: 52, marginBottom: 12 }}>🃏</div>
             <h2 style={{ fontFamily: "var(--f-serif)", fontSize: 24, marginBottom: 8 }}>
@@ -282,7 +282,7 @@ function GuestCards({ set, onFinish, onClose }) {
 
   return (
     <div style={overlayStyle}>
-      <div style={{ ...panelStyle, maxWidth: 520 }}>
+      <div className="quiz-modal-panel" style={{ ...panelStyle, maxWidth: 520 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
           <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", fontSize: 22 }}>✕</button>
           <div style={{ fontSize: 13, color: "var(--text-muted)" }}>{step + 1} / {total}</div>
@@ -492,7 +492,7 @@ export default function TasksPage() {
     <div style={{ minHeight: "100vh", background: "var(--bg)", fontFamily: "var(--f-sans)" }}>
 
       {/* Header */}
-      <header style={{
+      <header className="tasks-header" style={{
         position: "fixed", top: 0, left: 0, right: 0, zIndex: 200,
         background: "rgba(15,42,30,0.9)", backdropFilter: "blur(20px)",
         borderBottom: "1px solid rgba(255,255,255,0.07)",
@@ -522,7 +522,7 @@ export default function TasksPage() {
         </button>
       </header>
 
-      <div style={{ maxWidth: 1280, margin: "0 auto", padding: "100px 48px 80px" }}>
+      <div className="tasks-container" style={{ maxWidth: 1280, margin: "0 auto", padding: "100px 48px 80px" }}>
 
         {/* Title */}
         <div style={{ marginBottom: 48 }}>
@@ -547,7 +547,7 @@ export default function TasksPage() {
         </div>
 
         {/* Фильтры */}
-        <div style={{ marginBottom: 36, display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center" }}>
+        <div className="tasks-filters" style={{ marginBottom: 36, display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center" }}>
           <FilterSelect label="Класс" value={gradeFilter} onChange={setGradeFilter} options={GRADE_OPTIONS} />
           <FilterSelect label="Экзамен" value={examFilter} onChange={setExamFilter} options={EXAM_OPTIONS} />
           {uniqueParts.length > 0 && (
@@ -569,7 +569,7 @@ export default function TasksPage() {
                 padding: "9px 16px 9px 38px", borderRadius: 999,
                 border: "1.5px solid var(--border-soft)",
                 background: "var(--surface)", fontSize: 14, outline: "none",
-                fontFamily: "var(--f-sans)", minWidth: 180,
+                fontFamily: "var(--f-sans)", minWidth: 180, maxWidth: "100%",
               }}
             />
             <svg style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)", pointerEvents: "none" }} width="14" height="14" viewBox="0 0 14 14" fill="none">
@@ -596,7 +596,7 @@ export default function TasksPage() {
             {applyFilters(tests).length > 0 && (
               <div style={{ marginBottom: 64 }}>
                 <h2 style={{ fontFamily: "var(--f-serif)", fontSize: 24, marginBottom: 24, letterSpacing: "-0.01em" }}>Тесты</h2>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 20 }}>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(280px, 100%), 1fr))", gap: 20 }}>
                   {applyFilters(tests).map((test) => (
                     <div key={test.id} onClick={() => openTest(test.id)} style={{
                       borderRadius: 20, overflow: "hidden",
@@ -653,7 +653,7 @@ export default function TasksPage() {
             {applyFilters(cardSets).length > 0 && (
               <div>
                 <h2 style={{ fontFamily: "var(--f-serif)", fontSize: 24, marginBottom: 24, letterSpacing: "-0.01em" }}>Карточки</h2>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 20 }}>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(280px, 100%), 1fr))", gap: 20 }}>
                   {applyFilters(cardSets).map((set) => (
                     <div key={set.id} onClick={() => openCards(set.id)} style={{
                       borderRadius: 20,

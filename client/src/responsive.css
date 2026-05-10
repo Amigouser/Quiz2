@@ -129,6 +129,15 @@
     max-width: 100% !important;
   }
 
+  /* ─ Tasks page ──────────────────────────────────────────── */
+  .tasks-header    { padding: 0 16px !important; height: 56px !important; }
+  .tasks-container { padding: 76px 16px 60px !important; }
+  .tasks-filters   { gap: 8px !important; }
+  .tasks-filters select { font-size: 13px !important; }
+
+  /* ─ Modals padding ──────────────────────────────────────── */
+  .quiz-modal-panel { padding: 24px 20px 20px !important; }
+
   /* ─ Generic utility ─────────────────────────────────────── */
   .rsp-hide-mobile { display: none !important; }
   .rsp-full-mobile { width: 100% !important; }
@@ -138,4 +147,13 @@
 @media (max-width: 400px) {
   .dash-stats  { grid-template-columns: 1fr !important; }
   .fc-card     { height: 200px !important; }
+
+  /* Login 8-digit code — shrink inputs to fit narrow screens */
+  .login-digits { gap: 4px !important; }
+  .login-digit-input { width: 32px !important; height: 46px !important; font-size: 18px !important; }
+
+  /* Tasks filters — stack on very narrow */
+  .tasks-filters { flex-direction: column !important; align-items: stretch !important; }
+  .tasks-filters > * { width: 100% !important; }
+  .tasks-filters select { width: 100% !important; box-sizing: border-box !important; }
 }

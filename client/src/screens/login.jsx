@@ -215,7 +215,7 @@ export const LoginCompact = ({ onEnter }) => {
 
         {/* 8-digit input */}
         <form onSubmit={handleSubmit}>
-          <div style={{
+          <div className="login-digits" style={{
             display: "flex", gap: 8, justifyContent: "center",
             marginBottom: 20,
           }}>
@@ -232,6 +232,7 @@ export const LoginCompact = ({ onEnter }) => {
                 onKeyDown={e => handleKeyDown(i, e)}
                 onPaste={handlePaste}
                 autoFocus={i === 0}
+                className="login-digit-input"
                 style={{
                   width: 44, height: 56,
                   textAlign: "center",
