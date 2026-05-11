@@ -49,8 +49,12 @@ router.get("/tests/public/:id", (req, res) => {
         text: q.question_text,
         hint: q.hint,
         explanation: q.explanation,
+        question_type: q.question_type || "single",
+        image_data: q.image_data || null,
+        correct_text: q.correct_text || null,
+        match_options: q.match_options ? JSON.parse(q.match_options) : ["1", "2"],
         correct_index: correctIndex,
-        answers: answers.map((a) => ({ id: a.id, text: a.answer_text })),
+        answers: answers.map((a) => ({ id: a.id, text: a.answer_text, match_value: a.match_value || null, is_correct: a.is_correct })),
       };
     }),
   });
@@ -137,7 +141,7 @@ router.get("/tests/:id", requireAuth, (req, res) => {
         correct_text: q.correct_text || null,
         match_options: q.match_options ? JSON.parse(q.match_options) : ["1", "2"],
         correct_index: correctIndex,
-        answers: answers.map((a) => ({ id: a.id, text: a.answer_text, match_value: a.match_value || null })),
+        answers: answers.map((a) => ({ id: a.id, text: a.answer_text, match_value: a.match_value || null, is_correct: a.is_correct })),
       };
     }),
   };
@@ -191,7 +195,29 @@ router.post("/attempts/:id/submit", requireAuth, (req, res) => {
         );
         results.push({ question_id, answer_text, is_correct: isCorrect, correct_text: question?.correct_text });
 
-      } else if (qType === "matching") {
+      } else if (qType === "multiple_select") {
+        const selectedIds = (answer_text || "").split(",").map(Number).filter(Boolean).sort((a, b) => a - b);
+        const correctIds = all("SELECT id FROM answers WHERE question_id = ? AND is_correct = 1", question_id).map(a => a.id).sort((a, b) => a - b);
+        const isCorrect = selectedIds.length === correctIds.length && selectedIds.every((id, i) => id === correctIds[i]) ? 1 : 0;
+        if (isCorrect) score++;
+        run(
+          "INSERT INTO attempt_answers (attempt_id, question_id, answer_id, answer_text, is_correct) VALUES (?, ?, ?, ?, ?)",
+          attemptId, question_id, null, answer_text || "", isCorrect
+        );
+        results.push({ question_id, answer_text, is_correct: isCorrect });
+
+      } else if (qType === "sequence") {
+        const studentOrder = (answer_text || "").split(",").map(Number).filter(Boolean);
+        const correctOrder = all("SELECT id FROM answers WHERE question_id = ? ORDER BY order_index", question_id).map(a => a.id);
+        const isCorrect = studentOrder.length === correctOrder.length && studentOrder.every((id, i) => id === correctOrder[i]) ? 1 : 0;
+        if (isCorrect) score++;
+        run(
+          "INSERT INTO attempt_answers (attempt_id, question_id, answer_id, answer_text, is_correct) VALUES (?, ?, ?, ?, ?)",
+          attemptId, question_id, null, answer_text || "", isCorrect
+        );
+        results.push({ question_id, answer_text, is_correct: isCorrect });
+
+      } else if (qType === "matching" || qType === "fill_blanks") {
         const matchEntries = Object.entries(matches || {});
         let allCorrect = matchEntries.length > 0;
         for (const [aid, selectedVal] of matchEntries) {

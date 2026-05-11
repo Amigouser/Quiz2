@@ -873,7 +873,7 @@ const AdminCreateTest = ({ onCreated, autoImport = false }) => {
                   <div className="field">
                     <label>Тип вопроса</label>
                     <div style={{ display: "flex", gap: 8 }}>
-                      {[["single", "Один ответ"], ["text_input", "Ввод числа/текста"], ["matching", "Соответствие"]].map(([type, label]) => (
+                      {[["single", "Один ответ"], ["text_input", "Ввод числа/текста"], ["matching", "Соответствие"], ["multiple_select", "Несколько ответов"], ["sequence", "Последовательность"], ["fill_blanks", "Заполни пропуски"]].map(([type, label]) => (
                         <button key={type} className={`btn btn-sm ${q.question_type === type ? "btn-primary" : "btn-ghost"}`}
                           onClick={() => updateQ(qi, "question_type", type)}>{label}</button>
                       ))}
@@ -925,6 +925,58 @@ const AdminCreateTest = ({ onCreated, autoImport = false }) => {
                       <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 4 }}>Ученик введёт этот ответ в текстовое поле</div>
                     </div>
                   )}
+                  {/* Multiple select */}
+                  {q.question_type === "multiple_select" && (
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-soft)", marginBottom: 10 }}>
+                        Варианты ответа · отметь все правильные
+                      </div>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                        {q.answers.map((a, ai) => (
+                          <label key={a.id} style={{
+                            display: "flex", alignItems: "center", gap: 12, padding: "12px 14px",
+                            background: a.is_correct ? "var(--correct-bg)" : "var(--bg-muted)",
+                            border: `1.5px solid ${a.is_correct ? "var(--correct)" : "transparent"}`,
+                            borderRadius: "var(--r-md)", cursor: "pointer",
+                          }}>
+                            <input type="checkbox" checked={!!a.is_correct} onChange={e => updateA(qi, ai, "is_correct", e.target.checked)}
+                              style={{ accentColor: "var(--green-800)", width: 18, height: 18 }}/>
+                            <input value={a.text} onChange={e => updateA(qi, ai, "text", e.target.value)}
+                              placeholder={`Вариант ${String.fromCharCode(65 + ai)}`}
+                              style={{ flex: 1, background: "transparent", border: "none", outline: "none", fontSize: 15, fontFamily: "var(--f-sans)" }}/>
+                            {a.is_correct && <span className="pill" style={{ background: "var(--green-800)", color: "#fff" }}>верный</span>}
+                            {q.answers.length > 2 && (
+                              <button className="btn btn-ghost btn-sm" style={{ padding: "4px 8px" }} onClick={() => removeAnswer(qi, ai)}>✕</button>
+                            )}
+                          </label>
+                        ))}
+                      </div>
+                      <button className="btn btn-ghost btn-sm" style={{ marginTop: 10 }} onClick={() => addAnswer(qi)}>+ Добавить вариант</button>
+                    </div>
+                  )}
+                  {/* Sequence */}
+                  {q.question_type === "sequence" && (
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-soft)", marginBottom: 4 }}>
+                        Элементы последовательности · порядок строк = правильный порядок
+                      </div>
+                      <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 10 }}>Добавь элементы в правильном порядке (сверху вниз). Ученик будет расставлять их в произвольном порядке.</div>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                        {q.answers.map((a, ai) => (
+                          <div key={a.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", background: "var(--bg-muted)", borderRadius: 10 }}>
+                            <div style={{ fontSize: 13, color: "var(--text-muted)", minWidth: 24, fontWeight: 700 }}>{ai + 1}.</div>
+                            <input value={a.text} onChange={e => updateA(qi, ai, "text", e.target.value)}
+                              placeholder={`Элемент ${ai + 1}…`}
+                              style={{ flex: 1, background: "transparent", border: "none", outline: "none", fontSize: 14, fontFamily: "var(--f-sans)" }}/>
+                            {q.answers.length > 2 && (
+                              <button className="btn btn-ghost btn-sm" style={{ padding: "4px 8px" }} onClick={() => removeAnswer(qi, ai)}>✕</button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                      <button className="btn btn-ghost btn-sm" style={{ marginTop: 10 }} onClick={() => addAnswer(qi)}>+ Добавить элемент</button>
+                    </div>
+                  )}
                   {/* Matching */}
                   {q.question_type === "matching" && (
                     <div>
@@ -971,6 +1023,54 @@ const AdminCreateTest = ({ onCreated, autoImport = false }) => {
                         ))}
                       </div>
                       <button className="btn btn-ghost btn-sm" style={{ marginTop: 10 }} onClick={() => addAnswer(qi)}>+ Добавить строку</button>
+                    </div>
+                  )}
+                  {/* Fill blanks */}
+                  {q.question_type === "fill_blanks" && (
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-soft)", marginBottom: 10 }}>
+                        Цифры для выбора (список опций)
+                      </div>
+                      <div style={{ display: "flex", gap: 8, marginBottom: 14, flexWrap: "wrap" }}>
+                        {(q.match_options || ["1", "2"]).map((opt, oi) => (
+                          <div key={oi} style={{ display: "flex", gap: 4, alignItems: "center" }}>
+                            <input value={opt} onChange={e => {
+                              const newOpts = [...(q.match_options || ["1", "2"])];
+                              newOpts[oi] = e.target.value;
+                              updateQ(qi, "match_options", newOpts);
+                            }} style={{ width: 60, textAlign: "center", padding: "4px 8px", border: "1.5px solid var(--border)", borderRadius: 8, fontWeight: 700 }} />
+                            {(q.match_options || []).length > 2 && (
+                              <button className="btn btn-ghost btn-sm" style={{ padding: "2px 6px" }} onClick={() => {
+                                updateQ(qi, "match_options", (q.match_options || []).filter((_, i) => i !== oi));
+                              }}>✕</button>
+                            )}
+                          </div>
+                        ))}
+                        <button className="btn btn-ghost btn-sm" onClick={() => updateQ(qi, "match_options", [...(q.match_options || ["1", "2"]), String((q.match_options || []).length + 1)])}>+ вариант</button>
+                      </div>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-soft)", marginBottom: 8 }}>
+                        Пропуски (А, Б, В…) + правильная цифра
+                      </div>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                        {q.answers.map((a, ai) => (
+                          <div key={a.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", background: "var(--bg-muted)", borderRadius: 10 }}>
+                            <div style={{ fontSize: 15, fontWeight: 700, color: "var(--green-800)", minWidth: 28 }}>{String.fromCharCode(1040 + ai)}</div>
+                            <input value={a.text} onChange={e => updateA(qi, ai, "text", e.target.value)}
+                              placeholder={`Пропуск ${String.fromCharCode(1040 + ai)} (подсказка или контекст)`}
+                              style={{ flex: 1, background: "transparent", border: "none", outline: "none", fontSize: 14, fontFamily: "var(--f-sans)" }}/>
+                            <span style={{ fontSize: 12, color: "var(--text-muted)" }}>→</span>
+                            <select value={a.match_value || ""} onChange={e => updateA(qi, ai, "match_value", e.target.value)}
+                              style={{ padding: "4px 8px", border: "1.5px solid var(--border)", borderRadius: 8, fontWeight: 700, minWidth: 60 }}>
+                              <option value="">?</option>
+                              {(q.match_options || ["1", "2"]).map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                            </select>
+                            {q.answers.length > 1 && (
+                              <button className="btn btn-ghost btn-sm" style={{ padding: "4px 8px" }} onClick={() => removeAnswer(qi, ai)}>✕</button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                      <button className="btn btn-ghost btn-sm" style={{ marginTop: 10 }} onClick={() => addAnswer(qi)}>+ Добавить пропуск</button>
                     </div>
                   )}
                   <div className="field">
@@ -1224,7 +1324,7 @@ const AdminEditTest = ({ testId, onSaved }) => {
                   <div className="field">
                     <label>Тип вопроса</label>
                     <div style={{ display: "flex", gap: 8 }}>
-                      {[["single", "Один ответ"], ["text_input", "Ввод числа/текста"], ["matching", "Соответствие"]].map(([type, label]) => (
+                      {[["single", "Один ответ"], ["text_input", "Ввод числа/текста"], ["matching", "Соответствие"], ["multiple_select", "Несколько ответов"], ["sequence", "Последовательность"], ["fill_blanks", "Заполни пропуски"]].map(([type, label]) => (
                         <button key={type} className={`btn btn-sm ${q.question_type === type ? "btn-primary" : "btn-ghost"}`}
                           onClick={() => updateQ(qi, "question_type", type)}>{label}</button>
                       ))}
@@ -1273,6 +1373,53 @@ const AdminEditTest = ({ testId, onSaved }) => {
                       <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 4 }}>Ученик введёт этот ответ в текстовое поле</div>
                     </div>
                   )}
+                  {/* Multiple select */}
+                  {q.question_type === "multiple_select" && (
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-soft)", marginBottom: 10 }}>Варианты ответа · отметь все правильные</div>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                        {q.answers.map((a, ai) => (
+                          <label key={a.id} style={{
+                            display: "flex", alignItems: "center", gap: 12, padding: "12px 14px",
+                            background: a.is_correct ? "var(--correct-bg)" : "var(--bg-muted)",
+                            border: `1.5px solid ${a.is_correct ? "var(--correct)" : "transparent"}`,
+                            borderRadius: "var(--r-md)", cursor: "pointer",
+                          }}>
+                            <input type="checkbox" checked={!!a.is_correct} onChange={e => updateA(qi, ai, "is_correct", e.target.checked)}
+                              style={{ accentColor: "var(--green-800)", width: 18, height: 18 }}/>
+                            <input value={a.text} onChange={e => updateA(qi, ai, "text", e.target.value)}
+                              style={{ flex: 1, background: "transparent", border: "none", outline: "none", fontSize: 15, fontFamily: "var(--f-sans)" }}/>
+                            {a.is_correct && <span className="pill" style={{ background: "var(--green-800)", color: "#fff" }}>верный</span>}
+                            {q.answers.length > 2 && (
+                              <button className="btn btn-ghost btn-sm" style={{ padding: "4px 8px" }} onClick={() => removeAnswer(qi, ai)}>✕</button>
+                            )}
+                          </label>
+                        ))}
+                      </div>
+                      <button className="btn btn-ghost btn-sm" style={{ marginTop: 10 }} onClick={() => addAnswer(qi)}>+ Добавить вариант</button>
+                    </div>
+                  )}
+                  {/* Sequence */}
+                  {q.question_type === "sequence" && (
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-soft)", marginBottom: 4 }}>Элементы последовательности · порядок строк = правильный порядок</div>
+                      <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 10 }}>Добавь элементы в правильном порядке (сверху вниз).</div>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                        {q.answers.map((a, ai) => (
+                          <div key={a.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", background: "var(--bg-muted)", borderRadius: 10 }}>
+                            <div style={{ fontSize: 13, color: "var(--text-muted)", minWidth: 24, fontWeight: 700 }}>{ai + 1}.</div>
+                            <input value={a.text} onChange={e => updateA(qi, ai, "text", e.target.value)}
+                              placeholder={`Элемент ${ai + 1}…`}
+                              style={{ flex: 1, background: "transparent", border: "none", outline: "none", fontSize: 14, fontFamily: "var(--f-sans)" }}/>
+                            {q.answers.length > 2 && (
+                              <button className="btn btn-ghost btn-sm" style={{ padding: "4px 8px" }} onClick={() => removeAnswer(qi, ai)}>✕</button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                      <button className="btn btn-ghost btn-sm" style={{ marginTop: 10 }} onClick={() => addAnswer(qi)}>+ Добавить элемент</button>
+                    </div>
+                  )}
                   {/* Matching */}
                   {q.question_type === "matching" && (
                     <div>
@@ -1315,6 +1462,50 @@ const AdminEditTest = ({ testId, onSaved }) => {
                         ))}
                       </div>
                       <button className="btn btn-ghost btn-sm" style={{ marginTop: 10 }} onClick={() => addAnswer(qi)}>+ Добавить строку</button>
+                    </div>
+                  )}
+                  {/* Fill blanks */}
+                  {q.question_type === "fill_blanks" && (
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-soft)", marginBottom: 10 }}>Цифры для выбора (список опций)</div>
+                      <div style={{ display: "flex", gap: 8, marginBottom: 14, flexWrap: "wrap" }}>
+                        {(q.match_options || ["1", "2"]).map((opt, oi) => (
+                          <div key={oi} style={{ display: "flex", gap: 4, alignItems: "center" }}>
+                            <input value={opt} onChange={e => {
+                              const newOpts = [...(q.match_options || ["1", "2"])];
+                              newOpts[oi] = e.target.value;
+                              updateQ(qi, "match_options", newOpts);
+                            }} style={{ width: 60, textAlign: "center", padding: "4px 8px", border: "1.5px solid var(--border)", borderRadius: 8, fontWeight: 700 }} />
+                            {(q.match_options || []).length > 2 && (
+                              <button className="btn btn-ghost btn-sm" style={{ padding: "2px 6px" }} onClick={() => {
+                                updateQ(qi, "match_options", (q.match_options || []).filter((_, i) => i !== oi));
+                              }}>✕</button>
+                            )}
+                          </div>
+                        ))}
+                        <button className="btn btn-ghost btn-sm" onClick={() => updateQ(qi, "match_options", [...(q.match_options || ["1", "2"]), String((q.match_options || []).length + 1)])}>+ вариант</button>
+                      </div>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-soft)", marginBottom: 8 }}>Пропуски (А, Б, В…) + правильная цифра</div>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                        {q.answers.map((a, ai) => (
+                          <div key={a.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", background: "var(--bg-muted)", borderRadius: 10 }}>
+                            <div style={{ fontSize: 15, fontWeight: 700, color: "var(--green-800)", minWidth: 28 }}>{String.fromCharCode(1040 + ai)}</div>
+                            <input value={a.text} onChange={e => updateA(qi, ai, "text", e.target.value)}
+                              placeholder={`Пропуск ${String.fromCharCode(1040 + ai)}`}
+                              style={{ flex: 1, background: "transparent", border: "none", outline: "none", fontSize: 14, fontFamily: "var(--f-sans)" }}/>
+                            <span style={{ fontSize: 12, color: "var(--text-muted)" }}>→</span>
+                            <select value={a.match_value || ""} onChange={e => updateA(qi, ai, "match_value", e.target.value)}
+                              style={{ padding: "4px 8px", border: "1.5px solid var(--border)", borderRadius: 8, fontWeight: 700, minWidth: 60 }}>
+                              <option value="">?</option>
+                              {(q.match_options || ["1", "2"]).map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                            </select>
+                            {q.answers.length > 1 && (
+                              <button className="btn btn-ghost btn-sm" style={{ padding: "4px 8px" }} onClick={() => removeAnswer(qi, ai)}>✕</button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                      <button className="btn btn-ghost btn-sm" style={{ marginTop: 10 }} onClick={() => addAnswer(qi)}>+ Добавить пропуск</button>
                     </div>
                   )}
                   <div className="field">

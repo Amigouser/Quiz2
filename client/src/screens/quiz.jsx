@@ -10,6 +10,8 @@ export const QuizClassic = ({ quiz, onFinish, onExit }) => {
   const [answers, setAnswers] = React.useState([]);
   const [typedText, setTypedText] = React.useState("");
   const [matchState, setMatchState] = React.useState({});
+  const [multiSelected, setMultiSelected] = React.useState(new Set());
+  const [seqOrder, setSeqOrder] = React.useState([]);
 
   const q = quiz.questions[idx];
   const qType = q.question_type || "single";
@@ -19,6 +21,20 @@ export const QuizClassic = ({ quiz, onFinish, onExit }) => {
     setTypedText("");
     setMatchState({});
     setSelected(null);
+    setMultiSelected(new Set());
+    const curQ = quiz.questions[idx];
+    const curType = curQ.question_type || "single";
+    if (curType === "sequence") {
+      const n = curQ.options?.length || 0;
+      const arr = Array.from({ length: n }, (_, i) => i);
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      setSeqOrder(arr);
+    } else {
+      setSeqOrder([]);
+    }
   }, [idx]);
 
   React.useEffect(() => { if (burst) { const t = setTimeout(() => setBurst(false), 2500); return () => clearTimeout(t); } }, [burst]);
@@ -47,6 +63,34 @@ export const QuizClassic = ({ quiz, onFinish, onExit }) => {
     setLocked(true);
     setAnswers(a => [...a, { matches: matchState, correct: allCorrect }]);
     if (allCorrect) setTimeout(() => setBurst(true), 120);
+  };
+
+  const lockMultiple = () => {
+    if (locked) return;
+    const correctSet = new Set(q.correct_indices || []);
+    const selectedArr = [...multiSelected].sort((a, b) => a - b);
+    const correctArr = [...correctSet].sort((a, b) => a - b);
+    const allCorrect = selectedArr.length === correctArr.length && selectedArr.every((v, i) => v === correctArr[i]);
+    setLocked(true);
+    setAnswers(a => [...a, { selected: [...multiSelected], correct: allCorrect }]);
+    if (allCorrect) setTimeout(() => setBurst(true), 120);
+  };
+
+  const lockSequence = () => {
+    if (locked) return;
+    const allCorrect = seqOrder.length > 0 && seqOrder.every((optIdx, pos) => optIdx === pos);
+    setLocked(true);
+    setAnswers(a => [...a, { order: [...seqOrder], correct: allCorrect }]);
+    if (allCorrect) setTimeout(() => setBurst(true), 120);
+  };
+
+  const moveSeq = (fromPos, toPos) => {
+    if (locked || toPos < 0 || toPos >= seqOrder.length) return;
+    setSeqOrder(arr => {
+      const next = [...arr];
+      [next[fromPos], next[toPos]] = [next[toPos], next[fromPos]];
+      return next;
+    });
   };
 
   const allMatchesFilled = (q._matchAnswers || []).every(ma => matchState[ma.id]);
@@ -158,6 +202,167 @@ export const QuizClassic = ({ quiz, onFinish, onExit }) => {
           </div>
         )}
 
+        {/* ── Multiple select ── */}
+        {qType === "multiple_select" && (
+          <div style={{ marginTop: 28 }}>
+            <div style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 10, fontStyle: "italic" }}>
+              Выберите все правильные ответы
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {q.options.map((opt, i) => {
+                const isSel = multiSelected.has(i);
+                const isCorrect = locked && (q.correct_indices || []).includes(i);
+                const isWrong = locked && isSel && !isCorrect;
+                const isMissed = locked && !isSel && isCorrect;
+                let border = isSel ? "var(--green-700)" : "var(--border-soft)";
+                if (locked) border = isCorrect ? "var(--correct)" : isWrong ? "var(--wrong)" : isMissed ? "var(--correct)" : "var(--border-soft)";
+                return (
+                  <div key={i}
+                    onClick={() => !locked && setMultiSelected(s => { const n = new Set(s); n.has(i) ? n.delete(i) : n.add(i); return n; })}
+                    style={{
+                      display: "flex", alignItems: "center", gap: 14, padding: "13px 18px",
+                      background: isSel ? "var(--green-100)" : isMissed ? "var(--correct-bg)" : "var(--surface)",
+                      borderRadius: 12, border: `2px solid ${border}`,
+                      cursor: locked ? "default" : "pointer", transition: "all 150ms",
+                    }}>
+                    <div style={{
+                      width: 22, height: 22, borderRadius: 6, flexShrink: 0,
+                      border: `2px solid ${isSel ? (isWrong ? "var(--wrong)" : "var(--green-700)") : "var(--border)"}`,
+                      background: isSel ? (isWrong ? "var(--wrong)" : "var(--green-700)") : "transparent",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                    }}>
+                      {isSel && <span style={{ color: "#fff", fontSize: 13, fontWeight: 700, lineHeight: 1 }}>✓</span>}
+                    </div>
+                    <div style={{ flex: 1, fontSize: 15 }}>{opt}</div>
+                    {locked && isCorrect && <span style={{ fontSize: 20 }}>🌱</span>}
+                    {locked && isWrong && <span style={{ fontSize: 18, color: "var(--wrong)" }}>✕</span>}
+                    {locked && isMissed && <span style={{ fontSize: 12, color: "var(--correct)", fontWeight: 600 }}>← нужно было выбрать</span>}
+                  </div>
+                );
+              })}
+            </div>
+            {!locked && (
+              <button className="btn btn-primary" style={{ marginTop: 14 }}
+                disabled={multiSelected.size === 0} onClick={lockMultiple}>
+                Проверить выбор
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* ── Sequence ── */}
+        {qType === "sequence" && seqOrder.length === (q.options?.length || 0) && (
+          <div style={{ marginTop: 28 }}>
+            <div style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 10, fontStyle: "italic" }}>
+              Расставь элементы в правильном порядке
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {seqOrder.map((optIdx, pos) => {
+                const isCorrect = locked && optIdx === pos;
+                const isWrong = locked && optIdx !== pos;
+                return (
+                  <div key={optIdx} style={{
+                    display: "flex", alignItems: "center", gap: 12, padding: "12px 16px",
+                    background: "var(--surface)", borderRadius: 12,
+                    border: `1.5px solid ${isCorrect ? "var(--correct)" : isWrong ? "var(--wrong)" : "var(--border-soft)"}`,
+                  }}>
+                    <div style={{
+                      width: 30, height: 30, borderRadius: 8, flexShrink: 0,
+                      background: isCorrect ? "var(--correct)" : isWrong ? "var(--wrong)" : "var(--green-100)",
+                      color: isCorrect || isWrong ? "#fff" : "var(--green-800)",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      fontWeight: 700, fontSize: 14,
+                    }}>{pos + 1}</div>
+                    <div style={{ flex: 1, fontSize: 15 }}>{q.options[optIdx]}</div>
+                    {!locked && (
+                      <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                        <button onClick={() => moveSeq(pos, pos - 1)} disabled={pos === 0}
+                          style={{
+                            background: "none", border: "1px solid var(--border-soft)", borderRadius: 5,
+                            width: 28, height: 22, cursor: pos === 0 ? "default" : "pointer",
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                            opacity: pos === 0 ? 0.3 : 1, fontSize: 10, color: "var(--text-soft)",
+                          }}>▲</button>
+                        <button onClick={() => moveSeq(pos, pos + 1)} disabled={pos === seqOrder.length - 1}
+                          style={{
+                            background: "none", border: "1px solid var(--border-soft)", borderRadius: 5,
+                            width: 28, height: 22, cursor: pos === seqOrder.length - 1 ? "default" : "pointer",
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                            opacity: pos === seqOrder.length - 1 ? 0.3 : 1, fontSize: 10, color: "var(--text-soft)",
+                          }}>▼</button>
+                      </div>
+                    )}
+                    {locked && isCorrect && <span style={{ fontSize: 18, color: "var(--correct)" }}>✓</span>}
+                    {locked && isWrong && <span style={{ fontSize: 12, color: "var(--wrong)", minWidth: 80, textAlign: "right" }}>→ позиция {optIdx + 1}</span>}
+                  </div>
+                );
+              })}
+            </div>
+            {!locked && (
+              <button className="btn btn-primary" style={{ marginTop: 14 }} onClick={lockSequence}>
+                Проверить порядок
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* ── Fill blanks (same data model as matching) ── */}
+        {qType === "fill_blanks" && (
+          <div style={{ marginTop: 28 }}>
+            <div style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 4, fontStyle: "italic" }}>
+              Выбери цифру из списка для каждого пропуска
+            </div>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 16, padding: "12px 16px", background: "var(--surface)", borderRadius: 10, border: "1px solid var(--border-soft)" }}>
+              {(q.match_options || []).map((opt, oi) => (
+                <span key={oi} style={{ padding: "4px 12px", background: "var(--green-100)", borderRadius: 8, fontWeight: 700, fontSize: 15, color: "var(--green-800)" }}>
+                  {opt}
+                </span>
+              ))}
+              <span style={{ fontSize: 13, color: "var(--text-muted)", alignSelf: "center", marginLeft: 4 }}>— доступные варианты</span>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {(q._matchAnswers || []).map((ma) => {
+                const chosen = matchState[ma.id];
+                const itemLocked = locked;
+                const itemCorrect = itemLocked && chosen === ma.match_value;
+                const itemWrong = itemLocked && chosen !== ma.match_value;
+                return (
+                  <div key={ma.id} style={{
+                    display: "flex", alignItems: "center", gap: 12, padding: "12px 16px",
+                    background: "var(--surface)", borderRadius: 12,
+                    border: `1.5px solid ${itemCorrect ? "var(--correct)" : itemWrong ? "var(--wrong)" : "var(--border-soft)"}`,
+                  }}>
+                    <div style={{ minWidth: 32, fontWeight: 700, fontSize: 17, color: "var(--green-800)" }}>{ma.text}</div>
+                    <div style={{ flex: 1, fontSize: 14, color: "var(--text-muted)" }}>→</div>
+                    <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
+                      {(q.match_options || []).map((opt, oi) => (
+                        <button key={opt} onClick={() => !locked && setMatchState(s => ({ ...s, [ma.id]: opt }))}
+                          style={{
+                            width: 38, height: 38, borderRadius: 8, fontWeight: 700, fontSize: 15,
+                            cursor: locked ? "default" : "pointer",
+                            border: `2px solid ${chosen === opt ? (itemCorrect ? "var(--correct)" : itemWrong ? "var(--wrong)" : "var(--green-700)") : "var(--border)"}`,
+                            background: chosen === opt ? (itemCorrect ? "var(--correct-bg)" : itemWrong ? "var(--wrong-bg)" : "var(--green-100)") : "transparent",
+                            color: chosen === opt ? (itemCorrect ? "var(--correct)" : itemWrong ? "var(--wrong)" : "var(--green-800)") : "var(--text-muted)",
+                          }}>{opt}</button>
+                      ))}
+                    </div>
+                    {itemLocked && (itemCorrect
+                      ? <span style={{ fontSize: 18, color: "var(--correct)" }}>✓</span>
+                      : <span style={{ fontSize: 13, color: "var(--wrong)", minWidth: 36, textAlign: "center" }}>→{ma.match_value}</span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+            {!locked && (
+              <button className="btn btn-primary" style={{ marginTop: 14 }}
+                disabled={!(q._matchAnswers || []).every(ma => matchState[ma.id])} onClick={lockMatching}>
+                Проверить ответы
+              </button>
+            )}
+          </div>
+        )}
+
         {/* ── Matching ── */}
         {qType === "matching" && (
           <div style={{ marginTop: 28 }}>
@@ -223,7 +428,13 @@ export const QuizClassic = ({ quiz, onFinish, onExit }) => {
 
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 40 }}>
           <span style={{ fontSize: 13, color: "var(--text-muted)" }}>
-            {locked ? "Продолжай — следующий вопрос готов" : qType === "matching" ? "Выбери соответствие для каждой строки" : qType === "text_input" ? "Введи ответ и нажми Проверить" : "Выбери один ответ"}
+            {locked ? "Продолжай — следующий вопрос готов"
+              : qType === "matching" ? "Выбери соответствие для каждой строки"
+              : qType === "fill_blanks" ? "Выбери цифру для каждого пропуска"
+              : qType === "multiple_select" ? "Отметь все правильные ответы"
+              : qType === "sequence" ? "Расставь элементы по порядку стрелками"
+              : qType === "text_input" ? "Введи ответ и нажми Проверить"
+              : "Выбери один ответ"}
           </span>
           <button className="btn btn-primary btn-lg" onClick={next} disabled={!locked} style={{ opacity: locked ? 1 : 0.4 }}>
             {isLast ? "Посмотреть результат" : "Следующий вопрос"}

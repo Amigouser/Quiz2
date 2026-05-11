@@ -153,6 +153,7 @@ function QuizPage() {
           note: q.hint,
           options: q.answers.map((a) => a.text),
           correct: q.correct_index,
+          correct_indices: q.answers.map((a, i) => a.is_correct ? i : -1).filter(i => i >= 0),
           explain: q.explanation,
           question_type: q.question_type || "single",
           image_data: q.image_data || null,
@@ -195,7 +196,9 @@ function QuizPage() {
       const q = quiz.questions[i];
       const qType = q.question_type || "single";
       if (qType === "text_input") return { question_id: q._questionId, answer_text: a.typed || "" };
-      if (qType === "matching")   return { question_id: q._questionId, matches: a.matches || {} };
+      if (qType === "matching" || qType === "fill_blanks") return { question_id: q._questionId, matches: a.matches || {} };
+      if (qType === "multiple_select") return { question_id: q._questionId, answer_text: (a.selected || []).map(si => q._answerIds[si]).join(",") };
+      if (qType === "sequence") return { question_id: q._questionId, answer_text: (a.order || []).map(si => q._answerIds[si]).join(",") };
       return { question_id: q._questionId, answer_id: q._answerIds[a.picked] };
     });
 

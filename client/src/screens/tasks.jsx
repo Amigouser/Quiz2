@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import API from "../api";
 import { Leaf, Fern } from "../botanical";
+import { QuizClassic, QuizResults } from "./quiz";
 
 const TG_LINK  = "https://t.me/vikokon";
 const VK_LINK  = "https://vk.com/public219644318";
@@ -107,140 +108,30 @@ function LimitModal() {
   );
 }
 
-// ── Встроенный квиз ───────────────────────────────────────────────────────────
-function GuestQuiz({ quiz, onFinish, onClose }) {
-  const [step, setStep] = useState(0);
-  const [picked, setPicked] = useState(null);
-  const [answers, setAnswers] = useState([]);
-  const [showExplain, setShowExplain] = useState(false);
-  const [done, setDone] = useState(false);
 
-  const q = quiz.questions[step];
-  const total = quiz.questions.length;
-  const score = answers.filter(Boolean).length;
-
-  function choose(idx) {
-    if (picked !== null) return;
-    setPicked(idx);
-    setShowExplain(true);
-  }
-
-  function next() {
-    const correct = picked === q.correct_index;
-    const newAnswers = [...answers, correct];
-    if (step + 1 >= total) {
-      setAnswers(newAnswers);
-      setDone(true);
-    } else {
-      setAnswers(newAnswers);
-      setStep(step + 1);
-      setPicked(null);
-      setShowExplain(false);
-    }
-  }
-
-  if (done) {
-    const finalScore = answers.filter(Boolean).length;
-    return (
-      <div style={overlayStyle}>
-        <div className="quiz-modal-panel" style={panelStyle}>
-          <div style={{ textAlign: "center", marginBottom: 28 }}>
-            <div style={{ fontSize: 52, marginBottom: 12 }}>
-              {finalScore === total ? "🏆" : finalScore >= total / 2 ? "👍" : "📚"}
-            </div>
-            <h2 style={{ fontFamily: "var(--f-serif)", fontSize: 24, marginBottom: 8 }}>
-              {quiz.title}
-            </h2>
-            <div style={{ fontSize: 40, fontFamily: "var(--f-serif)", color: "var(--green-800)", fontWeight: 600 }}>
-              {finalScore} / {total}
-            </div>
-            <div style={{ fontSize: 14, color: "var(--text-muted)", marginTop: 4 }}>
-              {finalScore === total ? "Отлично!" : finalScore >= total / 2 ? "Хороший результат" : "Нужно повторить"}
-            </div>
-          </div>
-          <button
-            style={btnGreen}
-            onClick={onFinish}
-          >
-            Готово
-          </button>
-          <button style={btnGhost} onClick={onClose}>Закрыть</button>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div style={overlayStyle}>
-      <div className="quiz-modal-panel" style={{ ...panelStyle, maxWidth: 600 }}>
-        {/* Progress */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
-          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", fontSize: 22 }}>✕</button>
-          <div style={{ fontSize: 13, color: "var(--text-muted)" }}>
-            {step + 1} / {total}
-          </div>
-          <div style={{ fontSize: 13, color: "var(--green-800)", fontWeight: 600 }}>
-            {quiz.topic}
-          </div>
-        </div>
-
-        <div style={{
-          height: 4, background: "var(--border-soft)", borderRadius: 99, marginBottom: 28, overflow: "hidden",
-        }}>
-          <div style={{
-            height: "100%", borderRadius: 99,
-            background: "var(--green-600)",
-            width: `${((step + 1) / total) * 100}%`,
-            transition: "width 0.4s",
-          }} />
-        </div>
-
-        <h3 style={{ fontFamily: "var(--f-serif)", fontSize: 20, lineHeight: 1.4, marginBottom: 24 }}>
-          {q.text}
-        </h3>
-
-        <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 20 }}>
-          {q.answers.map((a, i) => {
-            let bg = "var(--surface)";
-            let border = "var(--border-soft)";
-            let color = "var(--text)";
-            if (picked !== null) {
-              if (i === q.correct_index) { bg = "#d1fae5"; border = "var(--green-500)"; color = "#065f46"; }
-              else if (i === picked) { bg = "#fee2e2"; border = "#f87171"; color = "#991b1b"; }
-            }
-            return (
-              <div key={i} onClick={() => choose(i)} style={{
-                padding: "14px 18px", borderRadius: 14,
-                border: `1.5px solid ${border}`,
-                background: bg, color, cursor: picked === null ? "pointer" : "default",
-                fontSize: 15, lineHeight: 1.4,
-                transition: "background 0.2s, border-color 0.2s",
-              }}>
-                {a.text}
-              </div>
-            );
-          })}
-        </div>
-
-        {showExplain && q.explanation && (
-          <div style={{
-            padding: "12px 16px", borderRadius: 12,
-            background: "var(--green-50)", border: "1px solid var(--green-200)",
-            fontSize: 13, color: "var(--text-soft)", lineHeight: 1.6, marginBottom: 16,
-          }}>
-            💡 {q.explanation}
-          </div>
-        )}
-
-        {picked !== null && (
-          <button style={btnGreen} onClick={next}>
-            {step + 1 >= total ? "Завершить" : "Следующий →"}
-          </button>
-        )}
-      </div>
-    </div>
-  );
-}
+// ── Стили для карточек ────────────────────────────────────────────────────────
+const overlayStyle = {
+  position: "fixed", inset: 0, zIndex: 500,
+  background: "rgba(10,25,18,0.7)", backdropFilter: "blur(6px)",
+  display: "flex", alignItems: "center", justifyContent: "center",
+  padding: 24,
+};
+const panelStyle = {
+  background: "var(--surface)", borderRadius: 24,
+  border: "1.5px solid var(--border-soft)",
+  boxShadow: "0 24px 64px rgba(0,0,0,0.28)",
+  maxWidth: 480, width: "100%", padding: "32px 32px 28px",
+};
+const btnGreen = {
+  display: "block", width: "100%", padding: "14px 24px", borderRadius: 999,
+  background: "var(--green-800)", color: "#fff",
+  fontWeight: 700, fontSize: 15, border: "none", cursor: "pointer", marginBottom: 10,
+};
+const btnGhost = {
+  display: "block", width: "100%", padding: "12px 24px", borderRadius: 999,
+  background: "transparent", color: "var(--text-soft)",
+  fontWeight: 600, fontSize: 14, border: "1.5px solid var(--border-soft)", cursor: "pointer",
+};
 
 // ── Встроенный просмотр карточек ──────────────────────────────────────────────
 function GuestCards({ set, onFinish, onClose }) {
@@ -341,37 +232,6 @@ function GuestCards({ set, onFinish, onClose }) {
   );
 }
 
-// ── Стили ─────────────────────────────────────────────────────────────────────
-const overlayStyle = {
-  position: "fixed", inset: 0, zIndex: 500,
-  background: "rgba(10,25,18,0.7)", backdropFilter: "blur(6px)",
-  display: "flex", alignItems: "center", justifyContent: "center",
-  padding: 24,
-};
-
-const panelStyle = {
-  background: "var(--surface)", borderRadius: 24,
-  border: "1.5px solid var(--border-soft)",
-  boxShadow: "0 24px 64px rgba(0,0,0,0.28)",
-  maxWidth: 480, width: "100%", padding: "32px 32px 28px",
-};
-
-const btnGreen = {
-  display: "block", width: "100%",
-  padding: "14px 24px", borderRadius: 999,
-  background: "var(--green-800)", color: "#fff",
-  fontWeight: 700, fontSize: 15, border: "none",
-  cursor: "pointer", marginBottom: 10,
-};
-
-const btnGhost = {
-  display: "block", width: "100%",
-  padding: "12px 24px", borderRadius: 999,
-  background: "transparent", color: "var(--text-soft)",
-  fontWeight: 600, fontSize: 14,
-  border: "1.5px solid var(--border-soft)",
-  cursor: "pointer",
-};
 
 // ── Дропдаун-фильтр ───────────────────────────────────────────────────────────
 function FilterSelect({ label, value, onChange, options }) {
@@ -409,6 +269,8 @@ export default function TasksPage() {
   const [loading, setLoading] = useState(true);
 
   const [activeQuiz, setActiveQuiz] = useState(null);
+  const [guestResult, setGuestResult] = useState(null);
+  const [quizKey, setQuizKey] = useState(0);
   const [activeCards, setActiveCards] = useState(null);
   const [showLimit, setShowLimit] = useState(false);
 
@@ -474,10 +336,38 @@ export default function TasksPage() {
     if (set) setActiveCards(set);
   }
 
-  function handleQuizFinish() {
+  function transformGuestQuiz(quiz) {
+    return {
+      title: quiz.title,
+      topic: quiz.topic,
+      questions: quiz.questions.map(q => ({
+        q: q.text,
+        note: q.hint,
+        options: q.answers.map(a => a.text),
+        correct: q.correct_index,
+        correct_indices: q.answers.map((a, i) => a.is_correct ? i : -1).filter(i => i >= 0),
+        explain: q.explanation,
+        question_type: q.question_type || "single",
+        image_data: q.image_data || null,
+        correct_text: q.correct_text || null,
+        match_options: q.match_options || ["1", "2"],
+        _questionId: q.id,
+        _answerIds: q.answers.map(a => a.id),
+        _matchAnswers: q.answers,
+      })),
+    };
+  }
+
+  function handleQuizFinish(answers) {
+    const score = answers.filter(a => a.correct).length;
+    setGuestResult({ score, max_score: activeQuiz.questions.length, title: activeQuiz.title });
+  }
+
+  function handleGuestClose() {
     const t = bumpTests();
     const { cards: c } = getDone();
     setActiveQuiz(null);
+    setGuestResult(null);
     checkLimit(t, c);
   }
 
@@ -689,12 +579,27 @@ export default function TasksPage() {
         )}
       </div>
 
-      {activeQuiz && (
-        <GuestQuiz
-          quiz={activeQuiz}
-          onFinish={handleQuizFinish}
-          onClose={() => setActiveQuiz(null)}
-        />
+      {activeQuiz && !guestResult && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 500 }}>
+          <QuizClassic
+            key={quizKey}
+            quiz={transformGuestQuiz(activeQuiz)}
+            onFinish={handleQuizFinish}
+            onExit={handleGuestClose}
+          />
+        </div>
+      )}
+
+      {activeQuiz && guestResult && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 500 }}>
+          <QuizResults
+            total={guestResult.max_score}
+            correct={guestResult.score}
+            quizTitle={guestResult.title}
+            onRetry={() => { setGuestResult(null); setQuizKey(k => k + 1); }}
+            onHome={handleGuestClose}
+          />
+        </div>
       )}
 
       {activeCards && (
