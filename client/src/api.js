@@ -27,6 +27,11 @@ const API = {
   submitAttempt: (id, answers) =>
     req(`/api/attempts/${id}/submit`, { method: "POST", body: { answers } }),
 
+  getPlant: () => req("/api/plant"),
+  waterPlant: () => req("/api/plant/water", { method: "POST" }),
+  collectPlant: () => req("/api/plant/collect", { method: "POST" }),
+  resetPlantWatering: () => req("/api/plant/reset-watering", { method: "POST" }),
+
   getCardSets: () => req("/api/flashcard-sets"),
   getCardSet: (id) => req(`/api/flashcard-sets/${id}`),
 

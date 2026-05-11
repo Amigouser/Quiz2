@@ -1661,7 +1661,19 @@ const StudentDetail = ({ studentId, onBack }) => {
     <div style={{ padding: "32px 40px", flex: 1, color: "var(--text-muted)", fontFamily: "var(--f-serif)", fontSize: 16 }}>Загрузка…</div>
   );
 
-  const { student, assigned, available } = data;
+  const { student, assigned, available, plant_progress, plant_collection } = data;
+
+  const PLANT_NAMES_ADMIN = {
+    sunflower: "Подсолнух", rose: "Роза", cactus: "Кактус",
+    fern: "Папоротник", orchid: "Орхидея", tulip: "Тюльпан",
+    bamboo: "Бамбук", lavender: "Лаванда", succulent: "Суккулент", chamomile: "Ромашка",
+  };
+
+  const grouped = {};
+  for (const item of (plant_collection || [])) {
+    if (!grouped[item.plant_type]) grouped[item.plant_type] = [];
+    grouped[item.plant_type].push(item.collected_at);
+  }
 
   return (
     <div style={{ padding: "32px 40px", flex: 1 }}>
@@ -1691,6 +1703,7 @@ const StudentDetail = ({ studentId, onBack }) => {
         {[
           { id: "tests", label: `📚 Тесты (${assigned.length})` },
           { id: "cards", label: `🃏 Карточки (${cardData?.assigned?.length || 0})` },
+          { id: "garden", label: `🌿 Сад (${plant_collection?.length || 0})` },
         ].map(t => (
           <div key={t.id} className={`chip ${subtab === t.id ? "active" : ""}`} onClick={() => setSubtab(t.id)}>
             {t.label}
@@ -1720,6 +1733,65 @@ const StudentDetail = ({ studentId, onBack }) => {
           labelCount={s => s.cards_count}
           labelSuffix="карт."
         />
+      )}
+
+      {subtab === "garden" && (
+        <div>
+          {/* Current plant */}
+          {plant_progress && (
+            <div style={{
+              display: "inline-flex", alignItems: "center", gap: 14,
+              background: "var(--bg-muted)", borderRadius: 14, padding: "14px 20px",
+              marginBottom: 24, fontSize: 13,
+            }}>
+              <span style={{ fontSize: 28 }}>🌱</span>
+              <div>
+                <div style={{ fontWeight: 600, marginBottom: 2 }}>
+                  Сейчас растёт: {PLANT_NAMES_ADMIN[plant_progress.plant_type] || plant_progress.plant_type}
+                </div>
+                <div style={{ color: "var(--text-muted)" }}>
+                  Стадия {Math.min(5, [0,1,2,3,5,7].filter(t => plant_progress.water_points >= t).length - 1)} из 5
+                  {" · "}Поливов: {plant_progress.water_points}
+                  {plant_progress.last_watered_date
+                    ? ` · Последний полив: ${new Date(plant_progress.last_watered_date).toLocaleDateString("ru-RU")}`
+                    : " · Ещё не поливал"}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Collected */}
+          {(plant_collection?.length || 0) === 0 ? (
+            <div style={{ color: "var(--text-muted)", fontSize: 14, padding: "20px 0" }}>
+              Ученик ещё не вырастил ни одного растения
+            </div>
+          ) : (
+            <div>
+              <div style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 12 }}>
+                Всего собрано: {plant_collection.length} растений
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                {plant_collection.map((item, i) => (
+                  <div key={i} style={{
+                    display: "flex", alignItems: "center", gap: 12,
+                    padding: "10px 16px", borderRadius: 10,
+                    background: "var(--bg-muted)", fontSize: 13,
+                  }}>
+                    <span style={{ fontSize: 20 }}>🌸</span>
+                    <span style={{ fontWeight: 600, flex: 1 }}>
+                      {PLANT_NAMES_ADMIN[item.plant_type] || item.plant_type}
+                    </span>
+                    <span style={{ color: "var(--text-muted)" }}>
+                      {new Date(item.collected_at).toLocaleDateString("ru-RU", {
+                        day: "numeric", month: "long", year: "numeric",
+                      })}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       )}
     </div>
   );
@@ -1765,7 +1837,7 @@ const AdminStudents = () => {
 
   const handleDelete = async (e, id, name) => {
     e.stopPropagation();
-    if (!confirm(`Удалить ученика «${name}»? Все его данные и попытки будут удалены.`)) return;
+    if (!confirm(`Удалить ученика «${name}»? Все его данные, попытки и коллекция растений будут удалены без возможности восстановления.`)) return;
     setDeletingId(id);
     try {
       await API.admin.deleteStudent(id);
@@ -1904,9 +1976,16 @@ const AdminStudents = () => {
                 }}>{s.name[0]?.toUpperCase()}</div>
                 <div>
                   <div style={{ fontWeight: 500 }}>{s.name}</div>
-                  {s.group_name && (
-                    <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 1 }}>{s.group_name}</div>
-                  )}
+                  <div style={{ display: "flex", gap: 6, marginTop: 2, flexWrap: "wrap" }}>
+                    {s.group_name && (
+                      <div style={{ fontSize: 11, color: "var(--text-muted)" }}>{s.group_name}</div>
+                    )}
+                    {s.plant_collection_count > 0 && (
+                      <div style={{ fontSize: 10, color: "var(--green-800)", fontWeight: 600, display: "flex", alignItems: "center", gap: 2 }}>
+                        🌿 {s.plant_collection_count} в коллекции
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
 

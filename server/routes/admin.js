@@ -126,7 +126,10 @@ router.get("/students", (req, res) => {
     SELECT u.id, u.name, u.code, u.group_name, u.created_at,
            COUNT(DISTINCT a.id) AS attempt_count,
            ROUND(AVG(CASE WHEN a.max_score > 0 THEN a.score * 100.0 / a.max_score END), 0) AS avg_score,
-           MAX(a.completed_at) AS last_attempt
+           MAX(a.completed_at) AS last_attempt,
+           (SELECT COUNT(*) FROM plant_collection WHERE user_id = u.id) AS plant_collection_count,
+           (SELECT plant_type FROM plant_progress WHERE user_id = u.id) AS current_plant,
+           (SELECT water_points FROM plant_progress WHERE user_id = u.id) AS plant_water_points
     FROM users u
     LEFT JOIN attempts a ON a.user_id = u.id
     WHERE u.is_admin = 0
@@ -141,6 +144,9 @@ router.delete("/students/:id", (req, res) => {
   if (!student) return res.status(404).json({ error: "Ученик не найден" });
   db.exec("BEGIN");
   try {
+    run("DELETE FROM plant_collection WHERE user_id = ?", req.params.id);
+    run("DELETE FROM plant_progress WHERE user_id = ?", req.params.id);
+    run("DELETE FROM attempt_answers WHERE attempt_id IN (SELECT id FROM attempts WHERE user_id = ?)", req.params.id);
     run("DELETE FROM attempts WHERE user_id = ?", req.params.id);
     run("DELETE FROM users WHERE id = ? AND is_admin = 0", req.params.id);
     db.exec("COMMIT");
@@ -215,7 +221,13 @@ router.get("/students/:id", (req, res) => {
   const assignedIds = new Set(assigned.map(t => t.id));
   const available = allTests.filter(t => !assignedIds.has(t.id));
 
-  res.json({ student: { ...student, ...stats }, assigned, available });
+  const plantProgress = get("SELECT plant_type, water_points, last_watered_date FROM plant_progress WHERE user_id = ?", req.params.id);
+  const plantCollection = all(
+    "SELECT plant_type, collected_at FROM plant_collection WHERE user_id = ? ORDER BY collected_at DESC",
+    req.params.id
+  );
+
+  res.json({ student: { ...student, ...stats }, assigned, available, plant_progress: plantProgress, plant_collection: plantCollection });
 });
 
 // Назначить тест ученику

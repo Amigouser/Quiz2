@@ -1,6 +1,9 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Fern, BotanicalBg } from "../botanical";
+import PlantWidget from "../components/PlantWidget";
+import PlantSVG from "../components/PlantSVG";
+import API from "../api";
 
 const TOPIC_ICONS = {
   "Цитология": "🔬", "Генетика": "🧬", "Зоология": "🦎",
@@ -180,8 +183,151 @@ function CardSetTile({ s, onStart }) {
   );
 }
 
+const PLANT_NAMES_MAP = {
+  sunflower: "Подсолнух", rose: "Роза", cactus: "Кактус",
+  fern: "Папоротник", orchid: "Орхидея", tulip: "Тюльпан",
+  bamboo: "Бамбук", lavender: "Лаванда", succulent: "Суккулент", chamomile: "Ромашка",
+};
+
+function CollectionView() {
+  const [plantData, setPlantData] = useState(null);
+
+  useEffect(() => {
+    API.getPlant().then(setPlantData).catch(() => {});
+  }, []);
+
+  if (!plantData) return (
+    <div style={{ textAlign: "center", padding: "80px 0", color: "var(--text-muted)", fontSize: 15 }}>
+      Загрузка…
+    </div>
+  );
+
+  const grouped = {};
+  for (const item of plantData.collection) {
+    if (!grouped[item.plant_type]) grouped[item.plant_type] = [];
+    grouped[item.plant_type].push(item.collected_at);
+  }
+
+  const progressPct = plantData.stage < 5
+    ? Math.round(((plantData.water_points - ([0,1,2,3,5,7][plantData.stage] ?? 0)) /
+        (([0,1,2,3,5,7][plantData.stage + 1] ?? 7) - ([0,1,2,3,5,7][plantData.stage] ?? 0))) * 100)
+    : 100;
+
+  return (
+    <div>
+      {/* Current plant */}
+      <h2 style={{ fontFamily: "var(--f-serif)", fontSize: 24, marginBottom: 20, letterSpacing: "-0.01em" }}>
+        Сейчас растёт
+      </h2>
+      <div style={{
+        display: "inline-flex", alignItems: "center", gap: 28,
+        background: "var(--surface)", border: "1.5px solid var(--border-soft)",
+        borderRadius: 24, padding: "20px 32px 20px 20px",
+        boxShadow: "var(--sh-sm)", marginBottom: 48,
+      }}>
+        <PlantSVG plantType={plantData.plant_type} stage={plantData.stage} />
+        <div>
+          <div style={{ fontFamily: "var(--f-serif)", fontSize: 20, fontWeight: 500, marginBottom: 6 }}>
+            {PLANT_NAMES_MAP[plantData.plant_type] || plantData.plant_type}
+          </div>
+          <div style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 10 }}>
+            Стадия {plantData.stage} из 5
+          </div>
+          <div style={{ display: "flex", gap: 5, alignItems: "center", marginBottom: 10 }}>
+            {[1, 2, 3, 4, 5].map(s => (
+              <div key={s} style={{
+                width: s <= plantData.stage ? 10 : 8, height: s <= plantData.stage ? 10 : 8,
+                borderRadius: "50%",
+                background: s <= plantData.stage ? "var(--green-800)" : "var(--border-soft)",
+              }} />
+            ))}
+          </div>
+          {plantData.stage < 5 && (
+            <div style={{ width: 160 }}>
+              <div style={{ height: 5, background: "var(--border-soft)", borderRadius: 999, overflow: "hidden" }}>
+                <div style={{ height: "100%", width: `${progressPct}%`, background: "var(--green-800)", borderRadius: 999 }} />
+              </div>
+              <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 4 }}>
+                {plantData.can_water ? "Можно полить сегодня 💧" : "Полито сегодня ✓"}
+              </div>
+            </div>
+          )}
+          {plantData.stage === 5 && (
+            <div style={{ fontSize: 13, color: "var(--green-800)", fontWeight: 700 }}>
+              🌸 Готово к сбору! Открой виджет справа внизу
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Collection grid */}
+      <h2 style={{ fontFamily: "var(--f-serif)", fontSize: 24, marginBottom: 8, letterSpacing: "-0.01em" }}>
+        Собранные растения
+      </h2>
+
+      {plantData.collection_count === 0 ? (
+        <div style={{
+          textAlign: "center", padding: "64px 24px",
+          background: "var(--surface)", borderRadius: 24,
+          border: "1.5px solid var(--border-soft)",
+        }}>
+          <div style={{ fontSize: 52, marginBottom: 16 }}>🌱</div>
+          <div style={{ fontFamily: "var(--f-serif)", fontSize: 20, marginBottom: 8 }}>
+            Коллекция пока пуста
+          </div>
+          <div style={{ fontSize: 14, color: "var(--text-muted)", maxWidth: 320, margin: "0 auto" }}>
+            Поливай растение каждый день — через 7 дней оно попадёт в коллекцию, и начнётся новое
+          </div>
+        </div>
+      ) : (
+        <>
+          <div style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 20 }}>
+            Всего собрано: {plantData.collection_count} 🌸
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(190px,100%), 1fr))", gap: 16 }}>
+            {Object.entries(grouped).map(([type, dates]) => (
+              <div key={type} style={{
+                background: "var(--surface)", border: "1.5px solid var(--border-soft)",
+                borderRadius: 20, padding: "20px 16px", textAlign: "center",
+                boxShadow: "var(--sh-sm)", position: "relative",
+                transition: "transform 0.2s, box-shadow 0.2s",
+              }}
+                onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-4px)"; e.currentTarget.style.boxShadow = "0 12px 36px rgba(26,52,36,0.13)"; }}
+                onMouseLeave={e => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = "var(--sh-sm)"; }}
+              >
+                {dates.length > 1 && (
+                  <div style={{
+                    position: "absolute", top: 12, right: 12,
+                    background: "var(--green-800)", color: "#fff",
+                    borderRadius: 999, fontSize: 11, fontWeight: 700,
+                    padding: "2px 8px",
+                  }}>×{dates.length}</div>
+                )}
+                <div style={{ display: "flex", justifyContent: "center", marginBottom: 10 }}>
+                  <PlantSVG plantType={type} stage={5} />
+                </div>
+                <div style={{ fontFamily: "var(--f-serif)", fontSize: 16, fontWeight: 500, marginBottom: 4 }}>
+                  {PLANT_NAMES_MAP[type] || type}
+                </div>
+                <div style={{ fontSize: 11, color: "var(--text-muted)" }}>
+                  Собрано {dates.length} {dates.length === 1 ? "раз" : "раза"}
+                </div>
+                <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 3 }}>
+                  {new Date(dates[0]).toLocaleDateString("ru-RU", { day: "numeric", month: "long", year: "numeric" })}
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 export const StudentDashboard = ({ name = "Аня", quizzes = [], cardSets = [], onOpenQuiz, onOpenCards, onAdmin, onLogout }) => {
   const navigate = useNavigate();
+
+  const [tab, setTab] = useState("tasks");
 
   const [gradeFilter, setGradeFilter] = useState("");
   const [examFilter, setExamFilter] = useState("");
@@ -307,6 +453,27 @@ export const StudentDashboard = ({ name = "Аня", quizzes = [], cardSets = [],
       </div>
 
       <div style={{ padding: "0 48px" }}>
+        {/* Таб-навигация */}
+        <div style={{ display: "flex", gap: 8, marginBottom: 32 }}>
+          {[["tasks", "Задания"], ["collection", "Коллекция 🌿"]].map(([key, label]) => (
+            <button
+              key={key}
+              onClick={() => setTab(key)}
+              style={{
+                padding: "10px 22px", borderRadius: 999, fontSize: 14, fontFamily: "var(--f-sans)",
+                border: tab === key ? "none" : "1.5px solid var(--border-soft)",
+                background: tab === key ? "var(--green-800)" : "var(--surface)",
+                color: tab === key ? "#fff" : "var(--text-soft)",
+                fontWeight: tab === key ? 700 : 400,
+                cursor: "pointer", transition: "all 0.18s",
+              }}
+            >{label}</button>
+          ))}
+        </div>
+
+        {tab === "collection" && <CollectionView />}
+
+        {tab === "tasks" && <>
         {/* Filters */}
         {(quizzes.length > 0 || cardSets.length > 0) && (
           <div style={{ marginBottom: 32, display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center" }}>
@@ -390,7 +557,10 @@ export const StudentDashboard = ({ name = "Аня", quizzes = [], cardSets = [],
             }}>Сбросить фильтры</button>
           </div>
         )}
+        </>}
       </div>
+
+      <PlantWidget />
     </div>
   );
 };

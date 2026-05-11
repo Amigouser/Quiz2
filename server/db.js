@@ -164,6 +164,24 @@ try { db.exec("ALTER TABLE answers ADD COLUMN match_value TEXT"); } catch (_) {}
 try { db.exec("ALTER TABLE attempt_answers ADD COLUMN answer_text TEXT"); } catch (_) {}
 try { db.exec("ALTER TABLE tests ADD COLUMN grade TEXT"); } catch (_) {}
 try { db.exec("ALTER TABLE flashcard_sets ADD COLUMN grade TEXT"); } catch (_) {}
+
+// Таблицы для растений
+db.exec(`
+  CREATE TABLE IF NOT EXISTS plant_progress (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE UNIQUE,
+    plant_type TEXT DEFAULT 'sunflower',
+    water_points INTEGER DEFAULT 0,
+    last_watered_date TEXT DEFAULT NULL,
+    created_at TEXT DEFAULT (datetime('now'))
+  );
+  CREATE TABLE IF NOT EXISTS plant_collection (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    plant_type TEXT NOT NULL,
+    collected_at TEXT DEFAULT (datetime('now'))
+  );
+`);
 // Перенести классы из category в grade (если category содержит "N класс")
 try {
   db.exec("UPDATE tests SET grade = category, category = NULL WHERE category LIKE '% класс'");
