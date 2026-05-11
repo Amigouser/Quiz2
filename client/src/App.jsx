@@ -17,11 +17,15 @@ export const useAuth = () => useContext(AuthCtx);
 function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [deleted, setDeleted] = useState(false);
 
   useEffect(() => {
     API.me()
       .then((d) => setUser(d.user))
-      .catch(() => setUser(null))
+      .catch((err) => {
+        if (err.status === 410 || err.message === "account_deleted") setDeleted(true);
+        setUser(null);
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -37,7 +41,93 @@ function AuthProvider({ children }) {
   };
 
   if (loading) return <Spinner />;
+  if (deleted) return <DeletedScreen />;
   return <AuthCtx.Provider value={{ user, login, logout }}>{children}</AuthCtx.Provider>;
+}
+
+function DeletedScreen() {
+  const plants = ["🌻", "🌹", "🌵", "🌿", "🌸", "🌷", "🎋", "💜", "🪴", "🌼"];
+  return (
+    <div style={{
+      minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center",
+      background: "var(--bg)", padding: 24,
+    }}>
+      <div style={{ textAlign: "center", maxWidth: 480 }}>
+        {/* Animated plant garden */}
+        <div style={{ fontSize: 52, marginBottom: 8, letterSpacing: 6, lineHeight: 1.4 }}>
+          {plants.slice(0, 5).map((p, i) => (
+            <span key={i} style={{
+              display: "inline-block",
+              animation: `floatPlant 2.4s ease-in-out ${i * 0.3}s infinite alternate`,
+            }}>{p}</span>
+          ))}
+        </div>
+
+        <style>{`
+          @keyframes floatPlant {
+            from { transform: translateY(0px); }
+            to   { transform: translateY(-10px); }
+          }
+        `}</style>
+
+        {/* Card */}
+        <div style={{
+          background: "var(--surface)", borderRadius: 28,
+          border: "1.5px solid var(--border-soft)",
+          boxShadow: "0 20px 60px rgba(26,52,36,0.12)",
+          padding: "40px 40px 36px",
+          marginTop: 8,
+        }}>
+          <div style={{
+            fontFamily: "var(--f-serif)", fontSize: 28, fontWeight: 500,
+            lineHeight: 1.2, marginBottom: 16, color: "var(--text)",
+          }}>
+            Твой учебный курс<br/>
+            <em style={{ color: "var(--green-800)" }}>завершён!</em>
+          </div>
+
+          <p style={{
+            fontSize: 15, color: "var(--text-soft)", lineHeight: 1.75,
+            marginBottom: 10,
+          }}>
+            Репетитор завершил занятия и закрыл твой профиль.
+            Все твои результаты и выращенные растения
+            сохранены у преподавателя.
+          </p>
+
+          <p style={{
+            fontSize: 15, color: "var(--text-soft)", lineHeight: 1.75,
+            marginBottom: 28,
+          }}>
+            Ты отлично поработал — желаем успехов
+            на экзаменах и во всём остальном! 🎓
+          </p>
+
+          <div style={{
+            height: 1, background: "var(--border-soft)", marginBottom: 24,
+          }} />
+
+          <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 16 }}>
+            Если ты считаешь, что это ошибка — напиши репетитору.
+          </p>
+
+          <button
+            onClick={() => { window.location.href = "/"; }}
+            style={{
+              padding: "12px 28px", borderRadius: 14,
+              background: "var(--green-800)", color: "#fff",
+              fontWeight: 600, fontSize: 14, border: "none",
+              cursor: "pointer", opacity: 1, transition: "opacity 0.15s",
+            }}
+            onMouseEnter={e => e.currentTarget.style.opacity = "0.8"}
+            onMouseLeave={e => e.currentTarget.style.opacity = "1"}
+          >
+            На главную страницу
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function Spinner() {

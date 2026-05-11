@@ -33,6 +33,11 @@ router.post("/logout", (req, res) => {
 
 router.get("/me", (req, res) => {
   if (!req.session.user) return res.status(401).json({ error: "Не авторизован" });
+  const exists = get("SELECT id FROM users WHERE id = ?", req.session.user.id);
+  if (!exists) {
+    req.session.destroy(() => {});
+    return res.status(410).json({ error: "account_deleted" });
+  }
   res.json({ user: req.session.user });
 });
 
