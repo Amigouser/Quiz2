@@ -59,24 +59,40 @@ export default function FlashcardsRoute() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [set, setSet] = useState(null);
+  const [cards, setCards] = useState([]);
   const [index, setIndex] = useState(0);
   const [flipped, setFlipped] = useState(false);
   const [known, setKnown] = useState(new Set());
   const [done, setDone] = useState(false);
 
   useEffect(() => {
-    API.getCardSet(id).then(setSet);
+    API.getCardSet(id).then(data => {
+      setSet(data);
+      setCards(data.cards);
+    });
   }, [id]);
+
+  const shuffleCards = () => {
+    const arr = [...cards];
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    setCards(arr);
+    setIndex(0);
+    setFlipped(false);
+    setKnown(new Set());
+  };
 
   const goNext = useCallback(() => {
     if (!set) return;
-    if (index < set.cards.length - 1) {
+    if (index < cards.length - 1) {
       setFlipped(false);
       setTimeout(() => setIndex(i => i + 1), 160);
     } else {
       setDone(true);
     }
-  }, [set, index]);
+  }, [cards, index]);
 
   const handleKey = useCallback((e) => {
     if (e.code === "Space" || e.code === "Enter") {
@@ -85,13 +101,13 @@ export default function FlashcardsRoute() {
     }
     if (e.code === "ArrowRight") {
       setFlipped(false);
-      setTimeout(() => setIndex(i => Math.min(i + 1, (set?.cards?.length || 1) - 1)), 160);
+      setTimeout(() => setIndex(i => Math.min(i + 1, cards.length - 1)), 160);
     }
     if (e.code === "ArrowLeft") {
       setFlipped(false);
       setTimeout(() => setIndex(i => Math.max(i - 1, 0)), 160);
     }
-  }, [set]);
+  }, [cards]);
 
   useEffect(() => {
     window.addEventListener("keydown", handleKey);
@@ -99,7 +115,7 @@ export default function FlashcardsRoute() {
   }, [handleKey]);
 
   const markKnown = () => {
-    setKnown(prev => new Set([...prev, set.cards[index].id]));
+    setKnown(prev => new Set([...prev, cards[index].id]));
     goNext();
   };
 
@@ -115,7 +131,7 @@ export default function FlashcardsRoute() {
   if (done) {
     return (
       <FlashcardResults
-        set={set}
+        set={{ ...set, cards }}
         known={known}
         onRetry={handleRetry}
         onHome={() => navigate("/dashboard")}
@@ -123,8 +139,8 @@ export default function FlashcardsRoute() {
     );
   }
 
-  const card = set.cards[index];
-  const progress = set.cards.length > 1 ? (index / (set.cards.length - 1)) * 100 : 100;
+  const card = cards[index];
+  const progress = cards.length > 1 ? (index / (cards.length - 1)) * 100 : 100;
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg)", position: "relative", overflow: "hidden" }}>
@@ -149,11 +165,21 @@ export default function FlashcardsRoute() {
           <div style={{ fontFamily: "var(--f-serif)", fontSize: 18, fontWeight: 600 }}>{set.title}</div>
           <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>
             {set.topic && <span>{set.topic} · </span>}
-            {set.cards.length} карточек
+            {cards.length} карточек
           </div>
         </div>
-        <div style={{ fontSize: 14, color: "var(--text-soft)", fontFamily: "var(--f-serif)" }}>
-          {index + 1} <span style={{ color: "var(--text-muted)" }}>/ {set.cards.length}</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <button
+            className="btn btn-ghost btn-sm"
+            onClick={shuffleCards}
+            title="Перемешать карточки"
+            style={{ display: "flex", alignItems: "center", gap: 4 }}
+          >
+            🔀 Перемешать
+          </button>
+          <div style={{ fontSize: 14, color: "var(--text-soft)", fontFamily: "var(--f-serif)" }}>
+            {index + 1} <span style={{ color: "var(--text-muted)" }}>/ {cards.length}</span>
+          </div>
         </div>
       </div>
 
@@ -196,8 +222,15 @@ export default function FlashcardsRoute() {
               display: "flex", flexDirection: "column",
               alignItems: "center", justifyContent: "center",
               padding: "40px 56px",
+              overflow: "hidden",
             }}>
-              <div style={{ fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 20, fontWeight: 600 }}>
+              {card.image_data && (
+                <img src={card.image_data} alt="" style={{
+                  maxWidth: "100%", maxHeight: 140, borderRadius: 10,
+                  objectFit: "contain", marginBottom: 16,
+                }} />
+              )}
+              <div style={{ fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: card.image_data ? 12 : 20, fontWeight: 600 }}>
                 Термин
               </div>
               <div style={{ fontFamily: "var(--f-serif)", fontSize: 30, fontWeight: 500, textAlign: "center", lineHeight: 1.3 }}>
@@ -221,8 +254,15 @@ export default function FlashcardsRoute() {
               display: "flex", flexDirection: "column",
               alignItems: "center", justifyContent: "center",
               padding: "40px 56px",
+              overflow: "hidden",
             }}>
-              <div style={{ fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--green-800)", marginBottom: 20, fontWeight: 600, opacity: 0.7 }}>
+              {card.image_data && (
+                <img src={card.image_data} alt="" style={{
+                  maxWidth: "100%", maxHeight: 120, borderRadius: 10,
+                  objectFit: "contain", marginBottom: 16,
+                }} />
+              )}
+              <div style={{ fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--green-800)", marginBottom: card.image_data ? 12 : 20, fontWeight: 600, opacity: 0.7 }}>
                 Определение
               </div>
               <div style={{ fontFamily: "var(--f-serif)", fontSize: 22, fontWeight: 400, textAlign: "center", lineHeight: 1.55 }}>
@@ -272,7 +312,7 @@ export default function FlashcardsRoute() {
           </button>
           <button
             className="btn btn-ghost btn-sm"
-            disabled={index === set.cards.length - 1}
+            disabled={index === cards.length - 1}
             onClick={() => { setFlipped(false); setTimeout(() => setIndex(i => i + 1), 160); }}
           >
             Следующая →

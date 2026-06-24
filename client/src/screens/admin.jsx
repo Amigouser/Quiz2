@@ -37,6 +37,28 @@ const SectionSelect = ({ value, onChange }) => (
 const GRADE_OPTIONS = ["5 класс", "6 класс", "7 класс", "8 класс", "9 класс", "10 класс", "11 класс"];
 const EXAM_OPTIONS = ["ОГЭ", "ЕГЭ", "ВПР"];
 
+const MultiChipPicker = ({ value = [], onChange, options, shortLabel }) => {
+  const arr = Array.isArray(value) ? value : (value ? [value] : []);
+  const toggle = (opt) => {
+    const next = arr.includes(opt) ? arr.filter(v => v !== opt) : [...arr, opt];
+    onChange(next);
+  };
+  return (
+    <div style={{ display: "flex", gap: 6, marginTop: 6, flexWrap: "wrap" }}>
+      {options.map(opt => (
+        <button
+          key={opt}
+          type="button"
+          onClick={() => toggle(opt)}
+          className={arr.includes(opt) ? "btn btn-primary btn-sm" : "btn btn-ghost btn-sm"}
+        >
+          {shortLabel ? shortLabel(opt) : opt}
+        </button>
+      ))}
+    </div>
+  );
+};
+
 const ChipPicker = ({ value, onChange, options, shortLabel }) => (
   <div style={{ display: "flex", gap: 6, marginTop: 6, flexWrap: "wrap" }}>
     {options.map(opt => (
@@ -53,7 +75,7 @@ const ChipPicker = ({ value, onChange, options, shortLabel }) => (
 );
 
 const GradePicker = ({ value, onChange }) => (
-  <ChipPicker value={value} onChange={onChange} options={GRADE_OPTIONS} shortLabel={g => g.replace(" класс", "")} />
+  <MultiChipPicker value={value} onChange={onChange} options={GRADE_OPTIONS} shortLabel={g => g.replace(" класс", "")} />
 );
 
 const ExamPicker = ({ value, onChange }) => (
@@ -643,7 +665,7 @@ const AdminCreateTest = ({ onCreated, autoImport = false }) => {
   const [section, setSection] = React.useState("");
   const [topic, setTopic] = React.useState("");
   const [description, setDescription] = React.useState("");
-  const [grade, setGrade] = React.useState("");
+  const [grade, setGrade] = React.useState([]);
   const [category, setCategory] = React.useState("");
   const [part, setPart] = React.useState("");
   const [line, setLine] = React.useState("");
@@ -686,8 +708,12 @@ const AdminCreateTest = ({ onCreated, autoImport = false }) => {
   const updateA = (qi, ai, field, val) =>
     setQuestions(qs => qs.map((q, i) => {
       if (i !== qi) return q;
+      const isMulti = q.question_type === "multiple_select";
       const answers = q.answers.map((a, j) => {
-        if (field === "is_correct") return { ...a, is_correct: j === ai };
+        if (field === "is_correct") {
+          if (isMulti) return { ...a, is_correct: j === ai ? (val ? 1 : 0) : a.is_correct };
+          return { ...a, is_correct: j === ai ? 1 : 0 };
+        }
         return j === ai ? { ...a, [field]: val } : a;
       });
       return { ...q, answers };
@@ -719,7 +745,7 @@ const AdminCreateTest = ({ onCreated, autoImport = false }) => {
         section: section.trim() || null,
         topic: topic.trim() || null,
         description: description.trim() || null,
-        grade: grade || null,
+        grade: grade.length > 0 ? grade.join(", ") : null,
         category: category || null,
         part: part.trim() || null,
         line: line.trim() || null,
@@ -860,7 +886,7 @@ const AdminCreateTest = ({ onCreated, autoImport = false }) => {
                         onBlur={e => e.currentTarget.style.borderColor = "var(--border)"}>
                         <input type="file" accept="image/*" style={{ display: "none" }} onChange={e => {
                           const file = e.target.files[0]; if (!file) return;
-                          if (file.size > 5 * 1024 * 1024) { alert("Файл слишком большой (макс. 5 МБ)"); return; }
+                          if (file.size > 20 * 1024 * 1024) { alert("Файл слишком большой (макс. 20 МБ)"); return; }
                           const reader = new FileReader();
                           reader.onload = ev => updateQ(qi, "image_data", ev.target.result);
                           reader.readAsDataURL(file); e.target.value = "";
@@ -1134,7 +1160,7 @@ const AdminEditTest = ({ testId, onSaved }) => {
       setSection(data.section || "");
       setTopic(data.topic || "");
       setDescription(data.description || "");
-      setGrade(data.grade || "");
+      setGrade(data.grade ? data.grade.split(", ").filter(Boolean) : []);
       setCategory(data.category || "");
       setPart(data.part || "");
       setLine(data.line || "");
@@ -1311,7 +1337,7 @@ const AdminEditTest = ({ testId, onSaved }) => {
                         onBlur={e => e.currentTarget.style.borderColor = "var(--border)"}>
                         <input type="file" accept="image/*" style={{ display: "none" }} onChange={e => {
                           const file = e.target.files[0]; if (!file) return;
-                          if (file.size > 5 * 1024 * 1024) { alert("Файл слишком большой (макс. 5 МБ)"); return; }
+                          if (file.size > 20 * 1024 * 1024) { alert("Файл слишком большой (макс. 20 МБ)"); return; }
                           const reader = new FileReader();
                           reader.onload = ev => updateQ(qi, "image_data", ev.target.result);
                           reader.readAsDataURL(file); e.target.value = "";
@@ -2058,7 +2084,7 @@ const AdminStudents = () => {
 };
 
 // ── Flashcard set editor ────────────────────────────────────────────────────
-const EMPTY_CARD = () => ({ id: Date.now() + Math.random(), term: "", definition: "" });
+const EMPTY_CARD = () => ({ id: Date.now() + Math.random(), term: "", definition: "", image_data: null });
 
 const AdminEditCardSet = ({ editId, onSaved, autoImport = false }) => {
   const [title, setTitle] = React.useState("");
@@ -2086,6 +2112,7 @@ const AdminEditCardSet = ({ editId, onSaved, autoImport = false }) => {
         id: Date.now() + Math.random(),
         term: c.term || c.front || "",
         definition: c.definition || c.back || "",
+        image_data: c.image_data || null,
       })));
     }
     setShowImport(false);
@@ -2098,12 +2125,12 @@ const AdminEditCardSet = ({ editId, onSaved, autoImport = false }) => {
       setSection(data.section || "");
       setTopic(data.topic || "");
       setDescription(data.description || "");
-      setGrade(data.grade || "");
+      setGrade(data.grade ? data.grade.split(", ").filter(Boolean) : []);
       setCategory(data.category || "");
       setPart(data.part || "");
       setLine(data.line || "");
       setSource(data.source || "");
-      setCards(data.cards.map(c => ({ id: c.id, term: c.term, definition: c.definition })));
+      setCards(data.cards.map(c => ({ id: c.id, term: c.term, definition: c.definition, image_data: c.image_data || null })));
     });
   }, [editId]);
 
@@ -2136,7 +2163,7 @@ const AdminEditCardSet = ({ editId, onSaved, autoImport = false }) => {
         title: title.trim(), section: section.trim() || null, topic: topic.trim() || null,
         description: description.trim() || null, grade: grade || null, category: category || null,
         part: part.trim() || null, line: line.trim() || null, source: source.trim() || null,
-        cards: validCards.map(c => ({ term: c.term.trim(), definition: c.definition.trim() })),
+        cards: validCards.map(c => ({ term: c.term.trim(), definition: c.definition.trim(), image_data: c.image_data || null })),
       };
       if (editId) await API.admin.updateCardSet(editId, payload);
       else await API.admin.createCardSet(payload);
@@ -2248,26 +2275,64 @@ const AdminEditCardSet = ({ editId, onSaved, autoImport = false }) => {
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {cards.map((c, i) => (
             <div key={c.id} style={{
-              display: "grid", gridTemplateColumns: "1fr 1fr auto",
-              gap: 12, alignItems: "center",
               background: "var(--surface)", border: "1.5px solid var(--border-soft)",
               borderRadius: "var(--r-md)", padding: "12px 14px",
             }}>
-              <input
-                className="input"
-                value={c.term} onChange={e => updateCard(i, "term", e.target.value)}
-                placeholder={`Термин ${i + 1}`}
-                style={{ fontSize: 14 }}
-              />
-              <input
-                className="input"
-                value={c.definition} onChange={e => updateCard(i, "definition", e.target.value)}
-                placeholder="Определение"
-                style={{ fontSize: 14 }}
-              />
-              {cards.length > 1 && (
-                <button className="btn btn-ghost btn-sm" style={{ color: "var(--wrong)", padding: "4px 8px" }} onClick={() => removeCard(i)}>✕</button>
-              )}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr auto", gap: 12, alignItems: "center" }}>
+                <input
+                  className="input"
+                  value={c.term} onChange={e => updateCard(i, "term", e.target.value)}
+                  placeholder={`Термин ${i + 1}`}
+                  style={{ fontSize: 14 }}
+                />
+                <input
+                  className="input"
+                  value={c.definition} onChange={e => updateCard(i, "definition", e.target.value)}
+                  placeholder="Определение"
+                  style={{ fontSize: 14 }}
+                />
+                {cards.length > 1 && (
+                  <button className="btn btn-ghost btn-sm" style={{ color: "var(--wrong)", padding: "4px 8px" }} onClick={() => removeCard(i)}>✕</button>
+                )}
+              </div>
+              {/* Image */}
+              <div style={{ marginTop: 8 }}>
+                {c.image_data ? (
+                  <div style={{ position: "relative", display: "inline-block" }}>
+                    <img src={c.image_data} alt="" style={{ maxHeight: 120, maxWidth: "100%", borderRadius: 8, border: "1px solid var(--border-soft)", display: "block" }} />
+                    <button onClick={() => updateCard(i, "image_data", null)}
+                      style={{ position: "absolute", top: 4, right: 4, width: 22, height: 22, borderRadius: "50%", border: "none", background: "rgba(0,0,0,0.55)", color: "#fff", cursor: "pointer", fontSize: 12, display: "grid", placeItems: "center" }}>✕</button>
+                  </div>
+                ) : (
+                  <label
+                    onPaste={e => {
+                      const items = e.clipboardData?.items;
+                      if (!items) return;
+                      for (const item of items) {
+                        if (item.type.startsWith("image/")) {
+                          e.preventDefault();
+                          const file = item.getAsFile();
+                          if (!file) return;
+                          const reader = new FileReader();
+                          reader.onload = ev => updateCard(i, "image_data", ev.target.result);
+                          reader.readAsDataURL(file);
+                          return;
+                        }
+                      }
+                    }}
+                    style={{ display: "inline-flex", alignItems: "center", gap: 6, cursor: "pointer", padding: "4px 10px", border: "1px dashed var(--border)", borderRadius: 6, fontSize: 12, color: "var(--text-muted)" }}
+                  >
+                    <input type="file" accept="image/*" style={{ display: "none" }} onChange={e => {
+                      const file = e.target.files[0]; if (!file) return;
+                      if (file.size > 20 * 1024 * 1024) { alert("Макс. 20 МБ"); return; }
+                      const reader = new FileReader();
+                      reader.onload = ev => updateCard(i, "image_data", ev.target.result);
+                      reader.readAsDataURL(file); e.target.value = "";
+                    }} />
+                    📎 Фото
+                  </label>
+                )}
+              </div>
             </div>
           ))}
 

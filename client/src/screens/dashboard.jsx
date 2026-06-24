@@ -151,33 +151,52 @@ function CardSetTile({ s, onStart }) {
     <div
       onClick={onStart}
       style={{
-        borderRadius: 20,
+        borderRadius: 20, overflow: "hidden",
         border: "1.5px solid var(--border-soft)",
         background: "var(--surface)", boxShadow: "var(--sh-sm)",
-        padding: "20px 22px", cursor: "pointer",
+        cursor: "pointer",
         transition: "transform 0.25s cubic-bezier(0.22,0.8,0.32,1), box-shadow 0.25s",
         position: "relative",
+        display: "flex", flexDirection: "column",
       }}
       onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-4px)"; e.currentTarget.style.boxShadow = "0 16px 48px rgba(26,52,36,0.12)"; }}
       onMouseLeave={e => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = "var(--sh-sm)"; }}
     >
       {s.is_assigned && (
         <span style={{
-          position: "absolute", top: 14, right: 14,
+          position: "absolute", top: 14, right: 14, zIndex: 1,
           background: "var(--green-800)", color: "#fff",
           padding: "3px 10px", borderRadius: 999,
           fontSize: 11, fontWeight: 700,
           letterSpacing: "0.06em", textTransform: "uppercase",
+          boxShadow: "0 4px 10px rgba(26,52,36,0.2)",
         }}>🌱 Назначено</span>
       )}
-      <div style={{ fontSize: 36, marginBottom: 12 }}>🃏</div>
-      <div style={{ fontFamily: "var(--f-serif)", fontSize: 17, fontWeight: 500, marginBottom: 6 }}>{s.title}</div>
-      {s.description && (
-        <div style={{ fontSize: 13, color: "var(--text-muted)", lineHeight: 1.5, marginBottom: 10 }}>{s.description}</div>
+      {s.preview_image ? (
+        <div style={{
+          height: 110, overflow: "hidden",
+          background: "linear-gradient(135deg, var(--green-100) 0%, var(--green-200) 100%)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+        }}>
+          <img src={s.preview_image} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+        </div>
+      ) : (
+        <div style={{
+          height: 110,
+          background: "linear-gradient(135deg, var(--green-100) 0%, var(--green-200) 100%)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          fontSize: 36,
+        }}>🃏</div>
       )}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <span style={{ fontSize: 12, color: "var(--text-muted)" }}>{s.cards_count ?? "—"} карточек</span>
-        <span style={{ fontSize: 12, fontWeight: 600, color: "var(--green-800)" }}>Открыть →</span>
+      <div style={{ padding: "16px 18px", display: "flex", flexDirection: "column", gap: 6, flex: 1 }}>
+        <div style={{ fontFamily: "var(--f-serif)", fontSize: 17, fontWeight: 500 }}>{s.title}</div>
+        {s.description && (
+          <div style={{ fontSize: 13, color: "var(--text-muted)", lineHeight: 1.5 }}>{s.description}</div>
+        )}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "auto", paddingTop: 6 }}>
+          <span style={{ fontSize: 12, color: "var(--text-muted)" }}>{s.cards_count ?? "—"} карточек</span>
+          <span style={{ fontSize: 12, fontWeight: 600, color: "var(--green-800)" }}>Открыть →</span>
+        </div>
       </div>
     </div>
   );
@@ -352,7 +371,7 @@ export const StudentDashboard = ({ name = "Аня", quizzes = [], cardSets = [],
 
   function applyFilters(items) {
     return items.filter(item => {
-      if (gradeFilter && item.grade !== gradeFilter) return false;
+      if (gradeFilter && !(item.grade || "").split(", ").includes(gradeFilter)) return false;
       if (examFilter && item.category !== examFilter) return false;
       if (partFilter && item.part !== partFilter) return false;
       if (sectionFilter && item.section !== sectionFilter) return false;

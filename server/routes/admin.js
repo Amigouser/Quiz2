@@ -346,6 +346,10 @@ router.delete("/results/:id", (req, res) => {
 });
 
 router.delete("/results", (req, res) => {
+  const { confirm } = req.body;
+  if (confirm !== "DELETE_ALL") {
+    return res.status(400).json({ error: 'Отправьте { "confirm": "DELETE_ALL" } для подтверждения' });
+  }
   run("DELETE FROM attempts");
   res.json({ ok: true });
 });
@@ -371,7 +375,9 @@ router.post("/restore", (req, res) => {
   try { db.close(); } catch (_) {}
   fs.writeFileSync(DB_PATH, buffer);
   res.json({ ok: true });
-  setTimeout(() => process.exit(0), 300);
+  setTimeout(() => {
+    process.kill(process.pid, "SIGTERM");
+  }, 300);
 });
 
 // ── Разделы ───────────────────────────────────────────────────────────────────

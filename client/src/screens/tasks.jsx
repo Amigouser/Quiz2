@@ -135,12 +135,24 @@ const btnGhost = {
 
 // ── Встроенный просмотр карточек ──────────────────────────────────────────────
 function GuestCards({ set, onFinish, onClose }) {
+  const [cards, setCards] = useState(() => [...set.cards]);
   const [step, setStep] = useState(0);
   const [flipped, setFlipped] = useState(false);
   const [done, setDone] = useState(false);
 
-  const card = set.cards[step];
-  const total = set.cards.length;
+  const card = cards[step];
+  const total = cards.length;
+
+  function shuffleCards() {
+    const arr = [...cards];
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    setCards(arr);
+    setStep(0);
+    setFlipped(false);
+  }
 
   function next() {
     if (step + 1 >= total) {
@@ -176,7 +188,16 @@ function GuestCards({ set, onFinish, onClose }) {
       <div className="quiz-modal-panel" style={{ ...panelStyle, maxWidth: 520 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
           <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", fontSize: 22 }}>✕</button>
-          <div style={{ fontSize: 13, color: "var(--text-muted)" }}>{step + 1} / {total}</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <button
+              onClick={shuffleCards}
+              style={{ background: "none", border: "none", cursor: "pointer", color: "var(--green-800)", fontSize: 13, fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}
+              title="Перемешать карточки"
+            >
+              🔀
+            </button>
+            <div style={{ fontSize: 13, color: "var(--text-muted)" }}>{step + 1} / {total}</div>
+          </div>
           <div style={{ fontSize: 13, color: "var(--green-800)", fontWeight: 600 }}>{set.topic || "Карточки"}</div>
         </div>
 
@@ -204,9 +225,16 @@ function GuestCards({ set, onFinish, onClose }) {
             textAlign: "center", marginBottom: 20,
             transition: "background 0.3s",
             userSelect: "none",
+            overflow: "hidden",
           }}
         >
-          <div style={{ fontSize: 11, color: "var(--text-muted)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 12 }}>
+          {card.image_data && (
+            <img src={card.image_data} alt="" style={{
+              maxWidth: "100%", maxHeight: 140, borderRadius: 10,
+              objectFit: "contain", marginBottom: 16,
+            }} />
+          )}
+          <div style={{ fontSize: 11, color: "var(--text-muted)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: card.image_data ? 8 : 12 }}>
             {flipped ? "Определение" : "Термин"}
           </div>
           <div style={{ fontFamily: "var(--f-serif)", fontSize: 22, lineHeight: 1.4, color: flipped ? "var(--green-900)" : "var(--text)" }}>

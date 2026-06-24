@@ -178,7 +178,8 @@ function DashboardPage() {
   const [cardSets, setCardSets] = useState([]);
 
   useEffect(() => {
-    API.getTests().then((data) => {
+    API.getTests().then((response) => {
+      const data = response.data || response;
       setQuizzes(
         data.map((q) => ({
           id: q.id,

@@ -28,7 +28,7 @@ studentRouter.get("/flashcard-sets/public", (req, res) => {
 
 // ── Public: get one set with cards (no auth) ─────────────────────────────────
 studentRouter.get("/flashcard-sets/public/:id", (req, res) => {
-  const set = get("SELECT * FROM flashcard_sets WHERE id = ? AND is_active = 1", req.params.id);
+  const set = get("SELECT id, title, topic, description, category, grade, section, part, line, source, is_active, created_at FROM flashcard_sets WHERE id = ? AND is_active = 1", req.params.id);
   if (!set) return res.status(404).json({ error: "Набор не найден" });
   const cards = all("SELECT * FROM flashcard_cards WHERE set_id = ? ORDER BY order_index", set.id);
   res.json({ ...set, cards });
@@ -41,7 +41,8 @@ studentRouter.get("/flashcard-sets", requireAuth, (req, res) => {
     SELECT s.id, s.title, s.topic, s.description,
            s.category, s.grade, s.section, s.part, s.line, s.source,
            COUNT(c.id) AS cards_count,
-           CASE WHEN fsa.id IS NOT NULL THEN 1 ELSE 0 END AS is_assigned
+           CASE WHEN fsa.id IS NOT NULL THEN 1 ELSE 0 END AS is_assigned,
+           (SELECT c2.image_data FROM flashcard_cards c2 WHERE c2.set_id = s.id AND c2.image_data IS NOT NULL LIMIT 1) AS preview_image
     FROM flashcard_sets s
     LEFT JOIN flashcard_cards c ON c.set_id = s.id
     LEFT JOIN flashcard_set_assignments fsa ON fsa.set_id = s.id AND fsa.user_id = ?
@@ -101,8 +102,8 @@ adminRouter.post("/flashcard-sets", requireAuth, requireAdmin, (req, res) => {
     ).lastInsertRowid;
     cards.forEach((c, i) => {
       run(
-        "INSERT INTO flashcard_cards (set_id, term, definition, order_index) VALUES (?, ?, ?, ?)",
-        setId, c.term, c.definition, i
+        "INSERT INTO flashcard_cards (set_id, term, definition, image_data, order_index) VALUES (?, ?, ?, ?, ?)",
+        setId, c.term, c.definition, c.image_data || null, i
       );
     });
     db.exec("COMMIT");
@@ -128,8 +129,8 @@ adminRouter.put("/flashcard-sets/:id", requireAuth, requireAdmin, (req, res) => 
       run("DELETE FROM flashcard_cards WHERE set_id = ?", id);
       cards.forEach((c, i) => {
         run(
-          "INSERT INTO flashcard_cards (set_id, term, definition, order_index) VALUES (?, ?, ?, ?)",
-          id, c.term, c.definition, i
+          "INSERT INTO flashcard_cards (set_id, term, definition, image_data, order_index) VALUES (?, ?, ?, ?, ?)",
+          id, c.term, c.definition, c.image_data || null, i
         );
       });
     }

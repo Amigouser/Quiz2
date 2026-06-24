@@ -10,7 +10,8 @@ router.post("/login", (req, res) => {
   // Специальный вход для администратора
   if (trimmed.toLowerCase() === "admin") {
     const { password } = req.body;
-    if (!password || password !== "VikaSasha") {
+    const adminPassword = process.env.ADMIN_PASSWORD || "changeme";
+    if (!password || password !== adminPassword) {
       return res.status(403).json({ error: "Неверный пароль" });
     }
     const admin = get("SELECT * FROM users WHERE is_admin = 1");

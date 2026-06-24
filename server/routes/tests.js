@@ -43,7 +43,6 @@ router.get("/tests/public/:id", (req, res) => {
     topic: test.topic,
     questions: questions.map((q) => {
       const answers = all("SELECT * FROM answers WHERE question_id = ? ORDER BY order_index", q.id);
-      const correctIndex = answers.findIndex((a) => a.is_correct === 1);
       return {
         id: q.id,
         text: q.question_text,
@@ -51,10 +50,9 @@ router.get("/tests/public/:id", (req, res) => {
         explanation: q.explanation,
         question_type: q.question_type || "single",
         image_data: q.image_data || null,
-        correct_text: q.correct_text || null,
+        correct_text: null,
         match_options: q.match_options ? JSON.parse(q.match_options) : ["1", "2"],
-        correct_index: correctIndex,
-        answers: answers.map((a) => ({ id: a.id, text: a.answer_text, match_value: a.match_value || null, is_correct: a.is_correct })),
+        answers: answers.map((a) => ({ id: a.id, text: a.answer_text, match_value: a.match_value || null })),
       };
     }),
   });
@@ -62,6 +60,16 @@ router.get("/tests/public/:id", (req, res) => {
 
 router.get("/tests", requireAuth, (req, res) => {
   const userId = req.session.user.id;
+  const page = Math.max(1, parseInt(req.query.page) || 1);
+  const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 50));
+  const offset = (page - 1) * limit;
+
+  const total = get(`
+    SELECT COUNT(DISTINCT t.id) as c
+    FROM tests t
+    LEFT JOIN test_assignments ta ON ta.test_id = t.id AND ta.user_id = ?
+    WHERE t.is_active = 1 AND t.is_draft = 0
+  `, userId).c;
 
   const tests = all(`
     SELECT t.id, t.title, t.topic, t.description,
@@ -74,7 +82,8 @@ router.get("/tests", requireAuth, (req, res) => {
     WHERE t.is_active = 1 AND t.is_draft = 0
     GROUP BY t.id
     ORDER BY ta.assigned_at DESC, t.created_at DESC
-  `, userId);
+    LIMIT ? OFFSET ?
+  `, userId, limit, offset);
 
   const attempts = all(
     "SELECT test_id, score, max_score FROM attempts WHERE user_id = ? ORDER BY completed_at DESC",
@@ -109,7 +118,15 @@ router.get("/tests", requireAuth, (req, res) => {
     };
   });
 
-  res.json(result);
+  res.json({
+    data: result,
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+    },
+  });
 });
 
 router.get("/tests/:id", requireAuth, (req, res) => {

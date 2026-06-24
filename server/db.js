@@ -127,6 +127,7 @@ try { db.exec("ALTER TABLE flashcard_sets ADD COLUMN part TEXT"); } catch (_) {}
 try { db.exec("ALTER TABLE flashcard_sets ADD COLUMN line TEXT"); } catch (_) {}
 try { db.exec("ALTER TABLE flashcard_sets ADD COLUMN source TEXT"); } catch (_) {}
 try { db.exec("ALTER TABLE flashcard_sets ADD COLUMN section TEXT"); } catch (_) {}
+try { db.exec("ALTER TABLE flashcard_cards ADD COLUMN image_data TEXT"); } catch (_) {}
 // Таблицы разделов и тем
 db.exec(`
   CREATE TABLE IF NOT EXISTS sections (
@@ -145,15 +146,9 @@ db.exec(`
 (function seedSections() {
   const existing = db.prepare("SELECT COUNT(*) as c FROM sections").get();
   if (existing.c > 0) return;
-  const names = [
-    "Биология как наука. Методы. Уровни организации",
-    "Строение клетки", "Биохимия клетки", "Метаболизм клетки",
-    "Клеточный цикл", "Размножение и развитие", "Прокариоты и вирусы",
-    "Грибы и лишайники", "Растения", "Животные", "Человек",
-    "Эволюция", "Экология", "Генетика",
-  ];
+  const { BIO_SECTIONS } = require("../shared/constants");
   const ins = db.prepare("INSERT OR IGNORE INTO sections (name) VALUES (?)");
-  for (const n of names) ins.run(n);
+  for (const name of BIO_SECTIONS) ins.run(name);
 })();
 
 try { db.exec("ALTER TABLE questions ADD COLUMN image_data TEXT"); } catch (_) {}
