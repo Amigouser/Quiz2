@@ -40,7 +40,8 @@ app.use(
   })
 );
 
-app.use("/api/auth", loginLimiter, require("./routes/auth"));
+app.use("/api/auth/login", loginLimiter);
+app.use("/api/auth", require("./routes/auth"));
 app.use("/api", require("./routes/tests"));
 app.use("/api", require("./routes/plant"));
 app.use("/api/upload", require("./routes/upload"));
