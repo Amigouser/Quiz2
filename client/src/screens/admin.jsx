@@ -294,7 +294,7 @@ const AdminSidebar = ({ active, onTab }) => {
   const handleRestore = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    if (!window.confirm("Восстановить базу из бэкапа? Текущие данные будут заменены. Сервер перезапустится автоматически.")) {
+    if (!window.confirm("Восстановить из бэкапа? Текущие данные будут заменены. Сервер перезапустится автоматически.")) {
       e.target.value = "";
       return;
     }
@@ -304,7 +304,7 @@ const AdminSidebar = ({ active, onTab }) => {
       const base64 = ev.target.result.split(",")[1];
       try {
         await API.admin.restore(base64);
-        alert("База восстановлена! Перезагрузите страницу через 3–5 секунд.");
+        alert("Восстановлено! Перезагрузите страницу через 3–5 секунд.");
       } catch (err) {
         alert("Ошибка: " + err.message);
         setRestoring(false);
@@ -351,7 +351,7 @@ const AdminSidebar = ({ active, onTab }) => {
             <div className="btn btn-ghost btn-sm" style={{ width: "100%", justifyContent: "flex-start", gap: 8, opacity: restoring ? 0.5 : 1 }}>
               📤 {restoring ? "Восстановление…" : "Восстановить"}
             </div>
-            <input ref={fileRef} type="file" accept=".db" style={{ display: "none" }} onChange={handleRestore} disabled={restoring} />
+            <input ref={fileRef} type="file" accept=".db,.zip" style={{ display: "none" }} onChange={handleRestore} disabled={restoring} />
           </label>
         </div>
         <button
@@ -635,11 +635,32 @@ function pasteImage(e, onLoad) {
       const file = item.getAsFile();
       if (!file) return;
       const reader = new FileReader();
-      reader.onload = ev => onLoad(ev.target.result);
+      reader.onload = async (ev) => {
+        try {
+          const result = await API.uploadImage(ev.target.result, "questions");
+          onLoad(result.url);
+        } catch (err) {
+          alert("Ошибка загрузки: " + err.message);
+        }
+      };
       reader.readAsDataURL(file);
       return;
     }
   }
+}
+
+async function uploadFileToServer(file, folder, onLoad) {
+  if (file.size > 20 * 1024 * 1024) { alert("Файл слишком большой (макс. 20 МБ)"); return; }
+  const reader = new FileReader();
+  reader.onload = async (ev) => {
+    try {
+      const result = await API.uploadImage(ev.target.result, folder);
+      onLoad(result.url);
+    } catch (err) {
+      alert("Ошибка загрузки: " + err.message);
+    }
+  };
+  reader.readAsDataURL(file);
 }
 
 const EMPTY_QUESTION = () => ({
@@ -886,10 +907,8 @@ const AdminCreateTest = ({ onCreated, autoImport = false }) => {
                         onBlur={e => e.currentTarget.style.borderColor = "var(--border)"}>
                         <input type="file" accept="image/*" style={{ display: "none" }} onChange={e => {
                           const file = e.target.files[0]; if (!file) return;
-                          if (file.size > 20 * 1024 * 1024) { alert("Файл слишком большой (макс. 20 МБ)"); return; }
-                          const reader = new FileReader();
-                          reader.onload = ev => updateQ(qi, "image_data", ev.target.result);
-                          reader.readAsDataURL(file); e.target.value = "";
+                          uploadFileToServer(file, "questions", url => updateQ(qi, "image_data", url));
+                          e.target.value = "";
                         }} />
                         📎 Файл или <kbd style={{ padding: "1px 5px", borderRadius: 4, border: "1px solid var(--border)", fontSize: 11, fontFamily: "monospace", background: "var(--bg-muted)" }}>Ctrl+V</kbd> для вставки
                       </label>
@@ -1337,10 +1356,8 @@ const AdminEditTest = ({ testId, onSaved }) => {
                         onBlur={e => e.currentTarget.style.borderColor = "var(--border)"}>
                         <input type="file" accept="image/*" style={{ display: "none" }} onChange={e => {
                           const file = e.target.files[0]; if (!file) return;
-                          if (file.size > 20 * 1024 * 1024) { alert("Файл слишком большой (макс. 20 МБ)"); return; }
-                          const reader = new FileReader();
-                          reader.onload = ev => updateQ(qi, "image_data", ev.target.result);
-                          reader.readAsDataURL(file); e.target.value = "";
+                          uploadFileToServer(file, "questions", url => updateQ(qi, "image_data", url));
+                          e.target.value = "";
                         }} />
                         📎 Файл или <kbd style={{ padding: "1px 5px", borderRadius: 4, border: "1px solid var(--border)", fontSize: 11, fontFamily: "monospace", background: "var(--bg-muted)" }}>Ctrl+V</kbd> для вставки
                       </label>
@@ -2305,30 +2322,14 @@ const AdminEditCardSet = ({ editId, onSaved, autoImport = false }) => {
                   </div>
                 ) : (
                   <label
-                    onPaste={e => {
-                      const items = e.clipboardData?.items;
-                      if (!items) return;
-                      for (const item of items) {
-                        if (item.type.startsWith("image/")) {
-                          e.preventDefault();
-                          const file = item.getAsFile();
-                          if (!file) return;
-                          const reader = new FileReader();
-                          reader.onload = ev => updateCard(i, "image_data", ev.target.result);
-                          reader.readAsDataURL(file);
-                          return;
-                        }
-                      }
-                    }}
+                    onPaste={e => pasteImage(e, url => updateCard(i, "image_data", url))}
                     style={{ display: "inline-flex", alignItems: "center", gap: 6, cursor: "pointer", padding: "4px 10px", border: "1px dashed var(--border)", borderRadius: 6, fontSize: 12, color: "var(--text-muted)" }}
                   >
-                    <input type="file" accept="image/*" style={{ display: "none" }} onChange={e => {
-                      const file = e.target.files[0]; if (!file) return;
-                      if (file.size > 20 * 1024 * 1024) { alert("Макс. 20 МБ"); return; }
-                      const reader = new FileReader();
-                      reader.onload = ev => updateCard(i, "image_data", ev.target.result);
-                      reader.readAsDataURL(file); e.target.value = "";
-                    }} />
+                        <input type="file" accept="image/*" style={{ display: "none" }} onChange={e => {
+                          const file = e.target.files[0]; if (!file) return;
+                          uploadFileToServer(file, "flashcards", url => updateCard(i, "image_data", url));
+                          e.target.value = "";
+                        }} />
                     📎 Фото
                   </label>
                 )}

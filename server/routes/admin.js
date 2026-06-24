@@ -1,6 +1,7 @@
 const router = require("express").Router();
 const fs = require("fs");
 const path = require("path");
+const archiver = require("archiver");
 const { db, run, get, all } = require("../db");
 const DB_PATH = path.join(__dirname, "../../data/biology.db");
 
@@ -359,25 +360,60 @@ router.delete("/results", (req, res) => {
 router.get("/backup", (req, res) => {
   try { db.exec("PRAGMA wal_checkpoint(TRUNCATE)"); } catch (_) {}
   const date = new Date().toISOString().slice(0, 10);
-  res.setHeader("Content-Disposition", `attachment; filename="biology-backup-${date}.db"`);
-  res.setHeader("Content-Type", "application/octet-stream");
-  fs.createReadStream(DB_PATH).pipe(res);
+  res.setHeader("Content-Disposition", `attachment; filename="biology-backup-${date}.zip"`);
+  res.setHeader("Content-Type", "application/zip");
+
+  const archive = archiver("zip", { zlib: { level: 6 } });
+  archive.on("error", (err) => {
+    console.error("Backup archive error:", err);
+    if (!res.headersSent) res.status(500).json({ error: err.message });
+  });
+  archive.pipe(res);
+
+  if (fs.existsSync(DB_PATH)) {
+    archive.file(DB_PATH, { name: "biology.db" });
+  }
+
+  const uploadsDir = path.join(__dirname, "..", "..", "data", "uploads");
+  if (fs.existsSync(uploadsDir)) {
+    archive.directory(uploadsDir, "uploads");
+  }
+
+  archive.finalize();
 });
+
+const unzipper = require("unzipper");
 
 router.post("/restore", (req, res) => {
   const { data } = req.body;
   if (!data) return res.status(400).json({ error: "Нет данных" });
   const buffer = Buffer.from(data, "base64");
   if (buffer.length < 100) return res.status(400).json({ error: "Файл повреждён" });
-  try {
-    fs.copyFileSync(DB_PATH, DB_PATH + ".bak");
-  } catch (_) {}
+
   try { db.close(); } catch (_) {}
-  fs.writeFileSync(DB_PATH, buffer);
-  res.json({ ok: true });
-  setTimeout(() => {
-    process.kill(process.pid, "SIGTERM");
-  }, 300);
+  try { fs.copyFileSync(DB_PATH, DB_PATH + ".bak"); } catch (_) {}
+
+  const uploadsDir = path.join(__dirname, "..", "..", "data", "uploads");
+
+  if (buffer[0] === 0x50 && buffer[1] === 0x4B) {
+    const tmpZip = DB_PATH + ".tmp.zip";
+    fs.writeFileSync(tmpZip, buffer);
+    fs.createReadStream(tmpZip)
+      .pipe(unzipper.Extract({ path: path.join(__dirname, "..", "..", "data") }))
+      .on("close", () => {
+        try { fs.unlinkSync(tmpZip); } catch (_) {}
+        res.json({ ok: true });
+        setTimeout(() => { process.kill(process.pid, "SIGTERM"); }, 300);
+      })
+      .on("error", (err) => {
+        try { fs.unlinkSync(tmpZip); } catch (_) {}
+        res.status(500).json({ error: "Ошибка распаковки: " + err.message });
+      });
+  } else {
+    fs.writeFileSync(DB_PATH, buffer);
+    res.json({ ok: true });
+    setTimeout(() => { process.kill(process.pid, "SIGTERM"); }, 300);
+  }
 });
 
 // ── Разделы ───────────────────────────────────────────────────────────────────

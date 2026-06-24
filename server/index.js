@@ -42,10 +42,14 @@ app.use(
 app.use("/api/auth", loginLimiter, require("./routes/auth"));
 app.use("/api", require("./routes/tests"));
 app.use("/api", require("./routes/plant"));
+app.use("/api/upload", require("./routes/upload"));
 app.use("/api/admin", require("./routes/admin"));
 const flashcards = require("./routes/flashcards");
 app.use("/api", flashcards.student);
 app.use("/api/admin", flashcards.admin);
+
+const uploadsDir = path.join(__dirname, "..", "data", "uploads");
+app.use("/uploads", express.static(uploadsDir));
 
 app.get("/api/health", (_req, res) => res.json({ ok: true }));
 

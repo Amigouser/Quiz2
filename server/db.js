@@ -257,4 +257,38 @@ function seed() {
 
 seed();
 
+// ── Миграция base64 → файлы на диске ────────────────────────────────────────
+(function migrateBase64ToFiles() {
+  const fs = require("fs");
+  const crypto = require("crypto");
+  const uploadsDir = path.join(__dirname, "..", "data", "uploads");
+  fs.mkdirSync(path.join(uploadsDir, "questions"), { recursive: true });
+  fs.mkdirSync(path.join(uploadsDir, "flashcards"), { recursive: true });
+
+  const flagFile = path.join(__dirname, "..", "data", ".base64_migrated");
+  if (fs.existsSync(flagFile)) return;
+
+  function migrateTable(table, subfolder) {
+    const rows = all(`SELECT id, image_data FROM ${table} WHERE image_data LIKE 'data:image%'`);
+    let count = 0;
+    for (const row of rows) {
+      const match = row.image_data.match(/^data:image\/(\w+);base64,(.+)$/);
+      if (!match) continue;
+      const ext = match[1] === "jpeg" ? "jpg" : match[1];
+      const buffer = Buffer.from(match[2], "base64");
+      const filename = `${crypto.randomUUID()}.${ext}`;
+      const dir = path.join(uploadsDir, subfolder);
+      fs.writeFileSync(path.join(dir, filename), buffer);
+      run(`UPDATE ${table} SET image_data = ? WHERE id = ?`, `/uploads/${subfolder}/${filename}`, row.id);
+      count++;
+    }
+    if (count > 0) console.log(`Migrated ${count} images from ${table}`);
+  }
+
+  migrateTable("questions", "questions");
+  migrateTable("flashcard_cards", "flashcards");
+
+  fs.writeFileSync(flagFile, new Date().toISOString());
+})();
+
 module.exports = { db, run, get, all };

@@ -32,6 +32,8 @@ const API = {
   collectPlant: () => req("/api/plant/collect", { method: "POST" }),
   resetPlantWatering: () => req("/api/plant/reset-watering", { method: "POST" }),
 
+  uploadImage: (base64, folder) => req("/api/upload", { method: "POST", body: { data: base64, folder } }),
+
   getCardSets: () => req("/api/flashcard-sets"),
   getCardSet: (id) => req(`/api/flashcard-sets/${id}`),
 
