@@ -426,7 +426,7 @@ export const QuizClassic = ({ quiz, onFinish, onExit }) => {
           </div>
         )}
 
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 40 }}>
+        <div className="quiz-bottom" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 40 }}>
           <span style={{ fontSize: 13, color: "var(--text-muted)" }}>
             {locked ? "Продолжай — следующий вопрос готов"
               : qType === "matching" ? "Выбери соответствие для каждой строки"
@@ -436,7 +436,7 @@ export const QuizClassic = ({ quiz, onFinish, onExit }) => {
               : qType === "text_input" ? "Введи ответ и нажми Проверить"
               : "Выбери один ответ"}
           </span>
-          <button className="btn btn-primary btn-lg" onClick={next} disabled={!locked} style={{ opacity: locked ? 1 : 0.4 }}>
+          <button className="btn btn-primary btn-lg" onClick={next} disabled={!locked} style={{ opacity: locked ? 1 : 0.4, flexShrink: 0 }}>
             {isLast ? "Посмотреть результат" : "Следующий вопрос"}
             <ArrowIcon />
           </button>
