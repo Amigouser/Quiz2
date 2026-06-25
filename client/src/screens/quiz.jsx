@@ -50,7 +50,11 @@ export const QuizClassic = ({ quiz, onFinish, onExit }) => {
 
   const lockTextInput = () => {
     if (locked || !typedText.trim()) return;
-    const correct = typedText.trim().toLowerCase() === (q.correct_text || "").trim().toLowerCase();
+    let accepted = [];
+    try { const parsed = JSON.parse(q.correct_text || "[]"); if (Array.isArray(parsed)) accepted = parsed.map(s => String(s).trim().toLowerCase()); } catch (_) {}
+    if (accepted.length === 0 && q.correct_text) accepted = [q.correct_text.trim().toLowerCase()];
+    const given = typedText.trim().toLowerCase();
+    const correct = accepted.length > 0 && accepted.includes(given);
     setLocked(true);
     setAnswers(a => [...a, { typed: typedText, correct }]);
     if (correct) setTimeout(() => setBurst(true), 120);
@@ -194,11 +198,17 @@ export const QuizClassic = ({ quiz, onFinish, onExit }) => {
                 </button>
               )}
             </div>
-            {locked && (
-              <div style={{ marginTop: 14, fontSize: 14, color: isCurrentCorrect ? "var(--correct)" : "var(--wrong)", fontWeight: 600 }}>
-                {isCurrentCorrect ? "🌱 Верно!" : `🍂 Верный ответ: ${q.correct_text}`}
-              </div>
-            )}
+            {locked && (() => {
+              let accepted = [];
+              try { const parsed = JSON.parse(q.correct_text || "[]"); if (Array.isArray(parsed)) accepted = parsed.map(s => String(s).trim()); } catch (_) {}
+              if (accepted.length === 0 && q.correct_text) accepted = [q.correct_text.trim()];
+              const displayText = accepted.length > 1 ? accepted.join(" / ") : accepted[0] || "";
+              return (
+                <div style={{ marginTop: 14, fontSize: 14, color: isCurrentCorrect ? "var(--correct)" : "var(--wrong)", fontWeight: 600 }}>
+                  {isCurrentCorrect ? "🌱 Верно!" : `🍂 Верный ответ: ${displayText}`}
+                </div>
+              );
+            })()}
           </div>
         )}
 

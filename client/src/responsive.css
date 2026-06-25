@@ -102,8 +102,8 @@
   .fc-topbar  { padding: 14px 16px !important; }
   .fc-area    { padding: 24px 16px 0 !important; }
   .fc-card-wrap { max-width: 100% !important; }
-  .fc-card    { height: auto !important; min-height: 200px !important; }
-  .fc-card > div { padding: 24px 20px !important; }
+  .fc-card    { height: auto !important; min-height: 200px !important; max-height: 55vh !important; }
+  .fc-card > div { padding: 24px 20px !important; overflow-y: auto !important; }
   .fc-actions { gap: 10px !important; flex-wrap: wrap !important; }
   .fc-actions button { flex: 1 !important; min-width: 120px !important; }
   .fc-nav     { margin-top: 16px !important; flex-wrap: wrap !important; justify-content: center !important; }
@@ -167,8 +167,10 @@
 /* ── Very small: < 400px ─────────────────────────────────────────── */
 @media (max-width: 400px) {
   .dash-stats  { grid-template-columns: 1fr !important; }
-  .fc-card     { min-height: 160px !important; }
-  .fc-card > div { padding: 20px 16px !important; }
+  .fc-card     { min-height: 160px !important; max-height: 50vh !important; }
+  .fc-card > div { padding: 20px 16px !important; overflow-y: auto !important; }
+  .fc-card .fc-term { font-size: 20px !important; }
+  .fc-card .fc-def  { font-size: 17px !important; }
 
   /* Login 8-digit code — shrink inputs to fit narrow screens */
   .login-digits { gap: 4px !important; }

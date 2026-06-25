@@ -208,7 +208,8 @@ export default function FlashcardsRoute() {
             transformStyle: "preserve-3d",
             transition: "transform 0.45s cubic-bezier(0.4, 0, 0.2, 1)",
             transform: flipped ? "rotateY(180deg)" : "rotateY(0deg)",
-            height: 280,
+            minHeight: 280,
+            maxHeight: "60vh",
           }}>
             {/* Front — Term */}
             <div style={{
@@ -221,22 +222,23 @@ export default function FlashcardsRoute() {
               boxShadow: "0 12px 48px rgba(0,0,0,0.07)",
               display: "flex", flexDirection: "column",
               alignItems: "center", justifyContent: "center",
-              padding: "40px 56px",
-              overflow: "hidden",
+              padding: "32px 28px",
+              overflowY: "auto",
+              overflowX: "hidden",
             }}>
               {card.image_data && (
                 <img src={card.image_data} alt="" style={{
-                  maxWidth: "100%", maxHeight: 140, borderRadius: 10,
-                  objectFit: "contain", marginBottom: 16,
+                  maxWidth: "100%", maxHeight: 120, borderRadius: 10,
+                  objectFit: "contain", marginBottom: 12, flexShrink: 0,
                 }} />
               )}
-              <div style={{ fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: card.image_data ? 12 : 20, fontWeight: 600 }}>
+              <div style={{ fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: card.image_data ? 10 : 16, fontWeight: 600, flexShrink: 0 }}>
                 Термин
               </div>
-              <div style={{ fontFamily: "var(--f-serif)", fontSize: 30, fontWeight: 500, textAlign: "center", lineHeight: 1.3 }}>
+              <div className="fc-term" style={{ fontFamily: "var(--f-serif)", fontSize: 24, fontWeight: 500, textAlign: "center", lineHeight: 1.35 }}>
                 {card.term}
               </div>
-              <div style={{ marginTop: 28, fontSize: 12, color: "var(--text-muted)" }}>
+              <div style={{ marginTop: 20, fontSize: 11, color: "var(--text-muted)", flexShrink: 0 }}>
                 Пробел или клик · перевернуть
               </div>
             </div>
@@ -253,19 +255,20 @@ export default function FlashcardsRoute() {
               boxShadow: "0 12px 48px rgba(0,0,0,0.07)",
               display: "flex", flexDirection: "column",
               alignItems: "center", justifyContent: "center",
-              padding: "40px 56px",
-              overflow: "hidden",
+              padding: "32px 28px",
+              overflowY: "auto",
+              overflowX: "hidden",
             }}>
               {card.image_data && (
                 <img src={card.image_data} alt="" style={{
-                  maxWidth: "100%", maxHeight: 120, borderRadius: 10,
-                  objectFit: "contain", marginBottom: 16,
+                  maxWidth: "100%", maxHeight: 100, borderRadius: 10,
+                  objectFit: "contain", marginBottom: 12, flexShrink: 0,
                 }} />
               )}
-              <div style={{ fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--green-800)", marginBottom: card.image_data ? 12 : 20, fontWeight: 600, opacity: 0.7 }}>
+              <div style={{ fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--green-800)", marginBottom: card.image_data ? 10 : 16, fontWeight: 600, opacity: 0.7, flexShrink: 0 }}>
                 Определение
               </div>
-              <div style={{ fontFamily: "var(--f-serif)", fontSize: 22, fontWeight: 400, textAlign: "center", lineHeight: 1.55 }}>
+              <div className="fc-def" style={{ fontFamily: "var(--f-serif)", fontSize: 20, fontWeight: 400, textAlign: "center", lineHeight: 1.55 }}>
                 {card.definition}
               </div>
             </div>

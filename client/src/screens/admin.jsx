@@ -702,23 +702,31 @@ const AdminCreateTest = ({ onCreated, autoImport = false }) => {
     if (data.topic) setTopic(data.topic);
     if (data.description) setDescription(data.description);
     if (Array.isArray(data.questions) && data.questions.length > 0) {
-      setQuestions(data.questions.map(q => ({
-        id: Date.now() + Math.random(),
-        text: q.text || q.question_text || "",
-        hint: q.hint || "",
-        explanation: q.explanation || "",
-        question_type: q.question_type || "single",
-        image_data: q.image_data || null,
-        correct_text: q.correct_text || "",
-        match_options: q.match_options || ["1", "2"],
-        expand: true,
-        answers: (q.answers || []).map((a, i) => ({
-          id: Date.now() + Math.random() + i,
-          text: a.text || a.answer_text || "",
-          is_correct: !!(a.is_correct),
-          match_value: a.match_value || "",
-        })),
-      })));
+      setQuestions(data.questions.map(q => {
+        let textAnswers = undefined;
+        if ((q.question_type || "single") === "text_input" && q.correct_text) {
+          try { const parsed = JSON.parse(q.correct_text); if (Array.isArray(parsed)) textAnswers = parsed.map(String); } catch (_) {}
+          if (!textAnswers) textAnswers = [q.correct_text];
+        }
+        return {
+          id: Date.now() + Math.random(),
+          text: q.text || q.question_text || "",
+          hint: q.hint || "",
+          explanation: q.explanation || "",
+          question_type: q.question_type || "single",
+          image_data: q.image_data || null,
+          correct_text: q.correct_text || "",
+          text_answers: textAnswers,
+          match_options: q.match_options || ["1", "2"],
+          expand: true,
+          answers: (q.answers || []).map((a, i) => ({
+            id: Date.now() + Math.random() + i,
+            text: a.text || a.answer_text || "",
+            is_correct: !!(a.is_correct),
+            match_value: a.match_value || "",
+          })),
+        };
+      }));
     }
     setShowImport(false);
   };
@@ -772,16 +780,26 @@ const AdminCreateTest = ({ onCreated, autoImport = false }) => {
         line: line.trim() || null,
         source: source.trim() || null,
         is_draft: draft ? 1 : 0,
-        questions: questions.map(q => ({
+        questions: questions.map(q => {
+          let correctText = null;
+          if (q.question_type === "text_input") {
+            const ta = (q.text_answers || []).filter(t => t && t.trim());
+            if (ta.length > 1) correctText = JSON.stringify(ta.map(t => t.trim()));
+            else if (ta.length === 1) correctText = ta[0].trim();
+          } else {
+            correctText = q.correct_text?.trim() || null;
+          }
+          return {
           text: q.text.trim(),
           hint: q.hint.trim() || null,
           explanation: q.explanation.trim() || null,
           question_type: q.question_type || "single",
           image_data: q.image_data || null,
-          correct_text: q.correct_text?.trim() || null,
+          correct_text: correctText,
           match_options: q.match_options || ["1", "2"],
           answers: q.answers.map(a => ({ text: a.text.trim(), is_correct: a.is_correct ? 1 : 0, match_value: a.match_value || null })),
-        })),
+        };
+        }),
       });
       onCreated?.();
     } catch (e) {
@@ -963,11 +981,38 @@ const AdminCreateTest = ({ onCreated, autoImport = false }) => {
                   )}
                   {/* Text input */}
                   {q.question_type === "text_input" && (
-                    <div className="field">
-                      <label>Правильный ответ (число или слово)</label>
-                      <input className="input" value={q.correct_text} onChange={e => updateQ(qi, "correct_text", e.target.value)}
-                        placeholder="Например: 2" style={{ maxWidth: 200 }} />
-                      <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 4 }}>Ученик введёт этот ответ в текстовое поле</div>
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-soft)", marginBottom: 10 }}>
+                        Правильные ответы · ученик введёт один из них
+                      </div>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                        {(q.text_answers || [q.correct_text || ""]).map((ans, ai) => (
+                          <div key={ai} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                            <span style={{ fontSize: 13, color: "var(--text-muted)", minWidth: 20, fontWeight: 600 }}>{ai + 1}.</span>
+                            <input className="input" value={ans}
+                              onChange={e => {
+                                const arr = [...(q.text_answers || [q.correct_text || ""])];
+                                arr[ai] = e.target.value;
+                                updateQ(qi, "text_answers", arr);
+                              }}
+                              placeholder={ai === 0 ? "Например: 2" : `Вариант ${ai + 1}`}
+                              style={{ flex: 1 }} />
+                            {(q.text_answers || []).length > 1 && (
+                              <button className="btn btn-ghost btn-sm" style={{ padding: "4px 8px" }}
+                                onClick={() => {
+                                  const arr = (q.text_answers || []).filter((_, i) => i !== ai);
+                                  updateQ(qi, "text_answers", arr);
+                                }}>✕</button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                      <button className="btn btn-ghost btn-sm" style={{ marginTop: 10 }}
+                        onClick={() => {
+                          const arr = q.text_answers || [q.correct_text || ""];
+                          updateQ(qi, "text_answers", [...arr, ""]);
+                        }}>+ Добавить вариант ответа</button>
+                      <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 4 }}>Ученик введёт ответ в текстовое поле. Все варианты считаются правильными.</div>
                     </div>
                   )}
                   {/* Multiple select */}
@@ -1184,18 +1229,26 @@ const AdminEditTest = ({ testId, onSaved }) => {
       setPart(data.part || "");
       setLine(data.line || "");
       setSource(data.source || "");
-      setQuestions(data.questions.map(q => ({
-        id: q.id,
-        text: q.question_text,
-        hint: q.hint || "",
-        explanation: q.explanation || "",
-        question_type: q.question_type || "single",
-        image_data: q.image_data || null,
-        correct_text: q.correct_text || "",
-        match_options: q.match_options || ["1", "2"],
-        expand: false,
-        answers: q.answers.map(a => ({ id: a.id, text: a.answer_text, is_correct: !!a.is_correct, match_value: a.match_value || "" })),
-      })));
+      setQuestions(data.questions.map(q => {
+        let textAnswers = undefined;
+        if ((q.question_type || "single") === "text_input" && q.correct_text) {
+          try { const parsed = JSON.parse(q.correct_text); if (Array.isArray(parsed)) textAnswers = parsed.map(String); } catch (_) {}
+          if (!textAnswers) textAnswers = [q.correct_text];
+        }
+        return {
+          id: q.id,
+          text: q.question_text,
+          hint: q.hint || "",
+          explanation: q.explanation || "",
+          question_type: q.question_type || "single",
+          image_data: q.image_data || null,
+          correct_text: q.correct_text || "",
+          text_answers: textAnswers,
+          match_options: q.match_options || ["1", "2"],
+          expand: false,
+          answers: q.answers.map(a => ({ id: a.id, text: a.answer_text, is_correct: !!a.is_correct, match_value: a.match_value || "" })),
+        };
+      }));
       setLoading(false);
     });
   }, [testId]);
@@ -1232,14 +1285,24 @@ const AdminEditTest = ({ testId, onSaved }) => {
         title: title.trim(), section: section.trim() || null, topic: topic.trim() || null,
         description: description.trim() || null, grade: grade || null, category: category || null,
         part: part.trim() || null, line: line.trim() || null, source: source.trim() || null,
-        questions: questions.map(q => ({
+        questions: questions.map(q => {
+          let correctText = null;
+          if (q.question_type === "text_input") {
+            const ta = (q.text_answers || []).filter(t => t && t.trim());
+            if (ta.length > 1) correctText = JSON.stringify(ta.map(t => t.trim()));
+            else if (ta.length === 1) correctText = ta[0].trim();
+          } else {
+            correctText = q.correct_text?.trim() || null;
+          }
+          return {
           text: q.text.trim(), hint: q.hint.trim() || null, explanation: q.explanation.trim() || null,
           question_type: q.question_type || "single",
           image_data: q.image_data || null,
-          correct_text: q.correct_text?.trim() || null,
+          correct_text: correctText,
           match_options: q.match_options || ["1", "2"],
           answers: q.answers.map(a => ({ text: a.text.trim(), is_correct: a.is_correct ? 1 : 0, match_value: a.match_value || null })),
-        })),
+        };
+        }),
       });
       onSaved?.();
     } catch (e) { setError(e.message); }
@@ -1409,11 +1472,38 @@ const AdminEditTest = ({ testId, onSaved }) => {
                   )}
                   {/* Text input */}
                   {q.question_type === "text_input" && (
-                    <div className="field">
-                      <label>Правильный ответ (число или слово)</label>
-                      <input className="input" value={q.correct_text} onChange={e => updateQ(qi, "correct_text", e.target.value)}
-                        placeholder="Например: 2" style={{ maxWidth: 200 }} />
-                      <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 4 }}>Ученик введёт этот ответ в текстовое поле</div>
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-soft)", marginBottom: 10 }}>
+                        Правильные ответы · ученик введёт один из них
+                      </div>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                        {(q.text_answers || [q.correct_text || ""]).map((ans, ai) => (
+                          <div key={ai} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                            <span style={{ fontSize: 13, color: "var(--text-muted)", minWidth: 20, fontWeight: 600 }}>{ai + 1}.</span>
+                            <input className="input" value={ans}
+                              onChange={e => {
+                                const arr = [...(q.text_answers || [q.correct_text || ""])];
+                                arr[ai] = e.target.value;
+                                updateQ(qi, "text_answers", arr);
+                              }}
+                              placeholder={ai === 0 ? "Например: 2" : `Вариант ${ai + 1}`}
+                              style={{ flex: 1 }} />
+                            {(q.text_answers || []).length > 1 && (
+                              <button className="btn btn-ghost btn-sm" style={{ padding: "4px 8px" }}
+                                onClick={() => {
+                                  const arr = (q.text_answers || []).filter((_, i) => i !== ai);
+                                  updateQ(qi, "text_answers", arr);
+                                }}>✕</button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                      <button className="btn btn-ghost btn-sm" style={{ marginTop: 10 }}
+                        onClick={() => {
+                          const arr = q.text_answers || [q.correct_text || ""];
+                          updateQ(qi, "text_answers", [...arr, ""]);
+                        }}>+ Добавить вариант ответа</button>
+                      <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 4 }}>Ученик введёт ответ в текстовое поле. Все варианты считаются правильными.</div>
                     </div>
                   )}
                   {/* Multiple select */}

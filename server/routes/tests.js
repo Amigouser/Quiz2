@@ -202,9 +202,12 @@ router.post("/attempts/:id/submit", requireAuth, (req, res) => {
       const qType = question?.question_type || "single";
 
       if (qType === "text_input") {
-        const expected = (question?.correct_text || "").trim().toLowerCase();
+        const raw = (question?.correct_text || "").trim();
+        let accepted = [];
+        try { const parsed = JSON.parse(raw); if (Array.isArray(parsed)) accepted = parsed.map(s => String(s).trim().toLowerCase()); } catch (_) {}
+        if (accepted.length === 0 && raw) accepted = [raw.toLowerCase()];
         const given = (answer_text || "").trim().toLowerCase();
-        const isCorrect = expected && given === expected ? 1 : 0;
+        const isCorrect = accepted.length > 0 && accepted.includes(given) ? 1 : 0;
         if (isCorrect) score++;
         run(
           "INSERT INTO attempt_answers (attempt_id, question_id, answer_id, answer_text, is_correct) VALUES (?, ?, ?, ?, ?)",
