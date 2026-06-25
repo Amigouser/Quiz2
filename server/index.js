@@ -55,6 +55,10 @@ app.use("/uploads", express.static(uploadsDir));
 
 app.get("/api/health", (_req, res) => res.json({ ok: true }));
 
+const clientDist = path.join(__dirname, "..", "client", "dist");
+app.use(express.static(clientDist));
+app.get(/^\/(?!api).*/, (_req, res) => res.sendFile(path.join(clientDist, "index.html")));
+
 const sessionsDir = path.join(__dirname, "..", "data", "sessions");
 function cleanupSessions() {
   try {
