@@ -47,7 +47,7 @@ router.post("/", requireAuth, (req, res) => {
   const filename = `${crypto.randomUUID()}.${ext}`;
   fs.writeFileSync(path.join(dir, filename), buffer);
 
-  const url = `/uploads/${subfolder}/${filename}`;
+  const url = `/api/uploads/${subfolder}/${filename}`;
   res.json({ url });
 });
 

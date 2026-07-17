@@ -51,6 +51,7 @@ app.use("/api/admin", flashcards.admin);
 app.use("/api", require("./routes/plant"));
 
 const uploadsDir = path.join(__dirname, "..", "data", "uploads");
+app.use("/api/uploads", express.static(uploadsDir));
 app.use("/uploads", express.static(uploadsDir));
 
 app.get("/api/health", (_req, res) => res.json({ ok: true }));

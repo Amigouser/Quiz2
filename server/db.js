@@ -279,7 +279,7 @@ seed();
       const filename = `${crypto.randomUUID()}.${ext}`;
       const dir = path.join(uploadsDir, subfolder);
       fs.writeFileSync(path.join(dir, filename), buffer);
-      run(`UPDATE ${table} SET image_data = ? WHERE id = ?`, `/uploads/${subfolder}/${filename}`, row.id);
+      run(`UPDATE ${table} SET image_data = ? WHERE id = ?`, `/api/uploads/${subfolder}/${filename}`, row.id);
       count++;
     }
     if (count > 0) console.log(`Migrated ${count} images from ${table}`);
@@ -290,5 +290,11 @@ seed();
 
   fs.writeFileSync(flagFile, new Date().toISOString());
 })();
+
+// ── Миграция /uploads/ → /api/uploads/ ──────────────────────────────────────
+try {
+  db.exec("UPDATE questions SET image_data = REPLACE(image_data, '/uploads/', '/api/uploads/') WHERE image_data LIKE '/uploads/%'");
+  db.exec("UPDATE flashcard_cards SET image_data = REPLACE(image_data, '/uploads/', '/api/uploads/') WHERE image_data LIKE '/uploads/%'");
+} catch (_) {}
 
 module.exports = { db, run, get, all };
