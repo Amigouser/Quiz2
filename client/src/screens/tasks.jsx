@@ -4,7 +4,6 @@ import API from "../api";
 import { Leaf, Fern } from "../botanical";
 import { QuizClassic, QuizResults } from "./quiz";
 
-const TG_LINK  = "https://t.me/vikokon";
 const VK_LINK  = "https://vk.com/public219644318";
 const LIMIT    = 3; // порог для тестов И для карточек
 
@@ -72,19 +71,6 @@ function LimitModal() {
         </p>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 24 }}>
-          <a href={TG_LINK} target="_blank" rel="noopener noreferrer"
-            style={{
-              display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
-              padding: "14px 24px", borderRadius: 999,
-              background: "#2aabee", color: "#fff",
-              fontWeight: 700, fontSize: 15, textDecoration: "none",
-              transition: "opacity 0.18s",
-            }}
-            onMouseEnter={e => e.currentTarget.style.opacity = "0.85"}
-            onMouseLeave={e => e.currentTarget.style.opacity = "1"}
-          >
-            <span style={{ fontSize: 20 }}>✈️</span> Написать в Telegram
-          </a>
           <a href={VK_LINK} target="_blank" rel="noopener noreferrer"
             style={{
               display: "flex", alignItems: "center", justifyContent: "center", gap: 10,

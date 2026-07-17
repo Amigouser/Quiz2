@@ -626,7 +626,7 @@ function ImportJsonPanel({ type, onImport, onClose }) {
   );
 }
 
-function pasteImage(e, onLoad) {
+function pasteImage(e, onLoad, folder = "questions") {
   const items = e.clipboardData?.items;
   if (!items) return;
   for (const item of items) {
@@ -637,7 +637,7 @@ function pasteImage(e, onLoad) {
       const reader = new FileReader();
       reader.onload = async (ev) => {
         try {
-          const result = await API.uploadImage(ev.target.result, "questions");
+          const result = await API.uploadImage(ev.target.result, folder);
           onLoad(result.url);
         } catch (err) {
           alert("Ошибка загрузки: " + err.message);
@@ -2412,7 +2412,7 @@ const AdminEditCardSet = ({ editId, onSaved, autoImport = false }) => {
                   </div>
                 ) : (
                   <label
-                    onPaste={e => pasteImage(e, url => updateCard(i, "image_data", url))}
+                    onPaste={e => pasteImage(e, url => updateCard(i, "image_data", url), "flashcards")}
                     style={{ display: "inline-flex", alignItems: "center", gap: 6, cursor: "pointer", padding: "4px 10px", border: "1px dashed var(--border)", borderRadius: 6, fontSize: 12, color: "var(--text-muted)" }}
                   >
                         <input type="file" accept="image/*" style={{ display: "none" }} onChange={e => {
