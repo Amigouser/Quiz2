@@ -307,25 +307,31 @@ export default function TasksPage() {
     });
   }, []);
 
-  const dataSections = [...new Set([...tests.map(t => t.section), ...cardSets.map(c => c.section)].filter(Boolean))];
+  const dataSections = [...new Set([...tests.map(t => t.section), ...cardSets.map(c => c.section)].filter(Boolean).flatMap(v => v.split(", ")))];
   const uniqueSections = [
     ...SECTION_OPTIONS,
     ...dataSections.filter(s => !SECTION_OPTIONS.includes(s)).sort(),
   ];
-  const dataParts = [...new Set([...tests.map(t => t.part), ...cardSets.map(c => c.part)].filter(Boolean))];
+  const dataParts = [...new Set([...tests.map(t => t.part), ...cardSets.map(c => c.part)].filter(Boolean).flatMap(v => v.split(", ")))];
   const uniqueParts = [...PART_OPTIONS, ...dataParts.filter(p => !PART_OPTIONS.includes(p)).sort()];
   const uniqueTopics  = [...new Set([...tests.map(t => t.topic),   ...cardSets.map(c => c.topic)].filter(Boolean))].sort();
-  const uniqueSources = [...new Set([...tests.map(t => t.source),  ...cardSets.map(c => c.source)].filter(Boolean))].sort();
+  const uniqueSources = [...new Set([...tests.map(t => t.source),  ...cardSets.map(c => c.source)].filter(Boolean).flatMap(v => v.split(", ")))].sort();
   const hasFilters = gradeFilter || examFilter || partFilter || sectionFilter || topicFilter || sourceFilter || search;
+
+  function itemHasValue(itemVal, filterVal) {
+    if (!filterVal) return true;
+    if (!itemVal) return false;
+    return itemVal.split(", ").includes(filterVal);
+  }
 
   function applyFilters(items) {
     return items.filter(item => {
-      if (gradeFilter && item.grade !== gradeFilter) return false;
-      if (examFilter && item.category !== examFilter) return false;
-      if (partFilter && item.part !== partFilter) return false;
-      if (sectionFilter && item.section !== sectionFilter) return false;
+      if (gradeFilter && !itemHasValue(item.grade, gradeFilter)) return false;
+      if (examFilter && !itemHasValue(item.category, examFilter)) return false;
+      if (partFilter && !itemHasValue(item.part, partFilter)) return false;
+      if (sectionFilter && !itemHasValue(item.section, sectionFilter)) return false;
       if (topicFilter && item.topic !== topicFilter) return false;
-      if (sourceFilter && item.source !== sourceFilter) return false;
+      if (sourceFilter && !itemHasValue(item.source, sourceFilter)) return false;
       if (search && !item.title.toLowerCase().includes(search.toLowerCase())) return false;
       return true;
     });

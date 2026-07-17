@@ -339,26 +339,32 @@ export const StudentDashboard = ({ name = "Аня", quizzes = [], cardSets = [],
   const [search, setSearch] = useState("");
 
   const { uniqueSections, uniqueParts, uniqueTopics, uniqueSources } = useMemo(() => {
-    const dataSections = [...new Set([...quizzes.map(t => t.section), ...cardSets.map(c => c.section)].filter(Boolean))];
-    const dataParts    = [...new Set([...quizzes.map(t => t.part),    ...cardSets.map(c => c.part)].filter(Boolean))];
+    const dataSections = [...new Set([...quizzes.map(t => t.section), ...cardSets.map(c => c.section)].filter(Boolean).flatMap(v => v.split(", ")))];
+    const dataParts    = [...new Set([...quizzes.map(t => t.part),    ...cardSets.map(c => c.part)].filter(Boolean).flatMap(v => v.split(", ")))];
     return {
       uniqueSections: [...SECTION_OPTIONS, ...dataSections.filter(s => !SECTION_OPTIONS.includes(s)).sort()],
       uniqueParts:    [...PART_OPTIONS,    ...dataParts.filter(p => !PART_OPTIONS.includes(p)).sort()],
       uniqueTopics:   [...new Set([...quizzes.map(t => t.topic),  ...cardSets.map(c => c.topic)].filter(Boolean))].sort(),
-      uniqueSources:  [...new Set([...quizzes.map(t => t.source), ...cardSets.map(c => c.source)].filter(Boolean))].sort(),
+      uniqueSources:  [...new Set([...quizzes.map(t => t.source), ...cardSets.map(c => c.source)].filter(Boolean).flatMap(v => v.split(", ")))].sort(),
     };
   }, [quizzes, cardSets]);
 
   const hasFilters = gradeFilter || examFilter || partFilter || sectionFilter || topicFilter || sourceFilter || search;
 
+  function itemHasValue(itemVal, filterVal) {
+    if (!filterVal) return true;
+    if (!itemVal) return false;
+    return itemVal.split(", ").includes(filterVal);
+  }
+
   function applyFilters(items) {
     return items.filter(item => {
-      if (gradeFilter && !(item.grade || "").split(", ").includes(gradeFilter)) return false;
-      if (examFilter && item.category !== examFilter) return false;
-      if (partFilter && item.part !== partFilter) return false;
-      if (sectionFilter && item.section !== sectionFilter) return false;
+      if (gradeFilter && !itemHasValue(item.grade, gradeFilter)) return false;
+      if (examFilter && !itemHasValue(item.category, examFilter)) return false;
+      if (partFilter && !itemHasValue(item.part, partFilter)) return false;
+      if (sectionFilter && !itemHasValue(item.section, sectionFilter)) return false;
       if (topicFilter && item.topic !== topicFilter) return false;
-      if (sourceFilter && item.source !== sourceFilter) return false;
+      if (sourceFilter && !itemHasValue(item.source, sourceFilter)) return false;
       if (search && !item.title.toLowerCase().includes(search.toLowerCase())) return false;
       return true;
     });

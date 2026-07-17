@@ -79,23 +79,18 @@ const GradePicker = ({ value, onChange }) => (
 );
 
 const ExamPicker = ({ value, onChange }) => (
-  <ChipPicker value={value} onChange={onChange} options={EXAM_OPTIONS} />
+  <MultiChipPicker value={value} onChange={onChange} options={EXAM_OPTIONS} />
 );
 
 // Часть экзамена
 const PART_OPTIONS = ["Часть 1", "Часть 2"];
-const isExamCategory = (cat) => cat === "ОГЭ" || cat === "ЕГЭ";
+const isExamCategory = (cat) => {
+  const arr = Array.isArray(cat) ? cat : (cat ? [cat] : []);
+  return arr.some(c => c === "ОГЭ" || c === "ЕГЭ");
+};
 
-const PartSelect = ({ value, onChange }) => (
-  <select
-    className="input"
-    value={value || ""}
-    onChange={e => onChange(e.target.value)}
-    style={{ cursor: "pointer" }}
-  >
-    <option value="">— выбери часть —</option>
-    {PART_OPTIONS.map(p => <option key={p} value={p}>{p}</option>)}
-  </select>
+const PartPicker = ({ value, onChange }) => (
+  <MultiChipPicker value={value} onChange={onChange} options={PART_OPTIONS} />
 );
 
 // ── Управляемый пикер разделов/тем ───────────────────────────────────────────
@@ -262,6 +257,222 @@ function ManagedPicker({ value, onChange, loadItems, createItem, updateItem, del
   );
 }
 
+// ── Множественный ManagedPicker ───────────────────────────────────────────
+function ManagedPickerMulti({ value = [], onChange, loadItems, createItem, updateItem, deleteItem, placeholder }) {
+  const [open, setOpen] = React.useState(false);
+  const [items, setItems] = React.useState([]);
+  const [newName, setNewName] = React.useState("");
+  const [editId, setEditId] = React.useState(null);
+  const [editName, setEditName] = React.useState("");
+  const [err, setErr] = React.useState("");
+  const ref = React.useRef();
+
+  const arr = Array.isArray(value) ? value : (value ? [value] : []);
+
+  React.useEffect(() => {
+    loadItems().then(setItems).catch(() => {});
+  }, []);
+
+  React.useEffect(() => {
+    if (!open) return;
+    const handler = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
+  const handleCreate = async () => {
+    if (!newName.trim()) return;
+    try {
+      const item = await createItem(newName.trim());
+      setItems(prev => [...prev, item].sort((a, b) => a.name.localeCompare(b.name, "ru")));
+      setNewName("");
+      setErr("");
+    } catch (e) { setErr(e.message); }
+  };
+
+  const handleUpdate = async (id) => {
+    if (!editName.trim()) return;
+    try {
+      await updateItem(id, editName.trim());
+      setItems(prev => prev.map(it => it.id === id ? { ...it, name: editName.trim() } : it));
+      if (arr.includes(items.find(it => it.id === id)?.name)) {
+        onChange(arr.map(v => v === items.find(it => it.id === id)?.name ? editName.trim() : v));
+      }
+      setEditId(null); setErr("");
+    } catch (e) { setErr(e.message); }
+  };
+
+  const handleDelete = async (id, name) => {
+    if (!confirm(`Удалить «${name}»?`)) return;
+    await deleteItem(id);
+    setItems(prev => prev.filter(it => it.id !== id));
+    if (arr.includes(name)) onChange(arr.filter(v => v !== name));
+  };
+
+  const toggleItem = (name) => {
+    const next = arr.includes(name) ? arr.filter(v => v !== name) : [...arr, name];
+    onChange(next);
+  };
+
+  return (
+    <div ref={ref} style={{ position: "relative" }}>
+      <div
+        onClick={() => setOpen(v => !v)}
+        style={{
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          padding: "9px 12px", borderRadius: "var(--r-md)",
+          border: `1.5px solid ${arr.length ? "var(--green-500)" : "var(--border-soft)"}`,
+          background: arr.length ? "var(--green-50)" : "var(--surface)",
+          cursor: "pointer", fontSize: 14, color: arr.length ? "var(--green-900)" : "var(--text-muted)",
+          userSelect: "none", minHeight: 38,
+        }}
+      >
+        <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          {arr.length > 0 ? arr.join(", ") : placeholder}
+        </span>
+        <svg width="11" height="11" viewBox="0 0 11 11" fill="none" style={{ flexShrink: 0, marginLeft: 8, opacity: 0.5 }}>
+          <path d="M1.5 3.5l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      </div>
+
+      {open && (
+        <div style={{
+          position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0,
+          zIndex: 400,
+          background: "var(--surface)", border: "1.5px solid var(--border-soft)",
+          borderRadius: "var(--r-lg)", boxShadow: "0 8px 32px rgba(0,0,0,0.18)",
+          maxHeight: 340, overflow: "hidden", display: "flex", flexDirection: "column",
+        }}>
+          <div style={{ padding: "10px 12px", borderBottom: "1px solid var(--border-soft)", display: "flex", gap: 6 }}>
+            <input
+              className="input"
+              value={newName}
+              onChange={e => { setNewName(e.target.value); setErr(""); }}
+              onKeyDown={e => e.key === "Enter" && handleCreate()}
+              placeholder="Новый..."
+              style={{ flex: 1, fontSize: 13, padding: "6px 10px" }}
+            />
+            <button className="btn btn-primary btn-sm" onClick={handleCreate} disabled={!newName.trim()}>
+              + Добавить
+            </button>
+          </div>
+          {err && <div style={{ padding: "4px 12px", fontSize: 12, color: "var(--wrong)" }}>{err}</div>}
+
+          <div style={{ overflowY: "auto", flex: 1 }}>
+            {arr.length > 0 && (
+              <div
+                onClick={() => onChange([])}
+                style={{ padding: "8px 12px", fontSize: 13, color: "var(--text-muted)", cursor: "pointer", borderBottom: "1px solid var(--border-soft)", fontStyle: "italic" }}
+              >
+                — Очистить все —
+              </div>
+            )}
+            {items.map(item => {
+              const selected = arr.includes(item.name);
+              return (
+                <div key={item.id} style={{
+                  display: "flex", alignItems: "center",
+                  background: selected ? "var(--green-100)" : "transparent",
+                  borderBottom: "1px solid var(--border-soft)",
+                }}>
+                  {editId === item.id ? (
+                    <div style={{ display: "flex", flex: 1, gap: 4, padding: "6px 8px" }}>
+                      <input
+                        className="input"
+                        value={editName}
+                        onChange={e => setEditName(e.target.value)}
+                        onKeyDown={e => { if (e.key === "Enter") handleUpdate(item.id); if (e.key === "Escape") setEditId(null); }}
+                        autoFocus
+                        style={{ flex: 1, fontSize: 13, padding: "5px 8px" }}
+                      />
+                      <button className="btn btn-primary btn-sm" onClick={() => handleUpdate(item.id)}>✓</button>
+                      <button className="btn btn-ghost btn-sm" onClick={() => setEditId(null)}>✕</button>
+                    </div>
+                  ) : (
+                    <>
+                      <div
+                        onClick={() => toggleItem(item.name)}
+                        style={{ flex: 1, padding: "9px 12px", cursor: "pointer", fontSize: 13, lineHeight: 1.4, display: "flex", alignItems: "center", gap: 8 }}
+                      >
+                        <span style={{ width: 18, height: 18, borderRadius: 4, border: `2px solid ${selected ? "var(--green-600)" : "var(--border)"}`, background: selected ? "var(--green-600)" : "transparent", display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0, transition: "all 0.15s" }}>
+                          {selected && <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2.5 6l2.5 2.5 4.5-5" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                        </span>
+                        {item.name}
+                      </div>
+                      <button
+                        className="btn btn-ghost btn-sm"
+                        style={{ padding: "4px 7px", flexShrink: 0, color: "var(--text-muted)" }}
+                        onClick={e => { e.stopPropagation(); setEditId(item.id); setEditName(item.name); }}
+                        title="Переименовать"
+                      >✏️</button>
+                      <button
+                        className="btn btn-ghost btn-sm"
+                        style={{ padding: "4px 7px", flexShrink: 0, color: "var(--wrong)", marginRight: 4 }}
+                        onClick={e => { e.stopPropagation(); handleDelete(item.id, item.name); }}
+                        title="Удалить"
+                      >✕</button>
+                    </>
+                  )}
+                </div>
+              );
+            })}
+            {items.length === 0 && (
+              <div style={{ padding: "16px 12px", fontSize: 13, color: "var(--text-muted)", textAlign: "center" }}>
+                Пусто — добавь первый
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Мульти-тег инпут для свободного ввода ─────────────────────────────────
+function MultiTagInput({ value = [], onChange, placeholder }) {
+  const arr = Array.isArray(value) ? value : (value ? [value] : []);
+  const [input, setInput] = React.useState("");
+
+  const addTag = () => {
+    const t = input.trim();
+    if (!t || arr.includes(t)) { setInput(""); return; }
+    onChange([...arr, t]);
+    setInput("");
+  };
+
+  const removeTag = (tag) => onChange(arr.filter(v => v !== tag));
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+      {arr.length > 0 && (
+        <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+          {arr.map(tag => (
+            <span key={tag} style={{
+              display: "inline-flex", alignItems: "center", gap: 4,
+              padding: "3px 8px", borderRadius: 6, fontSize: 12, fontWeight: 500,
+              background: "var(--green-100)", color: "var(--green-900)", border: "1px solid var(--green-200)",
+            }}>
+              {tag}
+              <button onClick={() => removeTag(tag)} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, fontSize: 14, color: "var(--green-700)", lineHeight: 1 }}>✕</button>
+            </span>
+          ))}
+        </div>
+      )}
+      <input
+        className="input"
+        value={input}
+        onChange={e => setInput(e.target.value)}
+        onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); addTag(); } if (e.key === "Tab" && input.trim()) { e.preventDefault(); addTag(); } }}
+        onBlur={addTag}
+        placeholder={arr.length > 0 ? "Ещё..." : placeholder}
+        style={{ fontSize: 13 }}
+      />
+    </div>
+  );
+}
+
 const SectionPicker = ({ value, onChange }) => (
   <ManagedPicker
     value={value}
@@ -284,6 +495,26 @@ const TopicPicker = ({ value, onChange }) => (
     updateItem={(id, name) => API.admin.updateTopic(id, name)}
     deleteItem={(id) => API.admin.deleteTopic(id)}
   />
+);
+
+const SectionPickerMulti = ({ value, onChange }) => (
+  <ManagedPickerMulti
+    value={value}
+    onChange={onChange}
+    placeholder="— выбери разделы —"
+    loadItems={() => API.admin.getSections()}
+    createItem={(name) => API.admin.createSection(name)}
+    updateItem={(id, name) => API.admin.updateSection(id, name)}
+    deleteItem={(id) => API.admin.deleteSection(id)}
+  />
+);
+
+const SourcePicker = ({ value, onChange }) => (
+  <MultiTagInput value={value} onChange={onChange} placeholder="Напр.: ФИПИ, ВИПИМБ" />
+);
+
+const LinePicker = ({ value, onChange }) => (
+  <MultiTagInput value={value} onChange={onChange} placeholder="Напр.: 5, 12" />
 );
 
 const AdminSidebar = ({ active, onTab }) => {
@@ -683,14 +914,14 @@ const EMPTY_QUESTION = () => ({
 
 const AdminCreateTest = ({ onCreated, autoImport = false }) => {
   const [title, setTitle] = React.useState("");
-  const [section, setSection] = React.useState("");
+  const [section, setSection] = React.useState([]);
   const [topic, setTopic] = React.useState("");
   const [description, setDescription] = React.useState("");
   const [grade, setGrade] = React.useState([]);
-  const [category, setCategory] = React.useState("");
-  const [part, setPart] = React.useState("");
-  const [line, setLine] = React.useState("");
-  const [source, setSource] = React.useState("");
+  const [category, setCategory] = React.useState([]);
+  const [part, setPart] = React.useState([]);
+  const [line, setLine] = React.useState([]);
+  const [source, setSource] = React.useState([]);
   const [isDraft, setIsDraft] = React.useState(false);
   const [questions, setQuestions] = React.useState([EMPTY_QUESTION()]);
   const [saving, setSaving] = React.useState(false);
@@ -771,14 +1002,14 @@ const AdminCreateTest = ({ onCreated, autoImport = false }) => {
     try {
       await API.admin.createTest({
         title: title.trim(),
-        section: section.trim() || null,
+        section: section.length > 0 ? section.join(", ") : null,
         topic: topic.trim() || null,
         description: description.trim() || null,
         grade: grade.length > 0 ? grade.join(", ") : null,
-        category: category || null,
-        part: part.trim() || null,
-        line: line.trim() || null,
-        source: source.trim() || null,
+        category: category.length > 0 ? category.join(", ") : null,
+        part: part.length > 0 ? part.join(", ") : null,
+        line: line.length > 0 ? line.join(", ") : null,
+        source: source.length > 0 ? source.join(", ") : null,
         is_draft: draft ? 1 : 0,
         questions: questions.map(q => {
           let correctText = null;
@@ -850,17 +1081,17 @@ const AdminCreateTest = ({ onCreated, autoImport = false }) => {
             </div>
             <div className="field">
               <label>Экзамен</label>
-              <ExamPicker value={category} onChange={(val) => { setCategory(val); if (!isExamCategory(val)) setPart(""); }} />
+              <ExamPicker value={category} onChange={(val) => { setCategory(val); if (!isExamCategory(val)) setPart([]); }} />
             </div>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginTop: 16 }}>
             <div className="field">
               <label>Часть</label>
-              <PartSelect value={part} onChange={setPart} category={category} />
+              <PartPicker value={part} onChange={setPart} />
             </div>
             <div className="field">
               <label>Раздел</label>
-              <SectionPicker value={section} onChange={setSection} />
+              <SectionPickerMulti value={section} onChange={setSection} />
             </div>
             <div className="field">
               <label>Тема</label>
@@ -870,11 +1101,11 @@ const AdminCreateTest = ({ onCreated, autoImport = false }) => {
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 12 }}>
             <div className="field">
               <label>Источник</label>
-              <input className="input" value={source} onChange={e => setSource(e.target.value)} placeholder="Напр.: ФИПИ" />
+              <SourcePicker value={source} onChange={setSource} />
             </div>
             <div className="field">
               <label>Линия</label>
-              <input className="input" value={line} onChange={e => setLine(e.target.value)} placeholder="Напр.: 5" />
+              <LinePicker value={line} onChange={setLine} />
             </div>
           </div>
         </div>
@@ -1205,14 +1436,14 @@ const AdminCreateTest = ({ onCreated, autoImport = false }) => {
 // ── Редактирование существующего теста ──────────────────────────────────────
 const AdminEditTest = ({ testId, onSaved }) => {
   const [title, setTitle] = React.useState("");
-  const [section, setSection] = React.useState("");
+  const [section, setSection] = React.useState([]);
   const [topic, setTopic] = React.useState("");
   const [description, setDescription] = React.useState("");
   const [grade, setGrade] = React.useState("");
-  const [category, setCategory] = React.useState("");
-  const [part, setPart] = React.useState("");
-  const [line, setLine] = React.useState("");
-  const [source, setSource] = React.useState("");
+  const [category, setCategory] = React.useState([]);
+  const [part, setPart] = React.useState([]);
+  const [line, setLine] = React.useState([]);
+  const [source, setSource] = React.useState([]);
   const [questions, setQuestions] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
   const [saving, setSaving] = React.useState(false);
@@ -1221,14 +1452,14 @@ const AdminEditTest = ({ testId, onSaved }) => {
   React.useEffect(() => {
     API.admin.getTest(testId).then(data => {
       setTitle(data.title);
-      setSection(data.section || "");
+      setSection(data.section ? data.section.split(", ").filter(Boolean) : []);
       setTopic(data.topic || "");
       setDescription(data.description || "");
       setGrade(data.grade ? data.grade.split(", ").filter(Boolean) : []);
-      setCategory(data.category || "");
-      setPart(data.part || "");
-      setLine(data.line || "");
-      setSource(data.source || "");
+      setCategory(data.category ? data.category.split(", ").filter(Boolean) : []);
+      setPart(data.part ? data.part.split(", ").filter(Boolean) : []);
+      setLine(data.line ? data.line.split(", ").filter(Boolean) : []);
+      setSource(data.source ? data.source.split(", ").filter(Boolean) : []);
       setQuestions(data.questions.map(q => {
         let textAnswers = undefined;
         if ((q.question_type || "single") === "text_input" && q.correct_text) {
@@ -1282,9 +1513,9 @@ const AdminEditTest = ({ testId, onSaved }) => {
     setSaving(true); setError(null);
     try {
       await API.admin.updateTest(testId, {
-        title: title.trim(), section: section.trim() || null, topic: topic.trim() || null,
-        description: description.trim() || null, grade: grade || null, category: category || null,
-        part: part.trim() || null, line: line.trim() || null, source: source.trim() || null,
+        title: title.trim(), section: section.length > 0 ? section.join(", ") : null, topic: topic.trim() || null,
+        description: description.trim() || null, grade: grade || null, category: category.length > 0 ? category.join(", ") : null,
+        part: part.length > 0 ? part.join(", ") : null, line: line.length > 0 ? line.join(", ") : null, source: source.length > 0 ? source.join(", ") : null,
         questions: questions.map(q => {
           let correctText = null;
           if (q.question_type === "text_input") {
@@ -1345,17 +1576,17 @@ const AdminEditTest = ({ testId, onSaved }) => {
             </div>
             <div className="field">
               <label>Экзамен</label>
-              <ExamPicker value={category} onChange={(val) => { setCategory(val); if (!isExamCategory(val)) setPart(""); }} />
+              <ExamPicker value={category} onChange={(val) => { setCategory(val); if (!isExamCategory(val)) setPart([]); }} />
             </div>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginTop: 16 }}>
             <div className="field">
               <label>Часть</label>
-              <PartSelect value={part} onChange={setPart} category={category} />
+              <PartPicker value={part} onChange={setPart} />
             </div>
             <div className="field">
               <label>Раздел</label>
-              <SectionPicker value={section} onChange={setSection} />
+              <SectionPickerMulti value={section} onChange={setSection} />
             </div>
             <div className="field">
               <label>Тема</label>
@@ -1365,11 +1596,11 @@ const AdminEditTest = ({ testId, onSaved }) => {
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 12 }}>
             <div className="field">
               <label>Источник</label>
-              <input className="input" value={source} onChange={e => setSource(e.target.value)} placeholder="Напр.: ФИПИ" />
+              <SourcePicker value={source} onChange={setSource} />
             </div>
             <div className="field">
               <label>Линия</label>
-              <input className="input" value={line} onChange={e => setLine(e.target.value)} placeholder="Напр.: 5" />
+              <LinePicker value={line} onChange={setLine} />
             </div>
           </div>
         </div>
@@ -2195,14 +2426,14 @@ const EMPTY_CARD = () => ({ id: Date.now() + Math.random(), term: "", definition
 
 const AdminEditCardSet = ({ editId, onSaved, autoImport = false }) => {
   const [title, setTitle] = React.useState("");
-  const [section, setSection] = React.useState("");
+  const [section, setSection] = React.useState([]);
   const [topic, setTopic] = React.useState("");
   const [description, setDescription] = React.useState("");
   const [grade, setGrade] = React.useState("");
-  const [category, setCategory] = React.useState("");
-  const [part, setPart] = React.useState("");
-  const [line, setLine] = React.useState("");
-  const [source, setSource] = React.useState("");
+  const [category, setCategory] = React.useState([]);
+  const [part, setPart] = React.useState([]);
+  const [line, setLine] = React.useState([]);
+  const [source, setSource] = React.useState([]);
   const [cards, setCards] = React.useState([EMPTY_CARD()]);
   const [bulkText, setBulkText] = React.useState("");
   const [showBulk, setShowBulk] = React.useState(false);
@@ -2229,14 +2460,14 @@ const AdminEditCardSet = ({ editId, onSaved, autoImport = false }) => {
     if (!editId) return;
     API.admin.getCardSet(editId).then(data => {
       setTitle(data.title);
-      setSection(data.section || "");
+      setSection(data.section ? data.section.split(", ").filter(Boolean) : []);
       setTopic(data.topic || "");
       setDescription(data.description || "");
       setGrade(data.grade ? data.grade.split(", ").filter(Boolean) : []);
-      setCategory(data.category || "");
-      setPart(data.part || "");
-      setLine(data.line || "");
-      setSource(data.source || "");
+      setCategory(data.category ? data.category.split(", ").filter(Boolean) : []);
+      setPart(data.part ? data.part.split(", ").filter(Boolean) : []);
+      setLine(data.line ? data.line.split(", ").filter(Boolean) : []);
+      setSource(data.source ? data.source.split(", ").filter(Boolean) : []);
       setCards(data.cards.map(c => ({ id: c.id, term: c.term, definition: c.definition, image_data: c.image_data || null })));
     });
   }, [editId]);
@@ -2267,9 +2498,9 @@ const AdminEditCardSet = ({ editId, onSaved, autoImport = false }) => {
     setSaving(true); setError(null);
     try {
       const payload = {
-        title: title.trim(), section: section.trim() || null, topic: topic.trim() || null,
-        description: description.trim() || null, grade: Array.isArray(grade) ? grade.join(", ") : (grade || null), category: category || null,
-        part: part.trim() || null, line: line.trim() || null, source: source.trim() || null,
+        title: title.trim(), section: section.length > 0 ? section.join(", ") : null, topic: topic.trim() || null,
+        description: description.trim() || null, grade: Array.isArray(grade) ? grade.join(", ") : (grade || null), category: category.length > 0 ? category.join(", ") : null,
+        part: part.length > 0 ? part.join(", ") : null, line: line.length > 0 ? line.join(", ") : null, source: source.length > 0 ? source.join(", ") : null,
         cards: validCards.map(c => ({ term: c.term.trim(), definition: c.definition.trim(), image_data: c.image_data || null })),
       };
       if (editId) await API.admin.updateCardSet(editId, payload);
@@ -2321,17 +2552,17 @@ const AdminEditCardSet = ({ editId, onSaved, autoImport = false }) => {
             </div>
             <div className="field">
               <label>Экзамен</label>
-              <ExamPicker value={category} onChange={(val) => { setCategory(val); if (!isExamCategory(val)) setPart(""); }} />
+              <ExamPicker value={category} onChange={(val) => { setCategory(val); if (!isExamCategory(val)) setPart([]); }} />
             </div>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginTop: 16 }}>
             <div className="field">
               <label>Часть</label>
-              <PartSelect value={part} onChange={setPart} category={category} />
+              <PartPicker value={part} onChange={setPart} />
             </div>
             <div className="field">
               <label>Раздел</label>
-              <SectionPicker value={section} onChange={setSection} />
+              <SectionPickerMulti value={section} onChange={setSection} />
             </div>
             <div className="field">
               <label>Тема</label>
@@ -2341,11 +2572,11 @@ const AdminEditCardSet = ({ editId, onSaved, autoImport = false }) => {
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 12 }}>
             <div className="field">
               <label>Источник</label>
-              <input className="input" value={source} onChange={e => setSource(e.target.value)} placeholder="Напр.: ФИПИ" />
+              <SourcePicker value={source} onChange={setSource} />
             </div>
             <div className="field">
               <label>Линия</label>
-              <input className="input" value={line} onChange={e => setLine(e.target.value)} placeholder="Напр.: 5" />
+              <LinePicker value={line} onChange={setLine} />
             </div>
           </div>
         </div>
