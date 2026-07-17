@@ -510,99 +510,116 @@ export default function TasksPage() {
           <div style={{ textAlign: "center", padding: "80px 0", color: "var(--text-muted)", fontSize: 16 }}>Загрузка…</div>
         ) : (
           <>
-            {/* Тесты */}
-            {applyFilters(tests).length > 0 && (
-              <div style={{ marginBottom: 64 }}>
-                <h2 style={{ fontFamily: "var(--f-serif)", fontSize: 24, marginBottom: 24, letterSpacing: "-0.01em" }}>Тесты</h2>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(280px, 100%), 1fr))", gap: 20 }}>
-                  {applyFilters(tests).map((test) => (
-                    <div key={test.id} onClick={() => openTest(test.id)} style={{
-                      borderRadius: 20, overflow: "hidden",
-                      border: "1.5px solid var(--border-soft)",
-                      background: "var(--surface)", boxShadow: "var(--sh-sm)",
-                      cursor: "pointer",
-                      transition: "transform 0.25s cubic-bezier(0.22,0.8,0.32,1), box-shadow 0.25s",
-                    }}
-                      onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-4px)"; e.currentTarget.style.boxShadow = "0 16px 48px rgba(26,52,36,0.12)"; }}
-                      onMouseLeave={e => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = "var(--sh-sm)"; }}
-                    >
-                      <div style={{
-                        height: 110,
-                        background: "linear-gradient(135deg, var(--green-100) 0%, var(--green-200) 100%)",
-                        display: "flex", alignItems: "center", justifyContent: "center",
-                        fontSize: 44, position: "relative", overflow: "hidden",
-                      }}>
-                        <div style={{ position: "absolute", inset: 0, color: "var(--green-700)", opacity: 0.1 }}>
-                          <Fern size={160} style={{ position: "absolute", top: -20, right: -20 }} />
-                        </div>
-                        <span style={{ position: "relative" }}>{TOPIC_ICONS[test.topic] || "🌱"}</span>
-                      </div>
-                      <div style={{ padding: "16px 18px" }}>
-                        <div style={{
-                          display: "inline-block", background: "var(--green-100)",
-                          color: "var(--green-800)", borderRadius: 999,
-                          padding: "2px 10px", fontSize: 10, fontWeight: 700,
-                          letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 8,
-                        }}>
-                          {test.topic}
-                        </div>
-                        <div style={{ fontFamily: "var(--f-serif)", fontSize: 17, fontWeight: 500, marginBottom: 6, lineHeight: 1.3 }}>
-                          {test.title}
-                        </div>
-                        {test.description && (
-                          <div style={{ fontSize: 13, color: "var(--text-muted)", lineHeight: 1.5, marginBottom: 10 }}>
-                            {test.description}
-                          </div>
-                        )}
-                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                          <span style={{ fontSize: 12, color: "var(--text-muted)" }}>
-                            {test.questions_count} вопр. · ~{test.est_minutes} мин
-                          </span>
-                          <span style={{ fontSize: 12, fontWeight: 600, color: "var(--green-800)" }}>Начать →</span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Карточки */}
-            {applyFilters(cardSets).length > 0 && (
-              <div>
-                <h2 style={{ fontFamily: "var(--f-serif)", fontSize: 24, marginBottom: 24, letterSpacing: "-0.01em" }}>Карточки</h2>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(280px, 100%), 1fr))", gap: 20 }}>
-                  {applyFilters(cardSets).map((set) => (
-                    <div key={set.id} onClick={() => openCards(set.id)} style={{
-                      borderRadius: 20,
-                      border: "1.5px solid var(--border-soft)",
-                      background: "var(--surface)", boxShadow: "var(--sh-sm)",
-                      padding: "20px 22px", cursor: "pointer",
-                      transition: "transform 0.25s cubic-bezier(0.22,0.8,0.32,1), box-shadow 0.25s",
-                    }}
-                      onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-4px)"; e.currentTarget.style.boxShadow = "0 16px 48px rgba(26,52,36,0.12)"; }}
-                      onMouseLeave={e => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = "var(--sh-sm)"; }}
-                    >
-                      <div style={{ fontSize: 36, marginBottom: 12 }}>🃏</div>
-                      <div style={{ fontFamily: "var(--f-serif)", fontSize: 17, fontWeight: 500, marginBottom: 6 }}>{set.title}</div>
-                      {set.description && (
-                        <div style={{ fontSize: 13, color: "var(--text-muted)", lineHeight: 1.5, marginBottom: 10 }}>{set.description}</div>
-                      )}
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                        <span style={{ fontSize: 12, color: "var(--text-muted)" }}>{set.cards_count ?? "—"} карточек</span>
-                        <span style={{ fontSize: 12, fontWeight: 600, color: "var(--green-800)" }}>Открыть →</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
             {tests.length === 0 && cardSets.length === 0 && (
               <div style={{ textAlign: "center", padding: "80px 0", color: "var(--text-muted)", fontSize: 16 }}>
                 Пока нет доступных заданий.
               </div>
             )}
+
+            {/* Two-column layout: Cards left, Tests right */}
+            <div className="tasks-two-col" style={{ display: "grid", gridTemplateColumns: "1fr 1.6fr", gap: 32, alignItems: "start" }}>
+              {/* Left: Cards */}
+              <div>
+                <h2 style={{ fontFamily: "var(--f-serif)", fontSize: 22, marginBottom: 20, letterSpacing: "-0.01em" }}>Карточки</h2>
+                {applyFilters(cardSets).length > 0 ? (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                    {applyFilters(cardSets).map((set) => (
+                      <div key={set.id} onClick={() => openCards(set.id)} style={{
+                        borderRadius: 16,
+                        border: "1.5px solid var(--border-soft)",
+                        background: "var(--surface)", boxShadow: "var(--sh-sm)",
+                        padding: "14px 18px", cursor: "pointer",
+                        transition: "transform 0.2s cubic-bezier(0.22,0.8,0.32,1), box-shadow 0.2s",
+                        display: "flex", alignItems: "center", gap: 14,
+                      }}
+                        onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 8px 28px rgba(26,52,36,0.1)"; }}
+                        onMouseLeave={e => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = "var(--sh-sm)"; }}
+                      >
+                        <div style={{
+                          width: 44, height: 44, borderRadius: 12, flexShrink: 0,
+                          background: "linear-gradient(135deg, var(--green-100) 0%, var(--green-200) 100%)",
+                          display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22,
+                        }}>🃏</div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontFamily: "var(--f-serif)", fontSize: 15, fontWeight: 500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                            {set.title}
+                          </div>
+                          <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>
+                            {set.cards_count ?? "—"} карточек
+                          </div>
+                        </div>
+                        <span style={{ fontSize: 12, fontWeight: 600, color: "var(--green-800)", flexShrink: 0 }}>→</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div style={{ textAlign: "center", padding: "40px 0", color: "var(--text-muted)", fontSize: 14 }}>
+                    {cardSets.length === 0 ? "Карточек пока нет" : "Ничего не найдено"}
+                  </div>
+                )}
+              </div>
+
+              {/* Right: Tests */}
+              <div>
+                <h2 style={{ fontFamily: "var(--f-serif)", fontSize: 22, marginBottom: 20, letterSpacing: "-0.01em" }}>Тесты</h2>
+                {applyFilters(tests).length > 0 ? (
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(260px, 100%), 1fr))", gap: 16 }}>
+                    {applyFilters(tests).map((test) => (
+                      <div key={test.id} onClick={() => openTest(test.id)} style={{
+                        borderRadius: 20, overflow: "hidden",
+                        border: "1.5px solid var(--border-soft)",
+                        background: "var(--surface)", boxShadow: "var(--sh-sm)",
+                        cursor: "pointer",
+                        transition: "transform 0.25s cubic-bezier(0.22,0.8,0.32,1), box-shadow 0.25s",
+                      }}
+                        onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-4px)"; e.currentTarget.style.boxShadow = "0 16px 48px rgba(26,52,36,0.12)"; }}
+                        onMouseLeave={e => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = "var(--sh-sm)"; }}
+                      >
+                        <div style={{
+                          height: 110,
+                          background: "linear-gradient(135deg, var(--green-100) 0%, var(--green-200) 100%)",
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          fontSize: 44, position: "relative", overflow: "hidden",
+                        }}>
+                          <div style={{ position: "absolute", inset: 0, color: "var(--green-700)", opacity: 0.1 }}>
+                            <Fern size={160} style={{ position: "absolute", top: -20, right: -20 }} />
+                          </div>
+                          <span style={{ position: "relative" }}>{TOPIC_ICONS[test.topic] || "🌱"}</span>
+                        </div>
+                        <div style={{ padding: "16px 18px" }}>
+                          <div style={{
+                            display: "inline-block", background: "var(--green-100)",
+                            color: "var(--green-800)", borderRadius: 999,
+                            padding: "2px 10px", fontSize: 10, fontWeight: 700,
+                            letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 8,
+                          }}>
+                            {test.topic}
+                          </div>
+                          <div style={{ fontFamily: "var(--f-serif)", fontSize: 17, fontWeight: 500, marginBottom: 6, lineHeight: 1.3 }}>
+                            {test.title}
+                          </div>
+                          {test.description && (
+                            <div style={{ fontSize: 13, color: "var(--text-muted)", lineHeight: 1.5, marginBottom: 10 }}>
+                              {test.description}
+                            </div>
+                          )}
+                          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                            <span style={{ fontSize: 12, color: "var(--text-muted)" }}>
+                              {test.questions_count} вопр. · ~{test.est_minutes} мин
+                            </span>
+                            <span style={{ fontSize: 12, fontWeight: 600, color: "var(--green-800)" }}>Начать →</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div style={{ textAlign: "center", padding: "40px 0", color: "var(--text-muted)", fontSize: 14 }}>
+                    {tests.length === 0 ? "Тестов пока нет" : "Ничего не найдено"}
+                  </div>
+                )}
+              </div>
+            </div>
           </>
         )}
       </div>

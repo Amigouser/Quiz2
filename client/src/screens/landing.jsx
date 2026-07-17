@@ -3047,7 +3047,7 @@ export function LandingPage() {
           paddingTop: 16, borderTop: "1px dashed var(--border-soft)",
         }}>
           <span style={{ fontSize: 12, color: "var(--text-muted)" }}>
-            © {new Date().getFullYear()} Vikokon. Все права защищены.
+            © {new Date().getFullYear()} Vikokon. Все права защищены. v1.0.0
           </span>
           <div style={{ display: "flex", alignItems: "center", gap: 20, flexWrap: "wrap" }}>
             <a

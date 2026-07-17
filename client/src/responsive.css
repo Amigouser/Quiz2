@@ -85,6 +85,11 @@
   .dash-filters { padding: 0 16px 14px !important; flex-direction: column !important; align-items: flex-start !important; }
   .dash-grid    { padding: 0 16px !important; grid-template-columns: 1fr !important; }
   .dash-cards-section { padding: 0 16px !important; }
+  .dash-two-col { grid-template-columns: 1fr !important; gap: 24px !important; }
+
+  /* ─ Tasks ─────────────────────────────────────────────────── */
+  .tasks-container { padding: 80px 16px 60px !important; }
+  .tasks-two-col { grid-template-columns: 1fr !important; gap: 24px !important; }
 
   /* ─ Quiz ────────────────────────────────────────────────── */
   .quiz-topbar { padding: 14px 16px !important; gap: 8px !important; }

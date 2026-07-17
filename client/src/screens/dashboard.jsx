@@ -151,53 +151,35 @@ function CardSetTile({ s, onStart }) {
     <div
       onClick={onStart}
       style={{
-        borderRadius: 20, overflow: "hidden",
+        borderRadius: 16, overflow: "hidden",
         border: "1.5px solid var(--border-soft)",
         background: "var(--surface)", boxShadow: "var(--sh-sm)",
         cursor: "pointer",
-        transition: "transform 0.25s cubic-bezier(0.22,0.8,0.32,1), box-shadow 0.25s",
-        position: "relative",
-        display: "flex", flexDirection: "column",
+        transition: "transform 0.2s cubic-bezier(0.22,0.8,0.32,1), box-shadow 0.2s",
+        display: "flex", alignItems: "center", gap: 14,
+        padding: "14px 18px",
       }}
-      onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-4px)"; e.currentTarget.style.boxShadow = "0 16px 48px rgba(26,52,36,0.12)"; }}
+      onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 8px 28px rgba(26,52,36,0.1)"; }}
       onMouseLeave={e => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = "var(--sh-sm)"; }}
     >
-      {s.is_assigned && (
-        <span style={{
-          position: "absolute", top: 14, right: 14, zIndex: 1,
-          background: "var(--green-800)", color: "#fff",
-          padding: "3px 10px", borderRadius: 999,
-          fontSize: 11, fontWeight: 700,
-          letterSpacing: "0.06em", textTransform: "uppercase",
-          boxShadow: "0 4px 10px rgba(26,52,36,0.2)",
-        }}>🌱 Назначено</span>
-      )}
-      {s.preview_image ? (
-        <div style={{
-          height: 110, overflow: "hidden",
-          background: "linear-gradient(135deg, var(--green-100) 0%, var(--green-200) 100%)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-        }}>
-          <img src={s.preview_image} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+      <div style={{
+        width: 44, height: 44, borderRadius: 12, flexShrink: 0,
+        background: "linear-gradient(135deg, var(--green-100) 0%, var(--green-200) 100%)",
+        display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22,
+      }}>
+        {s.preview_image ? (
+          <img src={s.preview_image} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: 12 }} />
+        ) : "🃏"}
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontFamily: "var(--f-serif)", fontSize: 15, fontWeight: 500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+          {s.title}
         </div>
-      ) : (
-        <div style={{
-          height: 110,
-          background: "linear-gradient(135deg, var(--green-100) 0%, var(--green-200) 100%)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: 36,
-        }}>🃏</div>
-      )}
-      <div style={{ padding: "16px 18px", display: "flex", flexDirection: "column", gap: 6, flex: 1 }}>
-        <div style={{ fontFamily: "var(--f-serif)", fontSize: 17, fontWeight: 500 }}>{s.title}</div>
-        {s.description && (
-          <div style={{ fontSize: 13, color: "var(--text-muted)", lineHeight: 1.5 }}>{s.description}</div>
-        )}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "auto", paddingTop: 6 }}>
-          <span style={{ fontSize: 12, color: "var(--text-muted)" }}>{s.cards_count ?? "—"} карточек</span>
-          <span style={{ fontSize: 12, fontWeight: 600, color: "var(--green-800)" }}>Открыть →</span>
+        <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>
+          {s.cards_count ?? "—"} карточек{s.is_assigned ? " · 🌱 Назначено" : ""}
         </div>
       </div>
+      <span style={{ fontSize: 12, fontWeight: 600, color: "var(--green-800)", flexShrink: 0 }}>→</span>
     </div>
   );
 }
@@ -537,29 +519,40 @@ export const StudentDashboard = ({ name = "Аня", quizzes = [], cardSets = [],
           </div>
         )}
 
-        {/* Quizzes */}
-        {filteredQuizzes.length > 0 && (
-          <div style={{ marginBottom: 64 }}>
-            <h2 style={{ fontFamily: "var(--f-serif)", fontSize: 24, marginBottom: 24, letterSpacing: "-0.01em" }}>Тесты</h2>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(280px, 100%), 1fr))", gap: 20 }}>
-              {filteredQuizzes.map(q => (
-                <QuizTile key={q.id} q={q} onStart={() => onOpenQuiz?.(q)} />
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Cards */}
-        {filteredCards.length > 0 && (
+        {/* Two-column layout: Cards left, Tests right */}
+        <div className="dash-two-col" style={{ display: "grid", gridTemplateColumns: "1fr 1.6fr", gap: 32, alignItems: "start" }}>
+          {/* Left: Cards */}
           <div>
-            <h2 style={{ fontFamily: "var(--f-serif)", fontSize: 24, marginBottom: 24, letterSpacing: "-0.01em" }}>Карточки</h2>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(280px, 100%), 1fr))", gap: 20 }}>
-              {filteredCards.map(s => (
-                <CardSetTile key={s.id} s={s} onStart={() => onOpenCards?.(s)} />
-              ))}
-            </div>
+            <h2 style={{ fontFamily: "var(--f-serif)", fontSize: 22, marginBottom: 20, letterSpacing: "-0.01em" }}>Карточки</h2>
+            {filteredCards.length > 0 ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                {filteredCards.map(s => (
+                  <CardSetTile key={s.id} s={s} onStart={() => onOpenCards?.(s)} />
+                ))}
+              </div>
+            ) : (
+              <div style={{ textAlign: "center", padding: "40px 0", color: "var(--text-muted)", fontSize: 14 }}>
+                {cardSets.length === 0 ? "Карточек пока нет" : "Ничего не найдено"}
+              </div>
+            )}
           </div>
-        )}
+
+          {/* Right: Tests */}
+          <div>
+            <h2 style={{ fontFamily: "var(--f-serif)", fontSize: 22, marginBottom: 20, letterSpacing: "-0.01em" }}>Тесты</h2>
+            {filteredQuizzes.length > 0 ? (
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(260px, 100%), 1fr))", gap: 16 }}>
+                {filteredQuizzes.map(q => (
+                  <QuizTile key={q.id} q={q} onStart={() => onOpenQuiz?.(q)} />
+                ))}
+              </div>
+            ) : (
+              <div style={{ textAlign: "center", padding: "40px 0", color: "var(--text-muted)", fontSize: 14 }}>
+                {quizzes.length === 0 ? "Тестов пока нет" : "Ничего не найдено"}
+              </div>
+            )}
+          </div>
+        </div>
 
         {quizzes.length === 0 && cardSets.length === 0 && (
           <div style={{ textAlign: "center", padding: "60px 0", color: "var(--text-muted)", fontSize: 16 }}>
@@ -568,7 +561,7 @@ export const StudentDashboard = ({ name = "Аня", quizzes = [], cardSets = [],
         )}
 
         {(quizzes.length > 0 || cardSets.length > 0) && filteredQuizzes.length === 0 && filteredCards.length === 0 && (
-          <div style={{ textAlign: "center", padding: "60px 0", color: "var(--text-muted)", fontSize: 16 }}>
+          <div style={{ textAlign: "center", padding: "40px 0", color: "var(--text-muted)", fontSize: 16 }}>
             По вашим фильтрам ничего не найдено.{" "}
             <button onClick={resetFilters} style={{
               background: "none", border: "none", color: "var(--green-800)",

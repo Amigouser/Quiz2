@@ -2268,7 +2268,7 @@ const AdminEditCardSet = ({ editId, onSaved, autoImport = false }) => {
     try {
       const payload = {
         title: title.trim(), section: section.trim() || null, topic: topic.trim() || null,
-        description: description.trim() || null, grade: grade || null, category: category || null,
+        description: description.trim() || null, grade: Array.isArray(grade) ? grade.join(", ") : (grade || null), category: category || null,
         part: part.trim() || null, line: line.trim() || null, source: source.trim() || null,
         cards: validCards.map(c => ({ term: c.term.trim(), definition: c.definition.trim(), image_data: c.image_data || null })),
       };
