@@ -115,7 +115,7 @@ export const QuizClassic = ({ quiz, onFinish, onExit }) => {
   );
 
   return (
-    <div style={{ minHeight: "100vh", background: "var(--bg)", position: "relative", overflow: "hidden" }}>
+    <div style={{ minHeight: "100vh", background: "var(--bg)", position: "relative", overflowX: "hidden", overflowY: "auto" }}>
       <LeafBurst go={burst} />
       <BotanicalBg intensity={0.4} pattern="mix" />
 
@@ -476,7 +476,7 @@ export const QuizFocused = ({ quiz, onFinish }) => {
   const next = () => { if (isLast) onFinish?.(); else { setIdx(i=>i+1); setSelected(null); setLocked(false); } };
 
   return (
-    <div style={{ minHeight: "100vh", background: "var(--bg)", display: "grid", gridTemplateColumns: "420px 1fr", overflow: "hidden", position: "relative" }}>
+    <div style={{ minHeight: "100vh", background: "var(--bg)", display: "grid", gridTemplateColumns: "420px 1fr", overflowX: "hidden", overflowY: "auto", position: "relative" }}>
       <LeafBurst go={burst} />
 
       {/* Left plate */}
@@ -588,7 +588,7 @@ export const QuizResults = ({ total = 0, correct = 0, quizTitle, onRetry, onHome
     "Давай вернёмся к теории — это нормально, биология требует времени.";
 
   return (
-    <div className="quiz-result-wrap" style={{ minHeight: "100vh", background: "var(--bg)", padding: "48px 48px 80px", position: "relative", overflow: "hidden" }}>
+    <div className="quiz-result-wrap" style={{ minHeight: "100vh", background: "var(--bg)", padding: "48px 48px 80px", position: "relative", overflowX: "hidden", overflowY: "auto" }}>
       <LeafBurst go={burst} count={40} />
       <BotanicalBg intensity={0.4} pattern="mix" />
 

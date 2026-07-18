@@ -211,8 +211,7 @@ function GuestCards({ set, onFinish, onClose }) {
             textAlign: "center", marginBottom: 20,
             transition: "background 0.3s",
             userSelect: "none",
-            overflow: "hidden",
-          }}
+            overflow: "visible",          }}
         >
           {card.image_data && (
             <img src={card.image_data} alt="" style={{
