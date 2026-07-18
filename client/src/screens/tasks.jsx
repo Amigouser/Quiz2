@@ -223,7 +223,7 @@ function GuestCards({ set, onFinish, onClose }) {
           <div style={{ fontSize: 11, color: "var(--text-muted)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: card.image_data ? 8 : 12 }}>
             {flipped ? "Определение" : "Термин"}
           </div>
-          <div style={{ fontFamily: "var(--f-serif)", fontSize: 22, lineHeight: 1.4, color: flipped ? "var(--green-900)" : "var(--text)" }}>
+          <div className="pre-line" style={{ fontFamily: "var(--f-serif)", fontSize: 22, lineHeight: 1.4, color: flipped ? "var(--green-900)" : "var(--text)" }}>
             {flipped ? card.definition : card.term}
           </div>
           {!flipped && (

@@ -235,7 +235,7 @@ export default function FlashcardsRoute() {
               <div style={{ fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: card.image_data ? 10 : 16, fontWeight: 600, flexShrink: 0 }}>
                 Термин
               </div>
-              <div className="fc-term" style={{ fontFamily: "var(--f-serif)", fontSize: 24, fontWeight: 500, textAlign: "center", lineHeight: 1.35 }}>
+              <div className="fc-term pre-line" style={{ fontFamily: "var(--f-serif)", fontSize: 24, fontWeight: 500, textAlign: "center", lineHeight: 1.35 }}>
                 {card.term}
               </div>
               <div style={{ marginTop: 20, fontSize: 11, color: "var(--text-muted)", flexShrink: 0 }}>
@@ -268,7 +268,7 @@ export default function FlashcardsRoute() {
               <div style={{ fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--green-800)", marginBottom: card.image_data ? 10 : 16, fontWeight: 600, opacity: 0.7, flexShrink: 0 }}>
                 Определение
               </div>
-              <div className="fc-def" style={{ fontFamily: "var(--f-serif)", fontSize: 20, fontWeight: 400, textAlign: "center", lineHeight: 1.55 }}>
+              <div className="fc-def pre-line" style={{ fontFamily: "var(--f-serif)", fontSize: 20, fontWeight: 400, textAlign: "center", lineHeight: 1.55 }}>
                 {card.definition}
               </div>
             </div>

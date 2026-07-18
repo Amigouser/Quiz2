@@ -148,10 +148,10 @@ export const QuizClassic = ({ quiz, onFinish, onExit }) => {
           </div>
         )}
 
-        <h2 className="quiz-h2" style={{ fontFamily: "var(--f-serif)", fontSize: 34, lineHeight: 1.2, marginBottom: 10, letterSpacing: "-0.01em" }}>
+        <h2 className="quiz-h2 pre-line" style={{ fontFamily: "var(--f-serif)", fontSize: 34, lineHeight: 1.2, marginBottom: 10, letterSpacing: "-0.01em" }}>
           {q.q}
         </h2>
-        {q.note && <p style={{ color: "var(--text-muted)", fontSize: 14, fontStyle: "italic", marginBottom: 28 }}>{q.note}</p>}
+        {q.note && <p className="pre-line" style={{ color: "var(--text-muted)", fontSize: 14, fontStyle: "italic", marginBottom: 28 }}>{q.note}</p>}
 
         {/* ── Single choice ── */}
         {qType === "single" && (
@@ -167,7 +167,7 @@ export const QuizClassic = ({ quiz, onFinish, onExit }) => {
               return (
                 <div key={i} className={cls} onClick={() => pick(i)}>
                   <div className="letter">{letter}</div>
-                  <div style={{ flex: 1 }}>{opt}</div>
+                  <div className="pre-line" style={{ flex: 1 }}>{opt}</div>
                   {locked && i === q.correct && <span style={{ fontSize: 20 }}>🌱</span>}
                   {locked && i === selected && i !== q.correct && <span style={{ fontSize: 18, color: "var(--wrong)" }}>✕</span>}
                 </div>
@@ -342,7 +342,7 @@ export const QuizClassic = ({ quiz, onFinish, onExit }) => {
                     background: "var(--surface)", borderRadius: 12,
                     border: `1.5px solid ${itemCorrect ? "var(--correct)" : itemWrong ? "var(--wrong)" : "var(--border-soft)"}`,
                   }}>
-                    <div style={{ minWidth: 32, fontWeight: 700, fontSize: 17, color: "var(--green-800)" }}>{ma.text}</div>
+                    <div className="pre-line" style={{ minWidth: 32, fontWeight: 700, fontSize: 17, color: "var(--green-800)" }}>{ma.text}</div>
                     <div style={{ flex: 1, fontSize: 14, color: "var(--text-muted)" }}>→</div>
                     <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
                       {(q.match_options || []).map((opt, oi) => (
@@ -388,7 +388,7 @@ export const QuizClassic = ({ quiz, onFinish, onExit }) => {
                     background: "var(--surface)", borderRadius: 12,
                     border: `1.5px solid ${itemCorrect ? "var(--correct)" : itemWrong ? "var(--wrong)" : "var(--border-soft)"}`,
                   }}>
-                    <div style={{ flex: 1, fontSize: 15 }}>{ma.text}</div>
+                    <div className="pre-line" style={{ flex: 1, fontSize: 15 }}>{ma.text}</div>
                     <div style={{ display: "flex", gap: 6 }}>
                       {(q.match_options || ["1", "2"]).map(opt => (
                         <button key={opt} onClick={() => !locked && setMatchState(s => ({ ...s, [ma.id]: opt }))}
@@ -431,7 +431,7 @@ export const QuizClassic = ({ quiz, onFinish, onExit }) => {
               <div style={{ fontWeight: 600, marginBottom: 4, color: isCurrentCorrect ? "var(--correct)" : "var(--wrong)" }}>
                 {isCurrentCorrect ? "Отлично!" : "Не совсем так."}
               </div>
-              <div style={{ fontSize: 14, color: "var(--text-soft)", lineHeight: 1.55 }}>{q.explain}</div>
+              <div className="pre-line" style={{ fontSize: 14, color: "var(--text-soft)", lineHeight: 1.55 }}>{q.explain}</div>
             </div>
           </div>
         )}
@@ -527,10 +527,10 @@ export const QuizFocused = ({ quiz, onFinish }) => {
         <BotanicalBg intensity={0.3} pattern="ferns" />
         <div style={{ position: "relative", maxWidth: 640 }}>
           <div className="eyebrow" style={{ marginBottom: 16 }}>Вопрос {String(idx + 1).padStart(2, "0")}</div>
-          <h2 style={{ fontFamily: "var(--f-serif)", fontSize: 36, lineHeight: 1.15, marginBottom: 14, letterSpacing: "-0.015em" }}>
+          <h2 className="pre-line" style={{ fontFamily: "var(--f-serif)", fontSize: 36, lineHeight: 1.15, marginBottom: 14, letterSpacing: "-0.015em" }}>
             {q.q}
           </h2>
-          {q.note && <p style={{ color: "var(--text-muted)", fontSize: 14, fontStyle: "italic", marginBottom: 24 }}>{q.note}</p>}
+          {q.note && <p className="pre-line" style={{ color: "var(--text-muted)", fontSize: 14, fontStyle: "italic", marginBottom: 24 }}>{q.note}</p>}
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 28 }}>
             {q.options.map((opt, i) => {
@@ -544,7 +544,7 @@ export const QuizFocused = ({ quiz, onFinish }) => {
               return (
                 <div key={i} className={cls} onClick={() => pick(i)} style={{ padding: "18px 18px" }}>
                   <div className="letter">{letter}</div>
-                  <div style={{ flex: 1, fontSize: 15 }}>{opt}</div>
+                  <div className="pre-line" style={{ flex: 1, fontSize: 15 }}>{opt}</div>
                 </div>
               );
             })}
@@ -560,7 +560,7 @@ export const QuizFocused = ({ quiz, onFinish }) => {
               <div style={{ fontFamily: "var(--f-serif)", fontStyle: "italic", fontSize: 14, marginBottom: 6, color: selected === q.correct ? "var(--correct)" : "var(--wrong)" }}>
                 {selected === q.correct ? "🌱 Верно" : "🍂 Почти"}
               </div>
-              <div style={{ fontSize: 14, color: "var(--text-soft)", lineHeight: 1.55 }}>{q.explain}</div>
+              <div className="pre-line" style={{ fontSize: 14, color: "var(--text-soft)", lineHeight: 1.55 }}>{q.explain}</div>
             </div>
           )}
 

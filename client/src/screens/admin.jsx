@@ -1126,7 +1126,7 @@ const AdminCreateTest = ({ onCreated, autoImport = false }) => {
                 <div style={{ width: 30, height: 30, borderRadius: "50%", background: "var(--green-800)", color: "#fff", fontFamily: "var(--f-serif)", display: "grid", placeItems: "center", fontSize: 14 }}>
                   {qi + 1}
                 </div>
-                <div style={{ flex: 1, fontWeight: 500, color: q.text ? "var(--text)" : "var(--text-muted)" }}>
+                <div style={{ flex: 1, fontWeight: 500, color: q.text ? "var(--text)" : "var(--text-muted)" }} className="pre-line">
                   {q.text || "Новый вопрос"}
                 </div>
                 <span className="pill pill-muted">{q.answers.length} варианта</span>
@@ -1175,11 +1175,11 @@ const AdminCreateTest = ({ onCreated, autoImport = false }) => {
                   </div>
                   <div className="field">
                     <label>Текст вопроса</label>
-                    <input className="input" value={q.text} onChange={e => updateQ(qi, "text", e.target.value)} placeholder="Введи вопрос…" />
+                    <textarea className="input" rows={3} value={q.text} onChange={e => updateQ(qi, "text", e.target.value)} placeholder="Введи вопрос…" />
                   </div>
                   <div className="field">
                     <label>Подсказка (необязательно)</label>
-                    <input className="input" value={q.hint} onChange={e => updateQ(qi, "hint", e.target.value)} placeholder="Направление для размышления…" />
+                    <textarea className="input" rows={2} value={q.hint} onChange={e => updateQ(qi, "hint", e.target.value)} placeholder="Направление для размышления…" />
                   </div>
                   {/* Single */}
                   {q.question_type === "single" && (
@@ -1514,7 +1514,7 @@ const AdminEditTest = ({ testId, onSaved }) => {
     try {
       await API.admin.updateTest(testId, {
         title: title.trim(), section: section.length > 0 ? section.join(", ") : null, topic: topic.trim() || null,
-        description: description.trim() || null, grade: grade || null, category: category.length > 0 ? category.join(", ") : null,
+        description: description.trim() || null, grade: grade.length > 0 ? grade.join(", ") : null, category: category.length > 0 ? category.join(", ") : null,
         part: part.length > 0 ? part.join(", ") : null, line: line.length > 0 ? line.join(", ") : null, source: source.length > 0 ? source.join(", ") : null,
         questions: questions.map(q => {
           let correctText = null;
@@ -1621,7 +1621,7 @@ const AdminEditTest = ({ testId, onSaved }) => {
                 <div style={{ width: 30, height: 30, borderRadius: "50%", background: "var(--green-800)", color: "#fff", fontFamily: "var(--f-serif)", display: "grid", placeItems: "center", fontSize: 14 }}>
                   {qi + 1}
                 </div>
-                <div style={{ flex: 1, fontWeight: 500, color: q.text ? "var(--text)" : "var(--text-muted)" }}>
+                <div style={{ flex: 1, fontWeight: 500, color: q.text ? "var(--text)" : "var(--text-muted)" }} className="pre-line">
                   {q.text || "Новый вопрос"}
                 </div>
                 <button className="btn btn-ghost btn-sm" onClick={() => updateQ(qi, "expand", !q.expand)}>
@@ -1669,11 +1669,11 @@ const AdminEditTest = ({ testId, onSaved }) => {
                   </div>
                   <div className="field">
                     <label>Текст вопроса</label>
-                    <input className="input" value={q.text} onChange={e => updateQ(qi, "text", e.target.value)} />
+                    <textarea className="input" rows={3} value={q.text} onChange={e => updateQ(qi, "text", e.target.value)} />
                   </div>
                   <div className="field">
                     <label>Подсказка</label>
-                    <input className="input" value={q.hint} onChange={e => updateQ(qi, "hint", e.target.value)} />
+                    <textarea className="input" rows={2} value={q.hint} onChange={e => updateQ(qi, "hint", e.target.value)} />
                   </div>
                   {/* Single */}
                   {q.question_type === "single" && (
@@ -2617,14 +2617,16 @@ const AdminEditCardSet = ({ editId, onSaved, autoImport = false }) => {
               borderRadius: "var(--r-md)", padding: "12px 14px",
             }}>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr auto", gap: 12, alignItems: "center" }}>
-                <input
+                <textarea
                   className="input"
+                  rows={2}
                   value={c.term} onChange={e => updateCard(i, "term", e.target.value)}
                   placeholder={`Термин ${i + 1}`}
                   style={{ fontSize: 14 }}
                 />
-                <input
+                <textarea
                   className="input"
+                  rows={2}
                   value={c.definition} onChange={e => updateCard(i, "definition", e.target.value)}
                   placeholder="Определение"
                   style={{ fontSize: 14 }}
