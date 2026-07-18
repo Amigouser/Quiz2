@@ -54,6 +54,7 @@ const API = {
     createStudent: (name, group_name) => req("/api/admin/students", { method: "POST", body: { name, group_name } }),
     deleteStudent: (id) => req(`/api/admin/students/${id}`, { method: "DELETE" }),
     getResults: () => req("/api/admin/results"),
+    getAttemptDetail: (id) => req(`/api/admin/results/${id}`),
     deleteResult: (id) => req(`/api/admin/results/${id}`, { method: "DELETE" }),
     deleteAllResults: () => req("/api/admin/results", { method: "DELETE", body: { confirm: "DELETE_ALL" } }),
     getCardSets: () => req("/api/admin/flashcard-sets"),

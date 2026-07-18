@@ -497,6 +497,18 @@ const TopicPicker = ({ value, onChange }) => (
   />
 );
 
+const TopicPickerMulti = ({ value, onChange }) => (
+  <ManagedPickerMulti
+    value={value}
+    onChange={onChange}
+    placeholder="— выбери темы —"
+    loadItems={() => API.admin.getTopics()}
+    createItem={(name) => API.admin.createTopic(name)}
+    updateItem={(id, name) => API.admin.updateTopic(id, name)}
+    deleteItem={(id) => API.admin.deleteTopic(id)}
+  />
+);
+
 const SectionPickerMulti = ({ value, onChange }) => (
   <ManagedPickerMulti
     value={value}
@@ -915,7 +927,7 @@ const EMPTY_QUESTION = () => ({
 const AdminCreateTest = ({ onCreated, autoImport = false }) => {
   const [title, setTitle] = React.useState("");
   const [section, setSection] = React.useState([]);
-  const [topic, setTopic] = React.useState("");
+  const [topic, setTopic] = React.useState([]);
   const [description, setDescription] = React.useState("");
   const [grade, setGrade] = React.useState([]);
   const [category, setCategory] = React.useState([]);
@@ -930,7 +942,7 @@ const AdminCreateTest = ({ onCreated, autoImport = false }) => {
 
   const handleImportTest = (data) => {
     if (data.title) setTitle(data.title);
-    if (data.topic) setTopic(data.topic);
+    if (data.topic) setTopic(data.topic ? data.topic.split(", ").filter(Boolean) : []);
     if (data.description) setDescription(data.description);
     if (Array.isArray(data.questions) && data.questions.length > 0) {
       setQuestions(data.questions.map(q => {
@@ -1003,7 +1015,7 @@ const AdminCreateTest = ({ onCreated, autoImport = false }) => {
       await API.admin.createTest({
         title: title.trim(),
         section: section.length > 0 ? section.join(", ") : null,
-        topic: topic.trim() || null,
+        topic: topic.length > 0 ? topic.join(", ") : null,
         description: description.trim() || null,
         grade: grade.length > 0 ? grade.join(", ") : null,
         category: category.length > 0 ? category.join(", ") : null,
@@ -1094,8 +1106,8 @@ const AdminCreateTest = ({ onCreated, autoImport = false }) => {
               <SectionPickerMulti value={section} onChange={setSection} />
             </div>
             <div className="field">
-              <label>Тема</label>
-              <TopicPicker value={topic} onChange={setTopic} />
+              <label>Темы</label>
+              <TopicPickerMulti value={topic} onChange={setTopic} />
             </div>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 12 }}>
@@ -1437,7 +1449,7 @@ const AdminCreateTest = ({ onCreated, autoImport = false }) => {
 const AdminEditTest = ({ testId, onSaved }) => {
   const [title, setTitle] = React.useState("");
   const [section, setSection] = React.useState([]);
-  const [topic, setTopic] = React.useState("");
+  const [topic, setTopic] = React.useState([]);
   const [description, setDescription] = React.useState("");
   const [grade, setGrade] = React.useState("");
   const [category, setCategory] = React.useState([]);
@@ -1453,7 +1465,7 @@ const AdminEditTest = ({ testId, onSaved }) => {
     API.admin.getTest(testId).then(data => {
       setTitle(data.title);
       setSection(data.section ? data.section.split(", ").filter(Boolean) : []);
-      setTopic(data.topic || "");
+      setTopic(data.topic ? data.topic.split(", ").filter(Boolean) : []);
       setDescription(data.description || "");
       setGrade(data.grade ? data.grade.split(", ").filter(Boolean) : []);
       setCategory(data.category ? data.category.split(", ").filter(Boolean) : []);
@@ -1513,7 +1525,7 @@ const AdminEditTest = ({ testId, onSaved }) => {
     setSaving(true); setError(null);
     try {
       await API.admin.updateTest(testId, {
-        title: title.trim(), section: section.length > 0 ? section.join(", ") : null, topic: topic.trim() || null,
+        title: title.trim(), section: section.length > 0 ? section.join(", ") : null, topic: topic.length > 0 ? topic.join(", ") : null,
         description: description.trim() || null, grade: grade.length > 0 ? grade.join(", ") : null, category: category.length > 0 ? category.join(", ") : null,
         part: part.length > 0 ? part.join(", ") : null, line: line.length > 0 ? line.join(", ") : null, source: source.length > 0 ? source.join(", ") : null,
         questions: questions.map(q => {
@@ -1589,8 +1601,8 @@ const AdminEditTest = ({ testId, onSaved }) => {
               <SectionPickerMulti value={section} onChange={setSection} />
             </div>
             <div className="field">
-              <label>Тема</label>
-              <TopicPicker value={topic} onChange={setTopic} />
+              <label>Темы</label>
+              <TopicPickerMulti value={topic} onChange={setTopic} />
             </div>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 12 }}>
@@ -2427,7 +2439,7 @@ const EMPTY_CARD = () => ({ id: Date.now() + Math.random(), term: "", definition
 const AdminEditCardSet = ({ editId, onSaved, autoImport = false }) => {
   const [title, setTitle] = React.useState("");
   const [section, setSection] = React.useState([]);
-  const [topic, setTopic] = React.useState("");
+  const [topic, setTopic] = React.useState([]);
   const [description, setDescription] = React.useState("");
   const [grade, setGrade] = React.useState("");
   const [category, setCategory] = React.useState([]);
@@ -2443,7 +2455,7 @@ const AdminEditCardSet = ({ editId, onSaved, autoImport = false }) => {
 
   const handleImportCards = (data) => {
     if (data.title) setTitle(data.title);
-    if (data.topic) setTopic(data.topic);
+    if (data.topic) setTopic(data.topic ? data.topic.split(", ").filter(Boolean) : []);
     if (data.description) setDescription(data.description || "");
     if (Array.isArray(data.cards) && data.cards.length > 0) {
       setCards(data.cards.map(c => ({
@@ -2461,7 +2473,7 @@ const AdminEditCardSet = ({ editId, onSaved, autoImport = false }) => {
     API.admin.getCardSet(editId).then(data => {
       setTitle(data.title);
       setSection(data.section ? data.section.split(", ").filter(Boolean) : []);
-      setTopic(data.topic || "");
+      setTopic(data.topic ? data.topic.split(", ").filter(Boolean) : []);
       setDescription(data.description || "");
       setGrade(data.grade ? data.grade.split(", ").filter(Boolean) : []);
       setCategory(data.category ? data.category.split(", ").filter(Boolean) : []);
@@ -2498,7 +2510,7 @@ const AdminEditCardSet = ({ editId, onSaved, autoImport = false }) => {
     setSaving(true); setError(null);
     try {
       const payload = {
-        title: title.trim(), section: section.length > 0 ? section.join(", ") : null, topic: topic.trim() || null,
+        title: title.trim(), section: section.length > 0 ? section.join(", ") : null, topic: topic.length > 0 ? topic.join(", ") : null,
         description: description.trim() || null, grade: Array.isArray(grade) ? grade.join(", ") : (grade || null), category: category.length > 0 ? category.join(", ") : null,
         part: part.length > 0 ? part.join(", ") : null, line: line.length > 0 ? line.join(", ") : null, source: source.length > 0 ? source.join(", ") : null,
         cards: validCards.map(c => ({ term: c.term.trim(), definition: c.definition.trim(), image_data: c.image_data || null })),
@@ -2565,8 +2577,8 @@ const AdminEditCardSet = ({ editId, onSaved, autoImport = false }) => {
               <SectionPickerMulti value={section} onChange={setSection} />
             </div>
             <div className="field">
-              <label>Тема</label>
-              <TopicPicker value={topic} onChange={setTopic} />
+              <label>Темы</label>
+              <TopicPickerMulti value={topic} onChange={setTopic} />
             </div>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 12 }}>
@@ -2785,9 +2797,228 @@ const AdminFlashcardSets = () => {
   );
 };
 
+const AttemptDetailModal = ({ attempt, onClose }) => {
+  const [detail, setDetail] = React.useState(null);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    API.admin.getAttemptDetail(attempt.id)
+      .then(data => { setDetail(data); setLoading(false); })
+      .catch(() => setLoading(false));
+  }, [attempt.id]);
+
+  if (loading) return (
+    <div style={{
+      position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex",
+      alignItems: "center", justifyContent: "center", zIndex: 1000,
+    }}>
+      <div className="card" style={{ padding: 40, minWidth: 300, textAlign: "center" }}>Загрузка…</div>
+    </div>
+  );
+
+  if (!detail) return (
+    <div style={{
+      position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex",
+      alignItems: "center", justifyContent: "center", zIndex: 1000,
+    }}>
+      <div className="card" style={{ padding: 40, minWidth: 300 }}>
+        <p>Не удалось загрузить</p>
+        <button className="btn btn-ghost btn-sm" onClick={onClose}>Закрыть</button>
+      </div>
+    </div>
+  );
+
+  const { attempt: att, questions } = detail;
+
+  return (
+    <div style={{
+      position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex",
+      alignItems: "center", justifyContent: "center", zIndex: 1000,
+      padding: 20,
+    }} onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="card" style={{
+        width: "100%", maxWidth: 700, maxHeight: "85vh", overflow: "auto", padding: 0,
+      }}>
+        {/* Header */}
+        <div style={{
+          padding: "20px 24px", borderBottom: "1px solid var(--border-soft)",
+          display: "flex", justifyContent: "space-between", alignItems: "flex-start",
+          position: "sticky", top: 0, background: "var(--bg)", zIndex: 1,
+        }}>
+          <div>
+            <div style={{ fontWeight: 600, fontSize: 18, marginBottom: 4 }}>{att.user_name}</div>
+            <div style={{ fontSize: 13, color: "var(--text-muted)" }}>
+              {att.test_title}{att.topic ? ` · ${att.topic}` : ""}
+            </div>
+          </div>
+          <div style={{ textAlign: "right" }}>
+            <div style={{ fontFamily: "var(--f-serif)", fontSize: 24 }}>
+              {att.score}/{att.max_score}
+            </div>
+            <div style={{ fontSize: 13, color: "var(--text-muted)" }}>
+              {att.max_score > 0 ? `${Math.round(att.score / att.max_score * 100)}%` : ""}
+            </div>
+          </div>
+        </div>
+
+        {/* Questions */}
+        <div style={{ padding: "16px 24px" }}>
+          {questions.map((q, i) => {
+            const isCorrect = q.is_correct === 1;
+            const qType = q.question_type || "single";
+
+            return (
+              <div key={q.question_id} style={{
+                marginBottom: 20, padding: 16, borderRadius: 8,
+                background: isCorrect ? "rgba(45,158,95,0.06)" : "rgba(192,57,43,0.06)",
+                border: `1px solid ${isCorrect ? "rgba(45,158,95,0.2)" : "rgba(192,57,43,0.2)"}`,
+              }}>
+                {/* Question header */}
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                  <span style={{
+                    display: "inline-flex", alignItems: "center", justifyContent: "center",
+                    width: 24, height: 24, borderRadius: "50%", fontSize: 13, fontWeight: 600,
+                    background: isCorrect ? "#2d9e5f" : "#c0392b", color: "#fff", flexShrink: 0,
+                  }}>{i + 1}</span>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: isCorrect ? "#2d9e5f" : "#c0392b" }}>
+                    {isCorrect ? "Верно" : "Неверно"}
+                  </span>
+                </div>
+
+                {/* Question text */}
+                <div style={{ fontSize: 15, marginBottom: 12, lineHeight: 1.5 }}>{q.question_text}</div>
+
+                {/* Answers by type */}
+                {(qType === "single" || qType === "multiple_select") && q.all_answers && (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                    {q.all_answers.map(a => {
+                      const studentIds = Array.isArray(q.student_answer)
+                        ? q.student_answer.map(sa => sa.id)
+                        : q.student_answer?.id ? [q.student_answer.id] : [];
+                      const isSelected = studentIds.includes(a.id);
+                      const isCorrectAnswer = a.is_correct === 1;
+
+                      return (
+                        <div key={a.id} style={{
+                          padding: "6px 10px", borderRadius: 6, fontSize: 13,
+                          background: isCorrectAnswer
+                            ? "rgba(45,158,95,0.12)"
+                            : isSelected ? "rgba(192,57,43,0.12)" : "transparent",
+                          border: `1px solid ${
+                            isCorrectAnswer ? "rgba(45,158,95,0.3)"
+                            : isSelected ? "rgba(192,57,43,0.3)" : "var(--border-soft)"
+                          }`,
+                        }}>
+                          {qType === "multiple_select" && (
+                            <span style={{ marginRight: 6 }}>{isSelected ? "☑" : "☐"}</span>
+                          )}
+                          {qType === "single" && (
+                            <span style={{ marginRight: 6 }}>{isSelected ? "●" : "○"}</span>
+                          )}
+                          {a.answer_text}
+                          {isCorrectAnswer && <span style={{ marginLeft: 6, color: "#2d9e5f" }}>✓</span>}
+                          {isSelected && !isCorrectAnswer && <span style={{ marginLeft: 6, color: "#c0392b" }}>✗</span>}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {qType === "text_input" && (
+                  <div>
+                    <div style={{ fontSize: 13, marginBottom: 4 }}>
+                      <span style={{ color: "var(--text-muted)" }}>Ответ ученика: </span>
+                      <span style={{ fontWeight: 500 }}>{q.student_answer?.answer_text || "(пусто)"}</span>
+                    </div>
+                    <div style={{ fontSize: 13 }}>
+                      <span style={{ color: "var(--text-muted)" }}>Правильный ответ: </span>
+                      <span style={{ fontWeight: 500, color: "#2d9e5f" }}>{q.correct_answer?.answer_text || ""}</span>
+                    </div>
+                  </div>
+                )}
+
+                {qType === "sequence" && (
+                  <div>
+                    <div style={{ fontSize: 13, marginBottom: 6 }}>
+                      <span style={{ color: "var(--text-muted)" }}>Порядок ученика: </span>
+                      {(q.student_answer || []).map((a, j) => (
+                        <span key={j} style={{
+                          display: "inline-block", padding: "2px 8px", margin: "0 2px", borderRadius: 4, fontSize: 12,
+                          background: a.id === q.correct_answer?.[j]?.id ? "rgba(45,158,95,0.12)" : "rgba(192,57,43,0.12)",
+                          border: `1px solid ${a.id === q.correct_answer?.[j]?.id ? "rgba(45,158,95,0.3)" : "rgba(192,57,43,0.3)"}`,
+                        }}>{a.answer_text}</span>
+                      ))}
+                    </div>
+                    <div style={{ fontSize: 13 }}>
+                      <span style={{ color: "var(--text-muted)" }}>Правильный порядок: </span>
+                      {(q.correct_answer || []).map((a, j) => (
+                        <span key={j} style={{
+                          display: "inline-block", padding: "2px 8px", margin: "0 2px", borderRadius: 4, fontSize: 12,
+                          background: "rgba(45,158,95,0.12)", border: "1px solid rgba(45,158,95,0.3)",
+                        }}>{a.answer_text}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {(qType === "matching" || qType === "fill_blanks") && (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                    {q.student_answer?.map((item, j) => (
+                      <div key={j} style={{
+                        display: "flex", alignItems: "center", gap: 8, fontSize: 13,
+                        padding: "4px 8px", borderRadius: 4,
+                      }}>
+                        <span style={{ minWidth: 100 }}>{item.answer_text}</span>
+                        <span style={{ color: "var(--text-muted)" }}>→</span>
+                        <span style={{
+                          padding: "2px 8px", borderRadius: 4,
+                          background: item.is_correct ? "rgba(45,158,95,0.12)" : "rgba(192,57,43,0.12)",
+                          border: `1px solid ${item.is_correct ? "rgba(45,158,95,0.3)" : "rgba(192,57,43,0.3)"}`,
+                        }}>{item.student_selected || "—"}</span>
+                        {!item.is_correct && (
+                          <>
+                            <span style={{ color: "var(--text-muted)" }}>→</span>
+                            <span style={{ color: "#2d9e5f", padding: "2px 8px", borderRadius: 4, background: "rgba(45,158,95,0.12)" }}>
+                              {item.match_value}
+                            </span>
+                          </>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Explanation */}
+                {q.explanation && (
+                  <div style={{
+                    marginTop: 10, padding: "8px 10px", borderRadius: 6,
+                    background: "var(--bg-muted)", fontSize: 13, color: "var(--text-muted)", lineHeight: 1.5,
+                  }}>
+                    <b>Пояснение:</b> {q.explanation}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Footer */}
+        <div style={{
+          padding: "16px 24px", borderTop: "1px solid var(--border-soft)",
+          display: "flex", justifyContent: "flex-end",
+          position: "sticky", bottom: 0, background: "var(--bg)",
+        }}>
+          <button className="btn btn-ghost btn-sm" onClick={onClose}>Закрыть</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const AdminResults = () => {
   const [results, setResults] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
+  const [selectedAttempt, setSelectedAttempt] = React.useState(null);
 
   React.useEffect(() => {
     API.admin.getResults()
@@ -2836,11 +3067,16 @@ const AdminResults = () => {
             <div>Ученик</div><div>Тест</div><div>Баллы</div><div>Ответы</div><div>Дата</div><div></div>
           </div>
           {results.map((r, i) => (
-            <div key={r.id} style={{
+            <div key={r.id} onClick={() => setSelectedAttempt(r)} style={{
               display: "grid", gridTemplateColumns: "1.5fr 2fr 100px 100px 120px 40px",
               padding: "14px 20px", alignItems: "center",
               borderBottom: i < results.length - 1 ? "1px solid var(--border-soft)" : "none",
-            }}>
+              cursor: "pointer",
+              transition: "background 0.15s",
+            }}
+            onMouseEnter={e => e.currentTarget.style.background = "var(--bg-muted)"}
+            onMouseLeave={e => e.currentTarget.style.background = ""}
+            >
               <div style={{ fontWeight: 500 }}>{r.user_name}</div>
               <div>
                 <div>{r.test_title}</div>
@@ -2862,13 +3098,17 @@ const AdminResults = () => {
                 {new Date(r.completed_at).toLocaleDateString("ru-RU")}
               </div>
               <button
-                onClick={() => deleteResult(r.id)}
+                onClick={(e) => { e.stopPropagation(); deleteResult(r.id); }}
                 style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", fontSize: 16, padding: "4px 6px", borderRadius: 4, lineHeight: 1 }}
                 title="Удалить"
               >✕</button>
             </div>
           ))}
         </div>
+      )}
+
+      {selectedAttempt && (
+        <AttemptDetailModal attempt={selectedAttempt} onClose={() => setSelectedAttempt(null)} />
       )}
     </div>
   );

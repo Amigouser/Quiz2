@@ -341,6 +341,95 @@ router.get("/results", (req, res) => {
   res.json(results);
 });
 
+router.get("/results/:id", (req, res) => {
+  const attempt = get(`
+    SELECT a.id, a.score, a.max_score, a.completed_at,
+           u.name AS user_name, t.title AS test_title, t.topic
+    FROM attempts a
+    JOIN users u ON u.id = a.user_id
+    JOIN tests t ON t.id = a.test_id
+    WHERE a.id = ?
+  `, req.params.id);
+  if (!attempt) return res.status(404).json({ error: "Попытка не найдена" });
+
+  const questions = all(`
+    SELECT q.id, q.question_text, q.question_type, q.correct_text, q.explanation, q.order_index
+    FROM questions q
+    WHERE q.test_id = (SELECT test_id FROM attempts WHERE id = ?)
+    ORDER BY q.order_index
+  `, req.params.id);
+
+  const attemptAnswers = all(`
+    SELECT aa.question_id, aa.answer_id, aa.answer_text, aa.is_correct
+    FROM attempt_answers aa
+    WHERE aa.attempt_id = ?
+  `, req.params.id);
+
+  const answersMap = {};
+  for (const q of questions) {
+    answersMap[q.id] = all(
+      "SELECT id, answer_text, is_correct, order_index, match_value FROM answers WHERE question_id = ? ORDER BY order_index",
+      q.id
+    );
+  }
+
+  const enriched = questions.map(q => {
+    const studentAnswers = attemptAnswers.filter(a => a.question_id === q.id);
+    const allAnswers = answersMap[q.id] || [];
+    const qType = q.question_type || "single";
+
+    let studentAnswer = null;
+    let correctAnswer = null;
+
+    if (qType === "single") {
+      const sa = studentAnswers[0];
+      studentAnswer = sa ? allAnswers.find(a => a.id === sa.answer_id) : null;
+      correctAnswer = allAnswers.find(a => a.is_correct === 1);
+    } else if (qType === "text_input") {
+      studentAnswer = { answer_text: studentAnswers[0]?.answer_text || "" };
+      let raw = (q.correct_text || "").trim();
+      let accepted = [];
+      try { const p = JSON.parse(raw); if (Array.isArray(p)) accepted = p.map(String); } catch (_) {}
+      if (accepted.length === 0 && raw) accepted = [raw];
+      correctAnswer = { answer_text: accepted.join(", ") };
+    } else if (qType === "multiple_select") {
+      const selectedIds = (studentAnswers[0]?.answer_text || "").split(",").map(Number).filter(Boolean);
+      studentAnswer = allAnswers.filter(a => selectedIds.includes(a.id));
+      correctAnswer = allAnswers.filter(a => a.is_correct === 1);
+    } else if (qType === "sequence") {
+      const studentOrder = (studentAnswers[0]?.answer_text || "").split(",").map(Number).filter(Boolean);
+      studentAnswer = studentOrder.map(id => allAnswers.find(a => a.id === id)).filter(Boolean);
+      correctAnswer = [...allAnswers].sort((a, b) => a.order_index - b.order_index);
+    } else if (qType === "matching" || qType === "fill_blanks") {
+      const matches = {};
+      for (const sa of studentAnswers) {
+        if (sa.answer_id) matches[sa.answer_id] = sa.answer_text;
+      }
+      studentAnswer = allAnswers.map(a => ({
+        id: a.id,
+        answer_text: a.answer_text,
+        match_value: a.match_value,
+        student_selected: matches[a.id] || null,
+        is_correct: matches[a.id] === a.match_value ? 1 : 0,
+      }));
+      correctAnswer = allAnswers.map(a => ({ id: a.id, match_value: a.match_value }));
+    }
+
+    return {
+      question_id: q.id,
+      question_text: q.question_text,
+      question_type: qType,
+      explanation: q.explanation,
+      is_correct: studentAnswers.length > 0 ? studentAnswers[0].is_correct : 0,
+      student_answer: studentAnswer,
+      correct_answer: correctAnswer,
+      all_answers: qType !== "text_input" ? allAnswers : undefined,
+    };
+  });
+
+  res.json({ attempt, questions: enriched });
+});
+
 router.delete("/results/:id", (req, res) => {
   run("DELETE FROM attempts WHERE id = ?", req.params.id);
   res.json({ ok: true });
