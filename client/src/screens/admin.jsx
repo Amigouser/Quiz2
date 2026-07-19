@@ -1201,7 +1201,7 @@ const AdminCreateTest = ({ onCreated, autoImport = false }) => {
                       </div>
                       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                         {q.answers.map((a, ai) => (
-                          <label key={a.id} style={{
+                          <div key={a.id} style={{
                             display: "flex", alignItems: "center", gap: 12, padding: "12px 14px",
                             background: a.is_correct ? "var(--correct-bg)" : "var(--bg-muted)",
                             border: `1.5px solid ${a.is_correct ? "var(--correct)" : "transparent"}`,
@@ -1216,7 +1216,7 @@ const AdminCreateTest = ({ onCreated, autoImport = false }) => {
                             {q.answers.length > 2 && (
                               <button className="btn btn-ghost btn-sm" style={{ padding: "4px 8px" }} onClick={() => removeAnswer(qi, ai)}>✕</button>
                             )}
-                          </label>
+                          </div>
                         ))}
                       </div>
                       <button className="btn btn-ghost btn-sm" style={{ marginTop: 10 }} onClick={() => addAnswer(qi)}>+ Добавить вариант</button>
@@ -1266,7 +1266,7 @@ const AdminCreateTest = ({ onCreated, autoImport = false }) => {
                       </div>
                       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                         {q.answers.map((a, ai) => (
-                          <label key={a.id} style={{
+                          <div key={a.id} style={{
                             display: "flex", alignItems: "center", gap: 12, padding: "12px 14px",
                             background: a.is_correct ? "var(--correct-bg)" : "var(--bg-muted)",
                             border: `1.5px solid ${a.is_correct ? "var(--correct)" : "transparent"}`,
@@ -1281,7 +1281,7 @@ const AdminCreateTest = ({ onCreated, autoImport = false }) => {
                             {q.answers.length > 2 && (
                               <button className="btn btn-ghost btn-sm" style={{ padding: "4px 8px" }} onClick={() => removeAnswer(qi, ai)}>✕</button>
                             )}
-                          </label>
+                          </div>
                         ))}
                       </div>
                       <button className="btn btn-ghost btn-sm" style={{ marginTop: 10 }} onClick={() => addAnswer(qi)}>+ Добавить вариант</button>
@@ -1502,8 +1502,12 @@ const AdminEditTest = ({ testId, onSaved }) => {
   const updateA = (qi, ai, field, val) =>
     setQuestions(qs => qs.map((q, i) => {
       if (i !== qi) return q;
+      const isMulti = q.question_type === "multiple_select";
       const answers = q.answers.map((a, j) => {
-        if (field === "is_correct") return { ...a, is_correct: j === ai };
+        if (field === "is_correct") {
+          if (isMulti) return { ...a, is_correct: j === ai ? (val ? 1 : 0) : a.is_correct };
+          return { ...a, is_correct: j === ai ? 1 : 0 };
+        }
         return j === ai ? { ...a, [field]: val } : a;
       });
       return { ...q, answers };
@@ -1693,7 +1697,7 @@ const AdminEditTest = ({ testId, onSaved }) => {
                       <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-soft)", marginBottom: 10 }}>Варианты ответа · отметь правильный</div>
                       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                         {q.answers.map((a, ai) => (
-                          <label key={a.id} style={{
+                          <div key={a.id} style={{
                             display: "flex", alignItems: "center", gap: 12, padding: "12px 14px",
                             background: a.is_correct ? "var(--correct-bg)" : "var(--bg-muted)",
                             border: `1.5px solid ${a.is_correct ? "var(--correct)" : "transparent"}`,
@@ -1707,7 +1711,7 @@ const AdminEditTest = ({ testId, onSaved }) => {
                             {q.answers.length > 2 && (
                               <button className="btn btn-ghost btn-sm" style={{ padding: "4px 8px" }} onClick={() => removeAnswer(qi, ai)}>✕</button>
                             )}
-                          </label>
+                          </div>
                         ))}
                       </div>
                       <button className="btn btn-ghost btn-sm" style={{ marginTop: 10 }} onClick={() => addAnswer(qi)}>+ Добавить вариант</button>
@@ -1755,7 +1759,7 @@ const AdminEditTest = ({ testId, onSaved }) => {
                       <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-soft)", marginBottom: 10 }}>Варианты ответа · отметь все правильные</div>
                       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                         {q.answers.map((a, ai) => (
-                          <label key={a.id} style={{
+                          <div key={a.id} style={{
                             display: "flex", alignItems: "center", gap: 12, padding: "12px 14px",
                             background: a.is_correct ? "var(--correct-bg)" : "var(--bg-muted)",
                             border: `1.5px solid ${a.is_correct ? "var(--correct)" : "transparent"}`,
@@ -1769,7 +1773,7 @@ const AdminEditTest = ({ testId, onSaved }) => {
                             {q.answers.length > 2 && (
                               <button className="btn btn-ghost btn-sm" style={{ padding: "4px 8px" }} onClick={() => removeAnswer(qi, ai)}>✕</button>
                             )}
-                          </label>
+                          </div>
                         ))}
                       </div>
                       <button className="btn btn-ghost btn-sm" style={{ marginTop: 10 }} onClick={() => addAnswer(qi)}>+ Добавить вариант</button>
