@@ -202,8 +202,8 @@ function DashboardPage() {
           is_assigned: q.is_assigned,
         }))
       );
-    });
-    API.getCardSets().then(setCardSets).catch(() => {});
+    }).catch(() => setQuizzes([]));
+    API.getCardSets().then(setCardSets).catch(() => setCardSets([]));
   }, []);
 
   const handleLogout = async () => {
