@@ -140,10 +140,10 @@ export const QuizClassic = ({ quiz, onFinish, onExit }) => {
         {/* Image */}
         {q.image_data && (
           <div style={{ marginBottom: 20 }}>
-            <img src={q.image_data} alt="Иллюстрация" style={{
-              maxWidth: "100%", maxHeight: 340, borderRadius: 12,
-              objectFit: "contain", border: "1px solid var(--border-soft)",
-              background: "#fff",
+            <img src={q.image_data} alt="Иллюстрация" loading="eager" style={{
+              display: "block", maxWidth: "100%", height: "auto", maxHeight: 340,
+              borderRadius: 12, objectFit: "contain",
+              border: "1px solid var(--border-soft)", background: "#fff",
             }} />
           </div>
         )}

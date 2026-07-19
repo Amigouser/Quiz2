@@ -227,9 +227,10 @@ export default function FlashcardsRoute() {
               overflowX: "hidden",
             }}>
               {card.image_data && (
-                <img src={card.image_data} alt="" style={{
-                  maxWidth: "100%", maxHeight: 120, borderRadius: 10,
-                  objectFit: "contain", marginBottom: 12, flexShrink: 0,
+                <img src={card.image_data} alt="" loading="eager" style={{
+                  display: "block", maxWidth: "100%", height: "auto", maxHeight: 120,
+                  borderRadius: 10, objectFit: "contain", marginBottom: 12, flexShrink: 0,
+                  WebkitTransform: "translateZ(0)", transform: "translateZ(0)",
                 }} />
               )}
               <div style={{ fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: card.image_data ? 10 : 16, fontWeight: 600, flexShrink: 0 }}>
@@ -260,9 +261,10 @@ export default function FlashcardsRoute() {
               overflowX: "hidden",
             }}>
               {card.image_data && (
-                <img src={card.image_data} alt="" style={{
-                  maxWidth: "100%", maxHeight: 100, borderRadius: 10,
-                  objectFit: "contain", marginBottom: 12, flexShrink: 0,
+                <img src={card.image_data} alt="" loading="eager" style={{
+                  display: "block", maxWidth: "100%", height: "auto", maxHeight: 100,
+                  borderRadius: 10, objectFit: "contain", marginBottom: 12, flexShrink: 0,
+                  WebkitTransform: "translateZ(0)", transform: "translateZ(0)",
                 }} />
               )}
               <div style={{ fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--green-800)", marginBottom: card.image_data ? 10 : 16, fontWeight: 600, opacity: 0.7, flexShrink: 0 }}>
