@@ -1,0 +1,83 @@
+async function req(url, opts = {}) {
+  const res = await fetch(url, {
+    credentials: "include",
+    headers: { "Content-Type": "application/json", ...opts.headers },
+    ...opts,
+    body: opts.body ? JSON.stringify(opts.body) : undefined,
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: res.statusText }));
+    throw Object.assign(new Error(err.error || "Ошибка запроса"), { status: res.status });
+  }
+  return res.json();
+}
+
+const API = {
+  login: (code, password) => req("/api/auth/login", { method: "POST", body: { code, password } }),
+  logout: () => req("/api/auth/logout", { method: "POST" }),
+  me: () => req("/api/auth/me"),
+
+  getPublicTests: () => req("/api/tests/public"),
+  getPublicTest: (id) => req(`/api/tests/public/${id}`),
+  getPublicCardSets: () => req("/api/flashcard-sets/public"),
+  getPublicCardSet: (id) => req(`/api/flashcard-sets/public/${id}`),
+  getTests: (params) => req(`/api/tests${params ? "?" + new URLSearchParams(params) : ""}`),
+  getTest: (id) => req(`/api/tests/${id}`),
+  createAttempt: (test_id) => req("/api/attempts", { method: "POST", body: { test_id } }),
+  submitAttempt: (id, answers) =>
+    req(`/api/attempts/${id}/submit`, { method: "POST", body: { answers } }),
+
+  getPlant: () => req("/api/plant"),
+  waterPlant: () => req("/api/plant/water", { method: "POST" }),
+  collectPlant: () => req("/api/plant/collect", { method: "POST" }),
+  resetPlantWatering: () => req("/api/plant/reset-watering", { method: "POST" }),
+
+  uploadImage: (base64, folder) => req("/api/upload", { method: "POST", body: { data: base64, folder } }),
+
+  getCardSets: () => req("/api/flashcard-sets"),
+  getCardSet: (id) => req(`/api/flashcard-sets/${id}`),
+
+  admin: {
+    getTests: () => req("/api/admin/tests"),
+    getTest: (id) => req(`/api/admin/tests/${id}`),
+    createTest: (data) => req("/api/admin/tests", { method: "POST", body: data }),
+    updateTest: (id, data) => req(`/api/admin/tests/${id}`, { method: "PUT", body: data }),
+    deleteTest: (id) => req(`/api/admin/tests/${id}`, { method: "DELETE" }),
+    toggleTest: (id) => req(`/api/admin/tests/${id}/toggle`, { method: "PATCH" }),
+    publishTest: (id) => req(`/api/admin/tests/${id}/publish`, { method: "PATCH" }),
+    getStudents: () => req("/api/admin/students"),
+    getStudent: (id) => req(`/api/admin/students/${id}`),
+    assignTest: (studentId, test_id) =>
+      req(`/api/admin/students/${studentId}/assign`, { method: "POST", body: { test_id } }),
+    unassignTest: (studentId, testId) =>
+      req(`/api/admin/students/${studentId}/assign/${testId}`, { method: "DELETE" }),
+    createStudent: (name, group_name) => req("/api/admin/students", { method: "POST", body: { name, group_name } }),
+    deleteStudent: (id) => req(`/api/admin/students/${id}`, { method: "DELETE" }),
+    getResults: () => req("/api/admin/results"),
+    getAttemptDetail: (id) => req(`/api/admin/results/${id}`),
+    deleteResult: (id) => req(`/api/admin/results/${id}`, { method: "DELETE" }),
+    deleteAllResults: () => req("/api/admin/results", { method: "DELETE", body: { confirm: "DELETE_ALL" } }),
+    getCardSets: () => req("/api/admin/flashcard-sets"),
+    getCardSet: (id) => req(`/api/admin/flashcard-sets/${id}`),
+    createCardSet: (data) => req("/api/admin/flashcard-sets", { method: "POST", body: data }),
+    updateCardSet: (id, data) => req(`/api/admin/flashcard-sets/${id}`, { method: "PUT", body: data }),
+    deleteCardSet: (id) => req(`/api/admin/flashcard-sets/${id}`, { method: "DELETE" }),
+    toggleCardSet: (id) => req(`/api/admin/flashcard-sets/${id}/toggle`, { method: "PATCH" }),
+    getStudentCardSets: (studentId) => req(`/api/admin/students/${studentId}/card-sets`),
+    assignCardSet: (studentId, set_id) =>
+      req(`/api/admin/students/${studentId}/card-sets`, { method: "POST", body: { set_id } }),
+    unassignCardSet: (studentId, setId) =>
+      req(`/api/admin/students/${studentId}/card-sets/${setId}`, { method: "DELETE" }),
+    restore: (data) => req("/api/admin/restore", { method: "POST", body: { data } }),
+    getSections: () => req("/api/admin/sections"),
+    createSection: (name) => req("/api/admin/sections", { method: "POST", body: { name } }),
+    updateSection: (id, name) => req(`/api/admin/sections/${id}`, { method: "PUT", body: { name } }),
+    deleteSection: (id) => req(`/api/admin/sections/${id}`, { method: "DELETE" }),
+    getTopics: () => req("/api/admin/topics"),
+    createTopic: (name) => req("/api/admin/topics", { method: "POST", body: { name } }),
+    updateTopic: (id, name) => req(`/api/admin/topics/${id}`, { method: "PUT", body: { name } }),
+    deleteTopic: (id) => req(`/api/admin/topics/${id}`, { method: "DELETE" }),
+  },
+};
+
+export default API;

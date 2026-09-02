@@ -1,0 +1,208 @@
+/* ─────────────────────────────────────────────
+   Биология · Design Tokens
+   Вдохновлено: ботанические гравюры, учебник,
+   спокойная природная палитра
+   ───────────────────────────────────────────── */
+
+:root {
+  /* ── Greens (primary biology palette) ── */
+  --green-950: #0f2a1e;
+  --green-900: #1b3d2a;
+  --green-800: #2d6a4f;   /* primary */
+  --green-700: #3d8765;
+  --green-600: #52b788;   /* secondary */
+  --green-500: #74c69d;
+  --green-400: #95d5b2;
+  --green-300: #b7e4c7;
+  --green-200: #d8f3dc;   /* pale */
+  --green-100: #ebf7ef;
+  --green-50:  #f5faf6;
+
+  /* ── Warm parchment neutrals (cream of an old textbook) ── */
+  --cream-50:  #fbfaf5;
+  --cream-100: #f7f4ea;
+  --cream-200: #efeadd;
+  --cream-300: #e3dcc9;
+  --ink-900:   #1a1f1b;
+  --ink-700:   #3a4238;
+  --ink-600:   #5a6358;
+  --ink-500:   #7a8378;
+  --ink-400:   #9ba39a;
+  --ink-300:   #c4ccc2;
+
+  /* ── Accents (toggled via data-accent on body) ── */
+  --amber:   #f4a261;
+  --amber-soft: #fbe4ca;
+  --coral:   #e07a5f;
+  --coral-soft: #f7d7cd;
+  --ochre:   #c89b3c;
+  --ochre-soft: #f0dfb3;
+
+  /* Semantic feedback */
+  --correct: #2d6a4f;
+  --correct-bg: #d8f3dc;
+  --wrong:   #c1523b;
+  --wrong-bg: #fadbd3;
+
+  /* ── Active accent (overridden by [data-accent]) ── */
+  --accent:      var(--amber);
+  --accent-soft: var(--amber-soft);
+
+  /* ── Surfaces (overridden by [data-theme]) ── */
+  --bg:           var(--cream-50);
+  --bg-elev:      #ffffff;
+  --bg-muted:     var(--cream-100);
+  --surface:      #ffffff;
+  --surface-2:    var(--cream-100);
+  --border:       var(--cream-300);
+  --border-soft:  var(--cream-200);
+  --text:         var(--ink-900);
+  --text-soft:    var(--ink-600);
+  --text-muted:   var(--ink-500);
+
+  /* ── Type ── */
+  --f-serif: "Fraunces", "Newsreader", ui-serif, Georgia, serif;
+  --f-sans:  "Manrope", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono:  "JetBrains Mono", ui-monospace, Menlo, monospace;
+
+  /* Fluid type scale — textbook-ish */
+  --t-display: clamp(40px, 5vw, 68px);
+  --t-h1: clamp(30px, 3.2vw, 44px);
+  --t-h2: clamp(22px, 2.2vw, 30px);
+  --t-h3: 20px;
+  --t-body: 16px;
+  --t-small: 14px;
+  --t-caption: 12px;
+
+  /* ── Spacing (density token rewritten by [data-density]) ── */
+  --d: 1;          /* density multiplier */
+  --s1: calc(4px  * var(--d));
+  --s2: calc(8px  * var(--d));
+  --s3: calc(12px * var(--d));
+  --s4: calc(16px * var(--d));
+  --s5: calc(24px * var(--d));
+  --s6: calc(32px * var(--d));
+  --s7: calc(48px * var(--d));
+  --s8: calc(64px * var(--d));
+
+  /* ── Radii ── */
+  --r-xs: 4px;
+  --r-sm: 8px;
+  --r-md: 14px;
+  --r-lg: 20px;
+  --r-xl: 28px;
+  --r-full: 999px;
+
+  /* ── Shadows (organic, soft) ── */
+  --sh-sm: 0 1px 2px rgba(26, 52, 36, 0.06), 0 1px 1px rgba(26, 52, 36, 0.04);
+  --sh-md: 0 4px 14px rgba(26, 52, 36, 0.08), 0 1px 2px rgba(26, 52, 36, 0.05);
+  --sh-lg: 0 14px 40px rgba(26, 52, 36, 0.12), 0 4px 10px rgba(26, 52, 36, 0.06);
+  --sh-inset: inset 0 1px 0 rgba(255,255,255,0.5);
+
+  /* Card style toggles via [data-cards] */
+  --card-shadow: var(--sh-md);
+  --card-border: 1px solid var(--border-soft);
+  --card-bg:     var(--surface);
+
+  /* Motion */
+  --ease: cubic-bezier(0.22, 0.8, 0.32, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --dur-fast: 140ms;
+  --dur: 240ms;
+  --dur-slow: 420ms;
+}
+
+/* ── Accent toggles ── */
+[data-accent="amber"]  { --accent: var(--amber);  --accent-soft: var(--amber-soft); }
+[data-accent="coral"]  { --accent: var(--coral);  --accent-soft: var(--coral-soft); }
+[data-accent="ochre"]  { --accent: var(--ochre);  --accent-soft: var(--ochre-soft); }
+
+/* ── Theme toggles ── */
+[data-theme="light"] {
+  --bg: var(--cream-50);
+  --bg-elev: #ffffff;
+  --bg-muted: var(--cream-100);
+  --surface: #ffffff;
+  --surface-2: var(--cream-100);
+  --border: var(--cream-300);
+  --border-soft: var(--cream-200);
+  --text: var(--ink-900);
+  --text-soft: var(--ink-600);
+  --text-muted: var(--ink-500);
+}
+[data-theme="sepia"] {
+  --bg: #f2e9d8;
+  --bg-elev: #f8f1e0;
+  --bg-muted: #ebe1cb;
+  --surface: #f8f1e0;
+  --surface-2: #ebe1cb;
+  --border: #d9c9a5;
+  --border-soft: #e4d7b8;
+  --text: #3a2e1a;
+  --text-soft: #6b5a3b;
+  --text-muted: #8b7a5b;
+}
+[data-theme="dark"] {
+  --bg: #0f1a13;
+  --bg-elev: #15241b;
+  --bg-muted: #132019;
+  --surface: #172b1f;
+  --surface-2: #1e3426;
+  --border: #2a4532;
+  --border-soft: #203a28;
+  --text: #e9f3ec;
+  --text-soft: #b9c9be;
+  --text-muted: #8a9c90;
+  --green-800: #52b788;
+  --green-700: #74c69d;
+  --green-200: #203a28;
+  --green-100: #1a2f20;
+  --correct-bg: #1f3a2a;
+  --wrong-bg: #3a2019;
+  --card-shadow: 0 4px 14px rgba(0,0,0,0.4);
+}
+
+/* ── Density ── */
+[data-density="compact"]  { --d: 0.78; }
+[data-density="cozy"]     { --d: 1;    }
+[data-density="spacious"] { --d: 1.22; }
+
+/* ── Card style ── */
+[data-cards="flat"]    { --card-shadow: none; --card-border: 1px solid var(--border); }
+[data-cards="shadow"]  { --card-shadow: var(--sh-md); --card-border: 1px solid var(--border-soft); }
+[data-cards="outline"] { --card-shadow: none; --card-border: 1.5px solid var(--green-800); }
+
+/* ── Base ── */
+* { box-sizing: border-box; }
+html, body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--f-sans);
+  font-size: var(--t-body);
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+body { transition: background var(--dur) var(--ease), color var(--dur) var(--ease); }
+
+h1,h2,h3,h4,h5 {
+  font-family: var(--f-serif);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: var(--text);
+  margin: 0;
+  font-variation-settings: "opsz" 24, "SOFT" 30;
+}
+p { margin: 0; }
+
+button { font-family: inherit; }
+input, textarea, select { font-family: inherit; color: inherit; }
+
+/* Selection */
+::selection { background: var(--green-200); color: var(--green-900); }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: var(--ink-400); }

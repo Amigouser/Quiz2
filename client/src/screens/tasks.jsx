@@ -1,0 +1,652 @@
+import React, { useEffect, useState, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
+import API from "../api";
+import { Leaf, Fern } from "../botanical";
+import { QuizClassic, QuizResults } from "./quiz";
+
+const VK_LINK  = "https://vk.com/public219644318";
+const LIMIT    = 3; // порог для тестов И для карточек
+
+const TOPIC_ICONS = {
+  "Цитология": "🔬", "Генетика": "🧬", "Зоология": "🦎",
+  "Ботаника": "🌿", "Биохимия": "🧪", "Микробиология": "🦠",
+  "Биология": "🌱", "Анатомия": "🫀", "Экология": "🌍",
+};
+
+const GRADE_OPTIONS = ["5 класс", "6 класс", "7 класс", "8 класс", "9 класс", "10 класс", "11 класс"];
+const EXAM_OPTIONS = ["ОГЭ", "ЕГЭ", "ВПР"];
+const PART_OPTIONS = ["Часть 1", "Часть 2"];
+const SECTION_OPTIONS = [
+  "Биология как наука. Методы. Уровни организации",
+  "Строение клетки",
+  "Биохимия клетки",
+  "Метаболизм клетки",
+  "Клеточный цикл",
+  "Размножение и развитие",
+  "Прокариоты и вирусы",
+  "Грибы и лишайники",
+  "Растения",
+  "Животные",
+  "Человек",
+  "Эволюция",
+  "Экология",
+  "Генетика",
+];
+
+function getDone() {
+  return {
+    tests: Number(localStorage.getItem("g_tests") || 0),
+    cards: Number(localStorage.getItem("g_cards") || 0),
+  };
+}
+function bumpTests() { const n = getDone().tests + 1; localStorage.setItem("g_tests", n); return n; }
+function bumpCards() { const n = getDone().cards + 1; localStorage.setItem("g_cards", n); return n; }
+
+// ── Модалка лимита ────────────────────────────────────────────────────────────
+function LimitModal() {
+  return (
+    <div style={{
+      position: "fixed", inset: 0, zIndex: 1000,
+      background: "rgba(10,25,18,0.82)", backdropFilter: "blur(8px)",
+      display: "flex", alignItems: "center", justifyContent: "center",
+      padding: 24,
+    }}>
+      <div style={{
+        background: "var(--surface)", borderRadius: 28,
+        border: "1.5px solid var(--border-soft)",
+        boxShadow: "0 32px 80px rgba(0,0,0,0.35)",
+        maxWidth: 480, width: "100%", padding: "32px 24px 28px",
+        textAlign: "center",
+      }}>
+        <div style={{ fontSize: 52, marginBottom: 16 }}>🌿</div>
+        <h2 style={{
+          fontFamily: "var(--f-serif)", fontSize: 26,
+          lineHeight: 1.2, marginBottom: 16,
+        }}>
+          Привет! Я репетитор<br/>по биологии
+        </h2>
+        <p style={{ fontSize: 15, color: "var(--text-soft)", lineHeight: 1.7, marginBottom: 28 }}>
+          Готовлю к ОГЭ и ЕГЭ — понятно, системно, с результатом.<br/>
+          Ты прошёл несколько заданий — давай спишемся и продолжим уже по‑настоящему! 🙌
+        </p>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 24 }}>
+          <a href={VK_LINK} target="_blank" rel="noopener noreferrer"
+            style={{
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+              padding: "14px 24px", borderRadius: 999,
+              background: "#4680c2", color: "#fff",
+              fontWeight: 700, fontSize: 15, textDecoration: "none",
+              transition: "opacity 0.18s",
+            }}
+            onMouseEnter={e => e.currentTarget.style.opacity = "0.85"}
+            onMouseLeave={e => e.currentTarget.style.opacity = "1"}
+          >
+            <span style={{ fontSize: 20 }}>🔗</span> ВКонтакте
+          </a>
+        </div>
+
+        <p style={{ fontSize: 12, color: "var(--text-muted)" }}>
+          Никитенко Виктория Юрьевна · Репетитор по биологии · ТГУ
+        </p>
+      </div>
+    </div>
+  );
+}
+
+
+// ── Стили для карточек ────────────────────────────────────────────────────────
+const overlayStyle = {
+  position: "fixed", inset: 0, zIndex: 500,
+  background: "rgba(10,25,18,0.7)", backdropFilter: "blur(6px)",
+  display: "flex", alignItems: "center", justifyContent: "center",
+  padding: 24,
+};
+const panelStyle = {
+  background: "var(--surface)", borderRadius: 24,
+  border: "1.5px solid var(--border-soft)",
+  boxShadow: "0 24px 64px rgba(0,0,0,0.28)",
+  maxWidth: 480, width: "100%", padding: "32px 32px 28px",
+};
+const btnGreen = {
+  display: "block", width: "100%", padding: "14px 24px", borderRadius: 999,
+  background: "var(--green-800)", color: "#fff",
+  fontWeight: 700, fontSize: 15, border: "none", cursor: "pointer", marginBottom: 10,
+};
+const btnGhost = {
+  display: "block", width: "100%", padding: "12px 24px", borderRadius: 999,
+  background: "transparent", color: "var(--text-soft)",
+  fontWeight: 600, fontSize: 14, border: "1.5px solid var(--border-soft)", cursor: "pointer",
+};
+
+// ── Встроенный просмотр карточек ──────────────────────────────────────────────
+function GuestCards({ set, onFinish, onClose }) {
+  const [cards, setCards] = useState(() => [...set.cards]);
+  const [step, setStep] = useState(0);
+  const [flipped, setFlipped] = useState(false);
+  const [done, setDone] = useState(false);
+
+  const card = cards[step];
+  const total = cards.length;
+
+  function shuffleCards() {
+    const arr = [...cards];
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    setCards(arr);
+    setStep(0);
+    setFlipped(false);
+  }
+
+  function next() {
+    if (step + 1 >= total) {
+      setDone(true);
+    } else {
+      setStep(step + 1);
+      setFlipped(false);
+    }
+  }
+
+  if (done) {
+    return (
+      <div style={overlayStyle}>
+        <div className="quiz-modal-panel" style={panelStyle}>
+          <div style={{ textAlign: "center", marginBottom: 28 }}>
+            <div style={{ fontSize: 52, marginBottom: 12 }}>🃏</div>
+            <h2 style={{ fontFamily: "var(--f-serif)", fontSize: 24, marginBottom: 8 }}>
+              {set.title}
+            </h2>
+            <div style={{ fontSize: 16, color: "var(--text-soft)" }}>
+              Все {total} карточек пройдено!
+            </div>
+          </div>
+          <button style={btnGreen} onClick={onFinish}>Готово</button>
+          <button style={btnGhost} onClick={onClose}>Закрыть</button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={overlayStyle}>
+      <div className="quiz-modal-panel" style={{ ...panelStyle, maxWidth: 520 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", fontSize: 22 }}>✕</button>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <button
+              onClick={shuffleCards}
+              style={{ background: "none", border: "none", cursor: "pointer", color: "var(--green-800)", fontSize: 13, fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}
+              title="Перемешать карточки"
+            >
+              🔀
+            </button>
+            <div style={{ fontSize: 13, color: "var(--text-muted)" }}>{step + 1} / {total}</div>
+          </div>
+          <div style={{ fontSize: 13, color: "var(--green-800)", fontWeight: 600 }}>{set.topic || "Карточки"}</div>
+        </div>
+
+        <div style={{
+          height: 4, background: "var(--border-soft)", borderRadius: 99, marginBottom: 28, overflow: "hidden",
+        }}>
+          <div style={{
+            height: "100%", borderRadius: 99,
+            background: "var(--green-600)",
+            width: `${((step + 1) / total) * 100}%`,
+            transition: "width 0.4s",
+          }} />
+        </div>
+
+        {/* Карточка */}
+        <div
+          onClick={() => setFlipped(f => !f)}
+          style={{
+            minHeight: 200, borderRadius: 20,
+            border: "1.5px solid var(--border-soft)",
+            background: flipped ? "linear-gradient(135deg, var(--green-100), var(--green-200))" : "var(--surface)",
+            display: "flex", flexDirection: "column",
+            alignItems: "center", justifyContent: "center",
+            padding: "32px 28px", cursor: "pointer",
+            textAlign: "center", marginBottom: 20,
+            transition: "background 0.3s",
+            userSelect: "none",
+            overflow: "visible",          }}
+        >
+          {card.image_data && (
+            <img src={card.image_data} alt="" style={{
+              maxWidth: "100%", maxHeight: 140, borderRadius: 10,
+              objectFit: "contain", marginBottom: 16,
+            }} />
+          )}
+          <div style={{ fontSize: 11, color: "var(--text-muted)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: card.image_data ? 8 : 12 }}>
+            {flipped ? "Определение" : "Термин"}
+          </div>
+          <div className="pre-line" style={{ fontFamily: "var(--f-serif)", fontSize: 22, lineHeight: 1.4, color: flipped ? "var(--green-900)" : "var(--text)" }}>
+            {flipped ? card.definition : card.term}
+          </div>
+          {!flipped && (
+            <div style={{ marginTop: 16, fontSize: 12, color: "var(--text-muted)" }}>
+              Нажми чтобы перевернуть
+            </div>
+          )}
+        </div>
+
+        <div style={{ display: "flex", gap: 10 }}>
+          <button style={{ ...btnGhost, flex: 1 }} onClick={() => setFlipped(f => !f)}>
+            {flipped ? "Скрыть" : "Показать"}
+          </button>
+          <button style={{ ...btnGreen, flex: 1 }} onClick={next}>
+            {step + 1 >= total ? "Завершить" : "Следующая →"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+// ── Дропдаун-фильтр ───────────────────────────────────────────────────────────
+function FilterSelect({ label, value, onChange, options }) {
+  return (
+    <div style={{ position: "relative", display: "inline-flex" }}>
+      <select
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        style={{
+          appearance: "none", WebkitAppearance: "none",
+          padding: "9px 36px 9px 16px",
+          borderRadius: 999,
+          border: value ? "1.5px solid var(--green-600)" : "1.5px solid var(--border-soft)",
+          background: value ? "var(--green-100)" : "var(--surface)",
+          color: value ? "var(--green-900)" : "var(--text-soft)",
+          fontSize: 14, fontFamily: "var(--f-sans)", fontWeight: value ? 600 : 400,
+          cursor: "pointer", outline: "none",
+        }}
+      >
+        <option value="">{label}</option>
+        {options.map(o => <option key={o} value={o}>{o}</option>)}
+      </select>
+      <svg style={{ position: "absolute", right: 13, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} width="11" height="11" viewBox="0 0 11 11" fill="none">
+        <path d="M1.5 3.5l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
+    </div>
+  );
+}
+
+// ── Главный компонент ─────────────────────────────────────────────────────────
+export default function TasksPage() {
+  const navigate = useNavigate();
+  const [tests, setTests] = useState([]);
+  const [cardSets, setCardSets] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const [activeQuiz, setActiveQuiz] = useState(null);
+  const [guestResult, setGuestResult] = useState(null);
+  const [quizKey, setQuizKey] = useState(0);
+  const [activeCards, setActiveCards] = useState(null);
+  const [showLimit, setShowLimit] = useState(false);
+
+  const [gradeFilter, setGradeFilter] = useState("");
+  const [examFilter, setExamFilter] = useState("");
+  const [partFilter, setPartFilter] = useState("");
+  const [sectionFilter, setSectionFilter] = useState("");
+  const [topicFilter, setTopicFilter] = useState("");
+  const [sourceFilter, setSourceFilter] = useState("");
+  const [search, setSearch] = useState("");
+
+  useEffect(() => {
+    Promise.all([
+      API.getPublicTests().catch(() => []),
+      API.getPublicCardSets().catch(() => []),
+    ]).then(([t, c]) => {
+      setTests(t);
+      setCardSets(c);
+      setLoading(false);
+    });
+  }, []);
+
+  const dataSections = [...new Set([...tests.map(t => t.section), ...cardSets.map(c => c.section)].filter(Boolean).flatMap(v => v.split(", ")))];
+  const uniqueSections = [
+    ...SECTION_OPTIONS,
+    ...dataSections.filter(s => !SECTION_OPTIONS.includes(s)).sort(),
+  ];
+  const dataParts = [...new Set([...tests.map(t => t.part), ...cardSets.map(c => c.part)].filter(Boolean).flatMap(v => v.split(", ")))];
+  const uniqueParts = [...PART_OPTIONS, ...dataParts.filter(p => !PART_OPTIONS.includes(p)).sort()];
+  const uniqueTopics  = [...new Set([...tests.map(t => t.topic),   ...cardSets.map(c => c.topic)].filter(Boolean))].sort();
+  const uniqueSources = [...new Set([...tests.map(t => t.source),  ...cardSets.map(c => c.source)].filter(Boolean).flatMap(v => v.split(", ")))].sort();
+  const hasFilters = gradeFilter || examFilter || partFilter || sectionFilter || topicFilter || sourceFilter || search;
+
+  function itemHasValue(itemVal, filterVal) {
+    if (!filterVal) return true;
+    if (!itemVal) return false;
+    return itemVal.split(", ").includes(filterVal);
+  }
+
+  function applyFilters(items) {
+    return items.filter(item => {
+      if (gradeFilter && !itemHasValue(item.grade, gradeFilter)) return false;
+      if (examFilter && !itemHasValue(item.category, examFilter)) return false;
+      if (partFilter && !itemHasValue(item.part, partFilter)) return false;
+      if (sectionFilter && !itemHasValue(item.section, sectionFilter)) return false;
+      if (topicFilter && item.topic !== topicFilter) return false;
+      if (sourceFilter && !itemHasValue(item.source, sourceFilter)) return false;
+      if (search && !item.title.toLowerCase().includes(search.toLowerCase())) return false;
+      return true;
+    });
+  }
+
+  function resetFilters() {
+    setGradeFilter(""); setExamFilter(""); setPartFilter(""); setSectionFilter("");
+    setTopicFilter(""); setSourceFilter(""); setSearch("");
+  }
+
+  function checkLimit(t, c) {
+    if (t >= LIMIT && c >= LIMIT) setShowLimit(true);
+  }
+
+  async function openTest(id) {
+    const quiz = await API.getPublicTest(id).catch(() => null);
+    if (quiz) setActiveQuiz(quiz);
+  }
+
+  async function openCards(id) {
+    const set = await API.getPublicCardSet(id).catch(() => null);
+    if (set) setActiveCards(set);
+  }
+
+  function transformGuestQuiz(quiz) {
+    return {
+      title: quiz.title,
+      topic: quiz.topic,
+      questions: quiz.questions.map(q => ({
+        q: q.text,
+        note: q.hint,
+        options: q.answers.map(a => a.text),
+        correct: q.correct_index,
+        correct_indices: q.answers.map((a, i) => a.is_correct ? i : -1).filter(i => i >= 0),
+        explain: q.explanation,
+        question_type: q.question_type || "single",
+        image_data: q.image_data || null,
+        correct_text: q.correct_text || null,
+        match_options: q.match_options || ["1", "2"],
+        _questionId: q.id,
+        _answerIds: q.answers.map(a => a.id),
+        _matchAnswers: q.answers,
+      })),
+    };
+  }
+
+  function handleQuizFinish(answers) {
+    const score = answers.filter(a => a.correct).length;
+    setGuestResult({ score, max_score: activeQuiz.questions.length, title: activeQuiz.title });
+  }
+
+  function handleGuestClose() {
+    const t = bumpTests();
+    const { cards: c } = getDone();
+    setActiveQuiz(null);
+    setGuestResult(null);
+    checkLimit(t, c);
+  }
+
+  function handleCardsFinish() {
+    const c = bumpCards();
+    const { tests: t } = getDone();
+    setActiveCards(null);
+    checkLimit(t, c);
+  }
+
+  return (
+    <div style={{ minHeight: "100vh", background: "var(--bg)", fontFamily: "var(--f-sans)" }}>
+
+      {/* Header */}
+      <header className="tasks-header" style={{
+        position: "fixed", top: 0, left: 0, right: 0, zIndex: 200,
+        background: "rgba(15,42,30,0.9)", backdropFilter: "blur(20px)",
+        borderBottom: "1px solid rgba(255,255,255,0.07)",
+        padding: "0 48px", height: 64,
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+      }}>
+        <button onClick={() => navigate("/")} style={{
+          display: "flex", alignItems: "center", gap: 10,
+          background: "none", border: "none", cursor: "pointer", padding: 0,
+        }}>
+          <img src="/tutor2.jpg" alt="Vikokon" style={{ width: 36, height: 36, borderRadius: 10, objectFit: "cover", border: "1px solid rgba(255,255,255,0.18)" }} />
+          <span style={{ fontFamily: "var(--f-serif)", fontWeight: 600, fontSize: 16, color: "#fff" }}>
+            Vikokon
+          </span>
+        </button>
+
+        <button onClick={() => navigate("/login")} style={{
+          display: "inline-flex", alignItems: "center", gap: 8,
+          padding: "10px 22px", borderRadius: 999,
+          background: "#b7e4c7", color: "#0f2a1e",
+          fontWeight: 600, fontSize: 14, border: "none", cursor: "pointer",
+        }}>
+          Войти в кабинет
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </button>
+      </header>
+
+      <div className="tasks-container" style={{ maxWidth: 1280, margin: "0 auto", padding: "100px 48px 80px" }}>
+
+        {/* Title */}
+        <div style={{ marginBottom: 48 }}>
+          <div style={{
+            display: "inline-block", background: "var(--green-100)",
+            color: "var(--green-800)", borderRadius: 999,
+            padding: "5px 16px", fontSize: 11, fontWeight: 700,
+            letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 16,
+          }}>
+            Задания
+          </div>
+          <h1 style={{
+            fontFamily: "var(--f-serif)", fontSize: "clamp(30px, 3vw, 48px)",
+            lineHeight: 1.1, letterSpacing: "-0.02em", marginBottom: 12,
+          }}>
+            Тесты и карточки<br/>
+            <em style={{ color: "var(--green-800)" }}>по биологии</em>
+          </h1>
+          <p style={{ fontSize: 16, color: "var(--text-soft)", lineHeight: 1.7 }}>
+            Попробуй бесплатно — никакой регистрации не нужно.
+          </p>
+        </div>
+
+        {/* Фильтры */}
+        <div className="tasks-filters" style={{ marginBottom: 36, display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center" }}>
+          <FilterSelect label="Класс" value={gradeFilter} onChange={setGradeFilter} options={GRADE_OPTIONS} />
+          <FilterSelect label="Экзамен" value={examFilter} onChange={setExamFilter} options={EXAM_OPTIONS} />
+          {uniqueParts.length > 0 && (
+            <FilterSelect label="Часть" value={partFilter} onChange={setPartFilter} options={uniqueParts} />
+          )}
+          <FilterSelect label="Раздел" value={sectionFilter} onChange={setSectionFilter} options={uniqueSections} />
+          {uniqueTopics.length > 0 && (
+            <FilterSelect label="Тема" value={topicFilter} onChange={setTopicFilter} options={uniqueTopics} />
+          )}
+          {uniqueSources.length > 0 && (
+            <FilterSelect label="Источник" value={sourceFilter} onChange={setSourceFilter} options={uniqueSources} />
+          )}
+          <div style={{ position: "relative" }}>
+            <input
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Поиск..."
+              style={{
+                padding: "9px 16px 9px 38px", borderRadius: 999,
+                border: "1.5px solid var(--border-soft)",
+                background: "var(--surface)", fontSize: 14, outline: "none",
+                fontFamily: "var(--f-sans)", minWidth: 180, maxWidth: "100%",
+              }}
+            />
+            <svg style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)", pointerEvents: "none" }} width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <circle cx="6" cy="6" r="4.5" stroke="currentColor" strokeWidth="1.5"/>
+              <path d="M10 10l2.5 2.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+            </svg>
+          </div>
+          {hasFilters && (
+            <button onClick={resetFilters} style={{
+              padding: "9px 16px", borderRadius: 999, fontSize: 13,
+              border: "1.5px solid var(--border-soft)", background: "transparent",
+              color: "var(--text-muted)", cursor: "pointer",
+            }}>
+              Сбросить
+            </button>
+          )}
+        </div>
+
+        {loading ? (
+          <div style={{ textAlign: "center", padding: "80px 0", color: "var(--text-muted)", fontSize: 16 }}>Загрузка…</div>
+        ) : (
+          <>
+            {tests.length === 0 && cardSets.length === 0 && (
+              <div style={{ textAlign: "center", padding: "80px 0", color: "var(--text-muted)", fontSize: 16 }}>
+                Пока нет доступных заданий.
+              </div>
+            )}
+
+            {/* Two-column layout: Cards left, Tests right */}
+            <div className="tasks-two-col" style={{ display: "grid", gridTemplateColumns: "1fr 1.6fr", gap: 32, alignItems: "start" }}>
+              {/* Left: Cards */}
+              <div>
+                <h2 style={{ fontFamily: "var(--f-serif)", fontSize: 22, marginBottom: 20, letterSpacing: "-0.01em" }}>Карточки</h2>
+                {applyFilters(cardSets).length > 0 ? (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                    {applyFilters(cardSets).map((set) => (
+                      <div key={set.id} onClick={() => openCards(set.id)} style={{
+                        borderRadius: 16,
+                        border: "1.5px solid var(--border-soft)",
+                        background: "var(--surface)", boxShadow: "var(--sh-sm)",
+                        padding: "14px 18px", cursor: "pointer",
+                        transition: "transform 0.2s cubic-bezier(0.22,0.8,0.32,1), box-shadow 0.2s",
+                        display: "flex", alignItems: "center", gap: 14,
+                      }}
+                        onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 8px 28px rgba(26,52,36,0.1)"; }}
+                        onMouseLeave={e => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = "var(--sh-sm)"; }}
+                      >
+                        <div style={{
+                          width: 44, height: 44, borderRadius: 12, flexShrink: 0,
+                          background: "linear-gradient(135deg, var(--green-100) 0%, var(--green-200) 100%)",
+                          display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22,
+                        }}>🃏</div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontFamily: "var(--f-serif)", fontSize: 15, fontWeight: 500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                            {set.title}
+                          </div>
+                          <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>
+                            {set.cards_count ?? "—"} карточек
+                          </div>
+                        </div>
+                        <span style={{ fontSize: 12, fontWeight: 600, color: "var(--green-800)", flexShrink: 0 }}>→</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div style={{ textAlign: "center", padding: "40px 0", color: "var(--text-muted)", fontSize: 14 }}>
+                    {cardSets.length === 0 ? "Карточек пока нет" : "Ничего не найдено"}
+                  </div>
+                )}
+              </div>
+
+              {/* Right: Tests */}
+              <div>
+                <h2 style={{ fontFamily: "var(--f-serif)", fontSize: 22, marginBottom: 20, letterSpacing: "-0.01em" }}>Тесты</h2>
+                {applyFilters(tests).length > 0 ? (
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(260px, 100%), 1fr))", gap: 16 }}>
+                    {applyFilters(tests).map((test) => (
+                      <div key={test.id} onClick={() => openTest(test.id)} style={{
+                        borderRadius: 20, overflow: "hidden",
+                        border: "1.5px solid var(--border-soft)",
+                        background: "var(--surface)", boxShadow: "var(--sh-sm)",
+                        cursor: "pointer",
+                        transition: "transform 0.25s cubic-bezier(0.22,0.8,0.32,1), box-shadow 0.25s",
+                      }}
+                        onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-4px)"; e.currentTarget.style.boxShadow = "0 16px 48px rgba(26,52,36,0.12)"; }}
+                        onMouseLeave={e => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = "var(--sh-sm)"; }}
+                      >
+                        <div style={{
+                          height: 110,
+                          background: "linear-gradient(135deg, var(--green-100) 0%, var(--green-200) 100%)",
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          fontSize: 44, position: "relative", overflow: "hidden",
+                        }}>
+                          <div style={{ position: "absolute", inset: 0, color: "var(--green-700)", opacity: 0.1 }}>
+                            <Fern size={160} style={{ position: "absolute", top: -20, right: -20 }} />
+                          </div>
+                          <span style={{ position: "relative" }}>{TOPIC_ICONS[test.topic] || "🌱"}</span>
+                        </div>
+                        <div style={{ padding: "16px 18px" }}>
+                          <div style={{
+                            display: "inline-block", background: "var(--green-100)",
+                            color: "var(--green-800)", borderRadius: 999,
+                            padding: "2px 10px", fontSize: 10, fontWeight: 700,
+                            letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 8,
+                          }}>
+                            {test.topic}
+                          </div>
+                          <div style={{ fontFamily: "var(--f-serif)", fontSize: 17, fontWeight: 500, marginBottom: 6, lineHeight: 1.3 }}>
+                            {test.title}
+                          </div>
+                          {test.description && (
+                            <div style={{ fontSize: 13, color: "var(--text-muted)", lineHeight: 1.5, marginBottom: 10 }}>
+                              {test.description}
+                            </div>
+                          )}
+                          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                            <span style={{ fontSize: 12, color: "var(--text-muted)" }}>
+                              {test.questions_count} вопр. · ~{test.est_minutes} мин
+                            </span>
+                            <span style={{ fontSize: 12, fontWeight: 600, color: "var(--green-800)" }}>Начать →</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div style={{ textAlign: "center", padding: "40px 0", color: "var(--text-muted)", fontSize: 14 }}>
+                    {tests.length === 0 ? "Тестов пока нет" : "Ничего не найдено"}
+                  </div>
+                )}
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+
+      {activeQuiz && !guestResult && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 500 }}>
+          <QuizClassic
+            key={quizKey}
+            quiz={transformGuestQuiz(activeQuiz)}
+            onFinish={handleQuizFinish}
+            onExit={handleGuestClose}
+          />
+        </div>
+      )}
+
+      {activeQuiz && guestResult && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 500 }}>
+          <QuizResults
+            total={guestResult.max_score}
+            correct={guestResult.score}
+            quizTitle={guestResult.title}
+            onRetry={() => { setGuestResult(null); setQuizKey(k => k + 1); }}
+            onHome={handleGuestClose}
+          />
+        </div>
+      )}
+
+      {activeCards && (
+        <GuestCards
+          set={activeCards}
+          onFinish={handleCardsFinish}
+          onClose={() => setActiveCards(null)}
+        />
+      )}
+
+      {showLimit && <LimitModal />}
+    </div>
+  );
+}

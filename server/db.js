@@ -1,0 +1,300 @@
+const { DatabaseSync } = require("node:sqlite");
+const path = require("path");
+const fs = require("fs");
+
+const dataDir = path.join(__dirname, "..", "data");
+if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
+
+const db = new DatabaseSync(path.join(dataDir, "biology.db"));
+
+db.exec("PRAGMA journal_mode = WAL");
+db.exec("PRAGMA foreign_keys = ON");
+
+db.exec(`
+  CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL UNIQUE,
+    is_admin INTEGER DEFAULT 0,
+    created_at TEXT DEFAULT (datetime('now'))
+  );
+
+  CREATE TABLE IF NOT EXISTS tests (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    topic TEXT,
+    description TEXT,
+    is_active INTEGER DEFAULT 1,
+    is_draft INTEGER DEFAULT 0,
+    created_at TEXT DEFAULT (datetime('now'))
+  );
+
+  CREATE TABLE IF NOT EXISTS questions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    test_id INTEGER REFERENCES tests(id) ON DELETE CASCADE,
+    question_text TEXT NOT NULL,
+    hint TEXT,
+    explanation TEXT,
+    order_index INTEGER DEFAULT 0
+  );
+
+  CREATE TABLE IF NOT EXISTS answers (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    question_id INTEGER REFERENCES questions(id) ON DELETE CASCADE,
+    answer_text TEXT NOT NULL,
+    is_correct INTEGER DEFAULT 0,
+    order_index INTEGER DEFAULT 0
+  );
+
+  CREATE TABLE IF NOT EXISTS attempts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER REFERENCES users(id),
+    test_id INTEGER REFERENCES tests(id),
+    score INTEGER DEFAULT 0,
+    max_score INTEGER DEFAULT 0,
+    completed_at TEXT DEFAULT (datetime('now'))
+  );
+
+  CREATE TABLE IF NOT EXISTS attempt_answers (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    attempt_id INTEGER REFERENCES attempts(id) ON DELETE CASCADE,
+    question_id INTEGER,
+    answer_id INTEGER,
+    is_correct INTEGER DEFAULT 0
+  );
+
+  CREATE TABLE IF NOT EXISTS test_assignments (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    test_id INTEGER REFERENCES tests(id) ON DELETE CASCADE,
+    assigned_at TEXT DEFAULT (datetime('now')),
+    UNIQUE(user_id, test_id)
+  );
+
+  CREATE TABLE IF NOT EXISTS flashcard_sets (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    topic TEXT,
+    description TEXT,
+    is_active INTEGER DEFAULT 1,
+    created_at TEXT DEFAULT (datetime('now'))
+  );
+
+  CREATE TABLE IF NOT EXISTS flashcard_cards (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    set_id INTEGER REFERENCES flashcard_sets(id) ON DELETE CASCADE,
+    term TEXT NOT NULL,
+    definition TEXT NOT NULL,
+    order_index INTEGER DEFAULT 0
+  );
+
+  CREATE TABLE IF NOT EXISTS flashcard_set_assignments (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    set_id INTEGER REFERENCES flashcard_sets(id) ON DELETE CASCADE,
+    assigned_at TEXT DEFAULT (datetime('now')),
+    UNIQUE(user_id, set_id)
+  );
+`);
+
+function n(v) {
+  return typeof v === "bigint" ? Number(v) : v;
+}
+
+function run(sql, ...params) {
+  const stmt = db.prepare(sql);
+  const r = stmt.run(...params);
+  return { lastInsertRowid: n(r.lastInsertRowid), changes: n(r.changes) };
+}
+
+function get(sql, ...params) {
+  return db.prepare(sql).get(...params) || null;
+}
+
+function all(sql, ...params) {
+  return db.prepare(sql).all(...params);
+}
+
+// ── Миграции ──────────────────────────────────────────────────────────────────
+try { db.exec("ALTER TABLE users ADD COLUMN code TEXT"); } catch (_) {}
+try { db.exec("ALTER TABLE users ADD COLUMN group_name TEXT"); } catch (_) {}
+try { db.exec("ALTER TABLE tests ADD COLUMN category TEXT"); } catch (_) {}
+try { db.exec("ALTER TABLE flashcard_sets ADD COLUMN category TEXT"); } catch (_) {}
+try { db.exec("ALTER TABLE tests ADD COLUMN part TEXT"); } catch (_) {}
+try { db.exec("ALTER TABLE tests ADD COLUMN line TEXT"); } catch (_) {}
+try { db.exec("ALTER TABLE tests ADD COLUMN source TEXT"); } catch (_) {}
+try { db.exec("ALTER TABLE tests ADD COLUMN section TEXT"); } catch (_) {}
+try { db.exec("ALTER TABLE flashcard_sets ADD COLUMN part TEXT"); } catch (_) {}
+try { db.exec("ALTER TABLE flashcard_sets ADD COLUMN line TEXT"); } catch (_) {}
+try { db.exec("ALTER TABLE flashcard_sets ADD COLUMN source TEXT"); } catch (_) {}
+try { db.exec("ALTER TABLE flashcard_sets ADD COLUMN section TEXT"); } catch (_) {}
+try { db.exec("ALTER TABLE flashcard_cards ADD COLUMN image_data TEXT"); } catch (_) {}
+// Таблицы разделов и тем
+db.exec(`
+  CREATE TABLE IF NOT EXISTS sections (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL UNIQUE,
+    created_at TEXT DEFAULT (datetime('now'))
+  );
+  CREATE TABLE IF NOT EXISTS topics (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL UNIQUE,
+    created_at TEXT DEFAULT (datetime('now'))
+  );
+`);
+
+// Заполняем разделы если пусто
+(function seedSections() {
+  const existing = db.prepare("SELECT COUNT(*) as c FROM sections").get();
+  if (existing.c > 0) return;
+  const { BIO_SECTIONS } = require("../shared/constants");
+  const ins = db.prepare("INSERT OR IGNORE INTO sections (name) VALUES (?)");
+  for (const name of BIO_SECTIONS) ins.run(name);
+})();
+
+try { db.exec("ALTER TABLE questions ADD COLUMN image_data TEXT"); } catch (_) {}
+try { db.exec("ALTER TABLE questions ADD COLUMN question_type TEXT DEFAULT 'single'"); } catch (_) {}
+try { db.exec("ALTER TABLE questions ADD COLUMN correct_text TEXT"); } catch (_) {}
+try { db.exec("ALTER TABLE questions ADD COLUMN match_options TEXT"); } catch (_) {}
+try { db.exec("ALTER TABLE answers ADD COLUMN match_value TEXT"); } catch (_) {}
+try { db.exec("ALTER TABLE attempt_answers ADD COLUMN answer_text TEXT"); } catch (_) {}
+try { db.exec("ALTER TABLE tests ADD COLUMN grade TEXT"); } catch (_) {}
+try { db.exec("ALTER TABLE flashcard_sets ADD COLUMN grade TEXT"); } catch (_) {}
+
+// Таблицы для растений
+db.exec(`
+  CREATE TABLE IF NOT EXISTS plant_progress (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE UNIQUE,
+    plant_type TEXT DEFAULT 'sunflower',
+    water_points INTEGER DEFAULT 0,
+    last_watered_date TEXT DEFAULT NULL,
+    created_at TEXT DEFAULT (datetime('now'))
+  );
+  CREATE TABLE IF NOT EXISTS plant_collection (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    plant_type TEXT NOT NULL,
+    collected_at TEXT DEFAULT (datetime('now'))
+  );
+`);
+// Перенести классы из category в grade (если category содержит "N класс")
+try {
+  db.exec("UPDATE tests SET grade = category, category = NULL WHERE category LIKE '% класс'");
+  db.exec("UPDATE flashcard_sets SET grade = category, category = NULL WHERE category LIKE '% класс'");
+} catch (_) {}
+// Создать коды для существующих учеников без кода
+(function generateMissingCodes() {
+  const users = all("SELECT id FROM users WHERE code IS NULL AND is_admin = 0");
+  for (const u of users) {
+    let code;
+    do { code = String(Math.floor(10000000 + Math.random() * 90000000)); }
+    while (get("SELECT id FROM users WHERE code = ?", code));
+    run("UPDATE users SET code = ? WHERE id = ?", code, u.id);
+  }
+})();
+
+function seed() {
+  const adminExists = get("SELECT id FROM users WHERE name = 'admin'");
+  if (adminExists) return;
+
+  run("INSERT INTO users (name, is_admin) VALUES ('admin', 1)");
+
+  const testId = run(
+    "INSERT INTO tests (title, topic, description) VALUES (?, ?, ?)",
+    "Строение растительной клетки",
+    "Ботаника",
+    "Проверяем знание основных органелл и их функций в растительной клетке."
+  ).lastInsertRowid;
+
+  const questionsData = [
+    {
+      text: "Какая структура отличает растительную клетку от животной?",
+      hint: "Подсказка: отвечает за фотосинтез.",
+      explanation: "Хлоропласты содержат хлорофилл и осуществляют фотосинтез. Их нет в животных клетках.",
+      answers: [
+        { text: "Митохондрия", is_correct: 0 },
+        { text: "Хлоропласт", is_correct: 1 },
+        { text: "Рибосома", is_correct: 0 },
+        { text: "Аппарат Гольджи", is_correct: 0 },
+      ],
+    },
+    {
+      text: "Какую функцию выполняет клеточная стенка у растений?",
+      hint: null,
+      explanation: "Клеточная стенка из целлюлозы — жёсткий каркас, защищающий клетку и задающий форму.",
+      answers: [
+        { text: "Обеспечивает движение клетки", is_correct: 0 },
+        { text: "Хранит генетическую информацию", is_correct: 0 },
+        { text: "Придаёт клетке форму и защиту", is_correct: 1 },
+        { text: "Синтезирует белки", is_correct: 0 },
+      ],
+    },
+    {
+      text: "Что находится в центральной вакуоли зрелой растительной клетки?",
+      hint: null,
+      explanation: "Крупная центральная вакуоль заполнена клеточным соком — раствором сахаров, солей и пигментов.",
+      answers: [
+        { text: "Клеточный сок", is_correct: 1 },
+        { text: "ДНК", is_correct: 0 },
+        { text: "Ферменты пищеварения", is_correct: 0 },
+        { text: "Хлорофилл", is_correct: 0 },
+      ],
+    },
+  ];
+
+  questionsData.forEach((q, qi) => {
+    const qId = run(
+      "INSERT INTO questions (test_id, question_text, hint, explanation, order_index) VALUES (?, ?, ?, ?, ?)",
+      testId, q.text, q.hint, q.explanation, qi
+    ).lastInsertRowid;
+
+    q.answers.forEach((a, ai) =>
+      run("INSERT INTO answers (question_id, answer_text, is_correct, order_index) VALUES (?, ?, ?, ?)",
+        qId, a.text, a.is_correct, ai)
+    );
+  });
+}
+
+seed();
+
+// ── Миграция base64 → файлы на диске ────────────────────────────────────────
+(function migrateBase64ToFiles() {
+  const fs = require("fs");
+  const crypto = require("crypto");
+  const uploadsDir = path.join(__dirname, "..", "data", "uploads");
+  fs.mkdirSync(path.join(uploadsDir, "questions"), { recursive: true });
+  fs.mkdirSync(path.join(uploadsDir, "flashcards"), { recursive: true });
+
+  const flagFile = path.join(__dirname, "..", "data", ".base64_migrated");
+  if (fs.existsSync(flagFile)) return;
+
+  function migrateTable(table, subfolder) {
+    const rows = all(`SELECT id, image_data FROM ${table} WHERE image_data LIKE 'data:image%'`);
+    let count = 0;
+    for (const row of rows) {
+      const match = row.image_data.match(/^data:image\/(\w+);base64,(.+)$/);
+      if (!match) continue;
+      const ext = match[1] === "jpeg" ? "jpg" : match[1];
+      const buffer = Buffer.from(match[2], "base64");
+      const filename = `${crypto.randomUUID()}.${ext}`;
+      const dir = path.join(uploadsDir, subfolder);
+      fs.writeFileSync(path.join(dir, filename), buffer);
+      run(`UPDATE ${table} SET image_data = ? WHERE id = ?`, `/api/uploads/${subfolder}/${filename}`, row.id);
+      count++;
+    }
+    if (count > 0) console.log(`Migrated ${count} images from ${table}`);
+  }
+
+  migrateTable("questions", "questions");
+  migrateTable("flashcard_cards", "flashcards");
+
+  fs.writeFileSync(flagFile, new Date().toISOString());
+})();
+
+// ── Миграция /uploads/ → /api/uploads/ ──────────────────────────────────────
+try {
+  db.exec("UPDATE questions SET image_data = REPLACE(image_data, '/uploads/', '/api/uploads/') WHERE image_data LIKE '/uploads/%'");
+  db.exec("UPDATE flashcard_cards SET image_data = REPLACE(image_data, '/uploads/', '/api/uploads/') WHERE image_data LIKE '/uploads/%'");
+} catch (_) {}
+
+module.exports = { db, run, get, all };
