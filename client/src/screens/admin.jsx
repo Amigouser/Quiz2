@@ -612,6 +612,9 @@ const AdminSidebar = ({ active, onTab }) => {
 const AdminTestsList = ({ onCreateNew, onImport, onEdit }) => {
   const [tests, setTests] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
+  const [importing, setImporting] = React.useState(false);
+  const [importResult, setImportResult] = React.useState(null);
+  const fileRef = React.useRef();
 
   const load = () => {
     setLoading(true);
@@ -635,6 +638,39 @@ const AdminTestsList = ({ onCreateNew, onImport, onEdit }) => {
     load();
   };
 
+  const handleDuplicate = async (id) => {
+    try {
+      await API.admin.duplicateTest(id);
+      load();
+    } catch (err) {
+      alert("Ошибка дублирования: " + err.message);
+    }
+  };
+
+  const handleImportFile = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setImporting(true);
+    setImportResult(null);
+    const reader = new FileReader();
+    reader.onload = async (ev) => {
+      let raw = ev.target.result.trim();
+      raw = raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
+      try {
+        const data = JSON.parse(raw);
+        const result = await API.admin.importTest(data);
+        setImportResult({ success: true, ...result });
+        load();
+      } catch (err) {
+        setImportResult({ success: false, error: err.message });
+      } finally {
+        setImporting(false);
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = "";
+  };
+
   return (
     <div style={{ padding: "32px 40px", flex: 1 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 28 }}>
@@ -642,10 +678,50 @@ const AdminTestsList = ({ onCreateNew, onImport, onEdit }) => {
           <div className="eyebrow" style={{ marginBottom: 12 }}>Тесты</div>
         </div>
         <div style={{ display: "flex", gap: 10 }}>
+          <button className="btn btn-ghost" onClick={() => fileRef.current?.click()} disabled={importing}>
+            {importing ? "Импорт…" : "📄 Загрузить пробник"}
+          </button>
+          <input ref={fileRef} type="file" accept=".json,application/json" style={{ display: "none" }} onChange={handleImportFile} />
           <button className="btn btn-ghost" onClick={onImport}>📥 Импорт JSON</button>
           <button className="btn btn-primary" onClick={onCreateNew}>+ Новый тест</button>
         </div>
       </div>
+
+      {importResult && (
+        <div style={{
+          padding: "14px 18px", marginBottom: 20, borderRadius: "var(--r-md)",
+          border: `1.5px solid ${importResult.success ? "var(--green-400)" : "var(--wrong)"}`,
+          background: importResult.success ? "var(--green-50)" : "var(--wrong-bg)",
+          fontSize: 14,
+        }}>
+          {importResult.success ? (
+            <div>
+              <div style={{ fontWeight: 600, color: "var(--green-900)", marginBottom: 4 }}>
+                Тест «{importResult.title}» импортирован как черновик
+              </div>
+              <div style={{ color: "var(--text-soft)" }}>
+                Вопросов: {importResult.questions_imported}
+              </div>
+              {importResult.errors && importResult.errors.length > 0 && (
+                <div style={{ marginTop: 8 }}>
+                  <div style={{ fontWeight: 600, color: "var(--wrong)", marginBottom: 4 }}>Не удалось импортировать:</div>
+                  {importResult.errors.map((err, i) => (
+                    <div key={i} style={{ fontSize: 13, color: "var(--wrong)" }}>
+                      Вопрос {err.question}: {err.error}
+                    </div>
+                  ))}
+                </div>
+              )}
+              <button className="btn btn-ghost btn-sm" style={{ marginTop: 8 }} onClick={() => setImportResult(null)}>Закрыть</button>
+            </div>
+          ) : (
+            <div>
+              <div style={{ fontWeight: 600, color: "var(--wrong)" }}>Ошибка импорта: {importResult.error}</div>
+              <button className="btn btn-ghost btn-sm" style={{ marginTop: 8 }} onClick={() => setImportResult(null)}>Закрыть</button>
+            </div>
+          )}
+        </div>
+      )}
 
       {loading ? (
         <div style={{ color: "var(--text-muted)", fontFamily: "var(--f-serif)", fontSize: 16 }}>Загрузка…</div>
@@ -690,6 +766,7 @@ const AdminTestsList = ({ onCreateNew, onImport, onEdit }) => {
                   <button className="btn btn-primary btn-sm" onClick={() => handlePublish(t.id)}>Опубл.</button>
                 )}
                 <button className="btn btn-ghost btn-sm" onClick={() => onEdit(t.id)}>Изменить</button>
+                <button className="btn btn-ghost btn-sm" onClick={() => handleDuplicate(t.id)}>📋</button>
                 <button className="btn btn-ghost btn-sm" onClick={() => handleToggle(t.id)}>
                   {t.is_active ? "Скрыть" : "Показать"}
                 </button>
@@ -913,8 +990,11 @@ const EMPTY_QUESTION = () => ({
   explanation: "",
   question_type: "single",
   image_data: null,
+  image_note: null,
   correct_text: "",
   match_options: ["1", "2"],
+  grading_criteria: "",
+  max_points: null,
   expand: true,
   answers: [
     { id: 1, text: "", is_correct: true,  match_value: "" },
@@ -958,9 +1038,12 @@ const AdminCreateTest = ({ onCreated, autoImport = false }) => {
           explanation: q.explanation || "",
           question_type: q.question_type || "single",
           image_data: q.image_data || null,
+          image_note: q.image_note || null,
           correct_text: q.correct_text || "",
           text_answers: textAnswers,
           match_options: q.match_options || ["1", "2"],
+          grading_criteria: q.grading_criteria || "",
+          max_points: q.max_points || null,
           expand: true,
           answers: (q.answers || []).map((a, i) => ({
             id: Date.now() + Math.random() + i,
@@ -1038,8 +1121,11 @@ const AdminCreateTest = ({ onCreated, autoImport = false }) => {
           explanation: q.explanation.trim() || null,
           question_type: q.question_type || "single",
           image_data: q.image_data || null,
+          image_note: q.image_note || null,
           correct_text: correctText,
           match_options: q.match_options || ["1", "2"],
+          grading_criteria: q.grading_criteria?.trim() || null,
+          max_points: q.max_points || null,
           answers: q.answers.map(a => ({ text: a.text.trim(), is_correct: a.is_correct ? 1 : 0, match_value: a.match_value || null })),
         };
         }),
@@ -1178,13 +1264,18 @@ const AdminCreateTest = ({ onCreated, autoImport = false }) => {
                   {/* Question type */}
                   <div className="field">
                     <label>Тип вопроса</label>
-                    <div style={{ display: "flex", gap: 8 }}>
-                      {[["single", "Один ответ"], ["text_input", "Ввод числа/текста"], ["matching", "Соответствие"], ["multiple_select", "Несколько ответов"], ["sequence", "Последовательность"], ["fill_blanks", "Заполни пропуски"]].map(([type, label]) => (
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                      {[["single", "Один ответ"], ["text_input", "Ввод числа/текста"], ["matching", "Соответствие"], ["multiple_select", "Несколько ответов"], ["sequence", "Последовательность"], ["fill_blanks", "Заполни пропуски"], ["open_response", "Развёрнутый ответ"]].map(([type, label]) => (
                         <button key={type} className={`btn btn-sm ${q.question_type === type ? "btn-primary" : "btn-ghost"}`}
                           onClick={() => updateQ(qi, "question_type", type)}>{label}</button>
                       ))}
                     </div>
                   </div>
+                  {q.image_note && (
+                    <div style={{ padding: "8px 12px", background: "var(--accent-soft, #fff3e0)", border: "1px solid var(--accent, #e6a23c)", borderRadius: "var(--r-md)", fontSize: 13, color: "var(--text)" }}>
+                      <span style={{ fontWeight: 600 }}>Нет картинки:</span> {q.image_note}
+                    </div>
+                  )}
                   <div className="field">
                     <label>Текст вопроса</label>
                     <textarea className="input" rows={3} value={q.text} onChange={e => updateQ(qi, "text", e.target.value)} placeholder="Введи вопрос…" />
@@ -1406,6 +1497,27 @@ const AdminCreateTest = ({ onCreated, autoImport = false }) => {
                       <button className="btn btn-ghost btn-sm" style={{ marginTop: 10 }} onClick={() => addAnswer(qi)}>+ Добавить пропуск</button>
                     </div>
                   )}
+                  {/* Open response */}
+                  {q.question_type === "open_response" && (
+                    <div>
+                      <div style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 10 }}>
+                        Ученик напишет развёрнутый ответ. Проверка вручную репетитором.
+                      </div>
+                      <div className="field" style={{ marginBottom: 10 }}>
+                        <label>Критерии оценивания</label>
+                        <textarea className="input" rows={2} value={q.grading_criteria || ""}
+                          onChange={e => updateQ(qi, "grading_criteria", e.target.value)}
+                          placeholder="За что начислять баллы…"
+                          style={{ resize: "vertical", fontFamily: "var(--f-sans)" }} />
+                      </div>
+                      <div className="field">
+                        <label>Макс. баллов</label>
+                        <input className="input" type="number" min={1} max={100} value={q.max_points || ""}
+                          onChange={e => updateQ(qi, "max_points", Number(e.target.value) || null)}
+                          placeholder="Напр.: 3" style={{ width: 100 }} />
+                      </div>
+                    </div>
+                  )}
                   <div className="field">
                     <label>Пояснение к правильному ответу</label>
                     <textarea className="input" rows={2} value={q.explanation} onChange={e => updateQ(qi, "explanation", e.target.value)}
@@ -1485,9 +1597,12 @@ const AdminEditTest = ({ testId, onSaved }) => {
           explanation: q.explanation || "",
           question_type: q.question_type || "single",
           image_data: q.image_data || null,
+          image_note: q.image_note || null,
           correct_text: q.correct_text || "",
           text_answers: textAnswers,
           match_options: q.match_options || ["1", "2"],
+          grading_criteria: q.grading_criteria || "",
+          max_points: q.max_points || null,
           expand: false,
           answers: q.answers.map(a => ({ id: a.id, text: a.answer_text, is_correct: !!a.is_correct, match_value: a.match_value || "" })),
         };
@@ -1545,8 +1660,11 @@ const AdminEditTest = ({ testId, onSaved }) => {
           text: q.text.trim(), hint: q.hint.trim() || null, explanation: q.explanation.trim() || null,
           question_type: q.question_type || "single",
           image_data: q.image_data || null,
+          image_note: q.image_note || null,
           correct_text: correctText,
           match_options: q.match_options || ["1", "2"],
+          grading_criteria: q.grading_criteria?.trim() || null,
+          max_points: q.max_points || null,
           answers: q.answers.map(a => ({ text: a.text.trim(), is_correct: a.is_correct ? 1 : 0, match_value: a.match_value || null })),
         };
         }),
@@ -1676,13 +1794,18 @@ const AdminEditTest = ({ testId, onSaved }) => {
                   {/* Question type */}
                   <div className="field">
                     <label>Тип вопроса</label>
-                    <div style={{ display: "flex", gap: 8 }}>
-                      {[["single", "Один ответ"], ["text_input", "Ввод числа/текста"], ["matching", "Соответствие"], ["multiple_select", "Несколько ответов"], ["sequence", "Последовательность"], ["fill_blanks", "Заполни пропуски"]].map(([type, label]) => (
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                      {[["single", "Один ответ"], ["text_input", "Ввод числа/текста"], ["matching", "Соответствие"], ["multiple_select", "Несколько ответов"], ["sequence", "Последовательность"], ["fill_blanks", "Заполни пропуски"], ["open_response", "Развёрнутый ответ"]].map(([type, label]) => (
                         <button key={type} className={`btn btn-sm ${q.question_type === type ? "btn-primary" : "btn-ghost"}`}
                           onClick={() => updateQ(qi, "question_type", type)}>{label}</button>
                       ))}
                     </div>
                   </div>
+                  {q.image_note && (
+                    <div style={{ padding: "8px 12px", background: "var(--accent-soft, #fff3e0)", border: "1px solid var(--accent, #e6a23c)", borderRadius: "var(--r-md)", fontSize: 13, color: "var(--text)" }}>
+                      <span style={{ fontWeight: 600 }}>Нет картинки:</span> {q.image_note}
+                    </div>
+                  )}
                   <div className="field">
                     <label>Текст вопроса</label>
                     <textarea className="input" rows={3} value={q.text} onChange={e => updateQ(qi, "text", e.target.value)} />
@@ -1886,6 +2009,27 @@ const AdminEditTest = ({ testId, onSaved }) => {
                         ))}
                       </div>
                       <button className="btn btn-ghost btn-sm" style={{ marginTop: 10 }} onClick={() => addAnswer(qi)}>+ Добавить пропуск</button>
+                    </div>
+                  )}
+                  {/* Open response */}
+                  {q.question_type === "open_response" && (
+                    <div>
+                      <div style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 10 }}>
+                        Ученик напишет развёрнутый ответ. Проверка вручную репетитором.
+                      </div>
+                      <div className="field" style={{ marginBottom: 10 }}>
+                        <label>Критерии оценивания</label>
+                        <textarea className="input" rows={2} value={q.grading_criteria || ""}
+                          onChange={e => updateQ(qi, "grading_criteria", e.target.value)}
+                          placeholder="За что начислять баллы…"
+                          style={{ resize: "vertical", fontFamily: "var(--f-sans)" }} />
+                      </div>
+                      <div className="field">
+                        <label>Макс. баллов</label>
+                        <input className="input" type="number" min={1} max={100} value={q.max_points || ""}
+                          onChange={e => updateQ(qi, "max_points", Number(e.target.value) || null)}
+                          placeholder="Напр.: 3" style={{ width: 100 }} />
+                      </div>
                     </div>
                   )}
                   <div className="field">
@@ -2736,6 +2880,15 @@ const AdminFlashcardSets = () => {
     load();
   };
 
+  const handleDuplicate = async (id) => {
+    try {
+      await API.admin.duplicateCardSet(id);
+      load();
+    } catch (err) {
+      alert("Ошибка дублирования: " + err.message);
+    }
+  };
+
   return (
     <div style={{ padding: "32px 40px", flex: 1 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 28 }}>
@@ -2788,6 +2941,7 @@ const AdminFlashcardSets = () => {
               </div>
               <div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
                 <button className="btn btn-ghost btn-sm" onClick={() => setEditId(s.id)}>Изменить</button>
+                <button className="btn btn-ghost btn-sm" onClick={() => handleDuplicate(s.id)}>📋</button>
                 <button className="btn btn-ghost btn-sm" onClick={() => handleToggle(s.id)}>
                   {s.is_active ? "Скрыть" : "Показать"}
                 </button>
@@ -2937,6 +3091,20 @@ const AttemptDetailModal = ({ attempt, onClose }) => {
                     <div style={{ fontSize: 13 }}>
                       <span style={{ color: "var(--text-muted)" }}>Правильный ответ: </span>
                       <span style={{ fontWeight: 500, color: "#2d9e5f" }}>{q.correct_answer?.answer_text || ""}</span>
+                    </div>
+                  </div>
+                )}
+
+                {qType === "open_response" && (
+                  <div>
+                    <div style={{ fontSize: 13, marginBottom: 4 }}>
+                      <span style={{ color: "var(--text-muted)" }}>Ответ ученика: </span>
+                      <div style={{ marginTop: 4, padding: "8px 12px", background: "var(--bg-muted)", borderRadius: "var(--r-md)", whiteSpace: "pre-wrap", lineHeight: 1.5 }}>
+                        {q.student_answer?.answer_text || "(пусто)"}
+                      </div>
+                    </div>
+                    <div style={{ marginTop: 8, fontSize: 12, color: "var(--accent, #e6a23c)", fontWeight: 600 }}>
+                      ⏳ Ожидает ручной проверки
                     </div>
                   </div>
                 )}

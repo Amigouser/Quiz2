@@ -148,6 +148,32 @@ adminRouter.delete("/flashcard-sets/:id", requireAuth, requireAdmin, (req, res) 
   res.json({ ok: true });
 });
 
+// ── Admin: duplicate set ────────────────────────────────────────────────────
+adminRouter.post("/flashcard-sets/:id/duplicate", requireAuth, requireAdmin, (req, res) => {
+  const set = get("SELECT * FROM flashcard_sets WHERE id = ?", req.params.id);
+  if (!set) return res.status(404).json({ error: "Набор не найден" });
+  const cards = all("SELECT * FROM flashcard_cards WHERE set_id = ? ORDER BY order_index", req.params.id);
+
+  db.exec("BEGIN");
+  try {
+    const newSetId = run(
+      "INSERT INTO flashcard_sets (title, topic, description, category, grade, section, part, line, source, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+      set.title + " (копия)", set.topic, set.description, set.category, set.grade, set.section, set.part, set.line, set.source, 1
+    ).lastInsertRowid;
+
+    for (const c of cards) {
+      run("INSERT INTO flashcard_cards (set_id, term, definition, image_data, order_index) VALUES (?, ?, ?, ?, ?)",
+        newSetId, c.term, c.definition, c.image_data, c.order_index);
+    }
+
+    db.exec("COMMIT");
+    res.json({ id: newSetId });
+  } catch (e) {
+    db.exec("ROLLBACK");
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // ── Admin: toggle active ─────────────────────────────────────────────────────
 adminRouter.patch("/flashcard-sets/:id/toggle", requireAuth, requireAdmin, (req, res) => {
   const s = get("SELECT is_active FROM flashcard_sets WHERE id = ?", req.params.id);

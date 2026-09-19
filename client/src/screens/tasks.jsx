@@ -370,6 +370,7 @@ export default function TasksPage() {
         image_data: q.image_data || null,
         correct_text: q.correct_text || null,
         match_options: q.match_options || ["1", "2"],
+        grading_criteria: q.grading_criteria || null,
         _questionId: q.id,
         _answerIds: q.answers.map(a => a.id),
         _matchAnswers: q.answers,

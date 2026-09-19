@@ -250,6 +250,7 @@ function QuizPage() {
           image_data: q.image_data || null,
           correct_text: q.correct_text || null,
           match_options: q.match_options || ["1", "2"],
+          grading_criteria: q.grading_criteria || null,
           _questionId: q.id,
           _answerIds: q.answers.map((a) => a.id),
           _matchAnswers: q.answers,
@@ -285,12 +286,13 @@ function QuizPage() {
 
     const payload = answers.map((a, i) => {
       const q = quiz.questions[i];
+      if (!q) return { question_id: 0, answer_text: "" };
       const qType = q.question_type || "single";
-      if (qType === "text_input") return { question_id: q._questionId, answer_text: a.typed || "" };
+      if (qType === "text_input" || qType === "open_response") return { question_id: q._questionId, answer_text: a.typed || "" };
       if (qType === "matching" || qType === "fill_blanks") return { question_id: q._questionId, matches: a.matches || {} };
-      if (qType === "multiple_select") return { question_id: q._questionId, answer_text: (a.selected || []).map(si => q._answerIds[si]).join(",") };
-      if (qType === "sequence") return { question_id: q._questionId, answer_text: (a.order || []).map(si => q._answerIds[si]).join(",") };
-      return { question_id: q._questionId, answer_id: q._answerIds[a.picked] };
+      if (qType === "multiple_select") return { question_id: q._questionId, answer_text: (a.selected || []).map(si => q._answerIds?.[si]).filter(Boolean).join(",") };
+      if (qType === "sequence") return { question_id: q._questionId, answer_text: (a.order || []).map(si => q._answerIds?.[si]).filter(Boolean).join(",") };
+      return { question_id: q._questionId, answer_id: q._answerIds?.[a.picked] };
     });
 
     try {

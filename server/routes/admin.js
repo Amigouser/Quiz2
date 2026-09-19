@@ -13,6 +13,230 @@ function requireAdmin(req, res, next) {
 
 router.use(requireAdmin);
 
+// ── Импорт теста из JSON (пробник) ──────────────────────────────────────────
+router.post("/tests/import", (req, res) => {
+  const data = req.body;
+  if (!data || typeof data !== "object") return res.status(400).json({ error: "Неверный JSON" });
+
+  // Поддержка обоих форматов: exam_title / title
+  const title = data.exam_title || data.title;
+  if (!title) return res.status(400).json({ error: "Отсутствует title (или exam_title)" });
+
+  // Вопросы: part1 + part2, или questions
+  let rawQuestions = [];
+  if (Array.isArray(data.part1)) rawQuestions = rawQuestions.concat(data.part1);
+  if (Array.isArray(data.part2)) rawQuestions = rawQuestions.concat(data.part2);
+  if (rawQuestions.length === 0 && Array.isArray(data.questions)) rawQuestions = data.questions;
+  if (rawQuestions.length === 0) return res.status(400).json({ error: "Нет вопросов (ищем part1, part2 или questions)" });
+
+  const errors = [];
+  const questions = [];
+
+  // Нормализация correct_answer → массив строк
+  function normalizeAnswer(raw) {
+    if (raw == null) return [];
+    if (Array.isArray(raw)) return raw.map(String).map(s => s.trim()).filter(Boolean);
+    const s = String(raw).trim();
+    if (!s) return [];
+    // "31;13" → берём первый вариант (альтернативы через ;)
+    if (s.includes(";")) return [s.split(";")[0].trim()];
+    return [s];
+  }
+
+  // Извлечь текст ответа из correct_answer с учётом ";"
+  function answerField(raw) {
+    if (raw == null) return "";
+    const s = String(raw).trim();
+    if (!s) return "";
+    // Несколько допустимых вариантов: "75; 75 нуклеотидов"
+    if (s.includes(";")) return s;
+    return s;
+  }
+
+  for (let i = 0; i < rawQuestions.length; i++) {
+    const q = rawQuestions[i];
+    const qId = q.id || String(i + 1);
+    const questionText = (q.prompt || q.question_text || q.text || "").trim();
+
+    if (!questionText) {
+      errors.push({ question: qId, error: "Нет текста вопроса" });
+      continue;
+    }
+
+    const answerType = q.answer_type;
+    let qType = null;
+    let correctText = null;
+    let answers = [];
+    let matchOptions = null;
+    let imageNote = q.image_note || null;
+    // Если есть image (путь к файлу), но нет image_note — используем image как подсказку
+    if (!imageNote && q.image) imageNote = q.image;
+
+    if (!answerType) {
+      // Часть 2 — развёрнутый ответ
+      qType = "open_response";
+    } else if (answerType === "text" || answerType === "number") {
+      qType = "text_input";
+      const raw = answerField(q.correct_answer);
+      if (raw.includes(";")) {
+        correctText = JSON.stringify(raw.split(";").map(s => s.trim()).filter(Boolean));
+      } else if (raw) {
+        correctText = raw;
+      }
+    } else if (answerType === "digit_pairs" || answerType === "matching") {
+      qType = "matching";
+      // fields — левые элементы, correct_answer — строка цифр, каждая = ответ
+      const fields = q.fields || [];
+      const answersStr = normalizeAnswer(q.correct_answer)[0] || "";
+      // Опции — цифры от 1 до максимума в ответе
+      const maxDigit = Math.max(...answersStr.split("").map(Number).filter(n => !isNaN(n)), 0);
+      matchOptions = Array.from({ length: maxDigit }, (_, i) => String(i + 1));
+      for (let fi = 0; fi < fields.length; fi++) {
+        answers.push({
+          text: fields[fi],
+          is_correct: 0,
+          match_value: answersStr[fi] || "",
+          order_index: fi,
+        });
+      }
+      // Если нет fields, но есть промпт с А) Б) В)... — парсим
+      if (answers.length === 0) {
+        const letterMatches = questionText.match(/[А-Я]\)\s*([^\nА-Я]+)/g);
+        if (letterMatches) {
+          letterMatches.forEach((m, mi) => {
+            const text = m.replace(/^[А-Я]\)\s*/, "").trim();
+            answers.push({ text, is_correct: 0, match_value: answersStr[mi] || "", order_index: mi });
+          });
+        }
+      }
+    } else if (answerType === "digits_any_order") {
+      qType = "multiple_select";
+      const correctDigits = normalizeAnswer(q.correct_answer)[0] || "";
+      const correctSet = new Set(correctDigits.split("").map(Number));
+      // Извлечь варианты из промпта: "1) дисульфидный мостик\n2) нуклеотид..."
+      const optMatches = questionText.match(/(\d+)\)\s*([^\n\d]+)/g);
+      if (optMatches) {
+        optMatches.forEach(m => {
+          const match = m.match(/^(\d+)\)\s*(.+)$/);
+          if (match) {
+            const num = Number(match[1]);
+            const text = match[2].trim();
+            answers.push({ text: `${num}) ${text}`, is_correct: correctSet.has(num) ? 1 : 0, order_index: num - 1 });
+          }
+        });
+      }
+      if (answers.length === 0) {
+        // Фолбэк: просто цифры
+        for (let d = 1; d <= 6; d++) {
+          answers.push({ text: String(d), is_correct: correctSet.has(d) ? 1 : 0, order_index: d - 1 });
+        }
+      }
+    } else if (answerType === "sequence" || answerType === "sequence_short") {
+      qType = "sequence";
+      const seqStr = normalizeAnswer(q.correct_answer)[0] || "";
+      // Последовательность цифр: "35124" → ["3","5","1","2","4"]
+      const digits = seqStr.split("").filter(c => c >= "0" && c <= "9");
+      // Извлечь тексты вариантов из промпта
+      const optMatches = questionText.match(/(\d+)\)\s*([^\n\d]+)/g);
+      const optMap = {};
+      if (optMatches) {
+        optMatches.forEach(m => {
+          const match = m.match(/^(\d+)\)\s*(.+)$/);
+          if (match) optMap[match[1]] = match[2].trim();
+        });
+      }
+      digits.forEach((d, di) => {
+        answers.push({
+          text: optMap[d] ? `${d}) ${optMap[d]}` : d,
+          is_correct: 0,
+          order_index: di,
+        });
+      });
+    } else {
+      errors.push({ question: qId, error: `Неизвестный answer_type: "${answerType}"` });
+      continue;
+    }
+
+    // Пояснение из answer_note или explanation
+    const explanation = q.explanation || q.answer_note || null;
+
+    questions.push({
+      question_text: questionText,
+      hint: q.hint || null,
+      explanation,
+      question_type: qType,
+      image_note: imageNote,
+      grading_criteria: q.grading_criteria || null,
+      max_points: q.points || q.max_points || null,
+      correct_text: correctText,
+      match_options: matchOptions,
+      answers,
+    });
+  }
+
+  if (questions.length === 0) {
+    return res.status(400).json({ error: "Ни один вопрос не удалось импортировать", errors });
+  }
+
+  db.exec("BEGIN");
+  let testId;
+  try {
+    // topic: из source или exam_title
+    const topic = data.source || null;
+    const description = data.instructions || data.description || null;
+
+    testId = run(
+      "INSERT INTO tests (title, topic, description, category, grade, section, part, line, source, is_draft) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)",
+      title,
+      topic,
+      description,
+      data.category || null,
+      data.grade || null,
+      data.section || null,
+      data.part || null,
+      data.line || null,
+      data.source || null
+    ).lastInsertRowid;
+
+    questions.forEach((q, qi) => {
+      let matchOptions = q.match_options ? JSON.stringify(q.match_options) : null;
+      if (!matchOptions && q.correct_text) {
+        try {
+          const parsed = JSON.parse(q.correct_text);
+          if (parsed.match_options) {
+            matchOptions = JSON.stringify(parsed.match_options);
+            q.correct_text = null;
+          }
+        } catch (_) {}
+      }
+
+      const qId = run(
+        "INSERT INTO questions (test_id, question_text, hint, explanation, order_index, question_type, image_note, grading_criteria, max_points, correct_text, match_options) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        testId, q.question_text, q.hint, q.explanation, qi,
+        q.question_type, q.image_note, q.grading_criteria, q.max_points,
+        q.correct_text, matchOptions
+      ).lastInsertRowid;
+
+      q.answers.forEach((a, ai) =>
+        run("INSERT INTO answers (question_id, answer_text, is_correct, order_index, match_value) VALUES (?, ?, ?, ?, ?)",
+          qId, a.text, a.is_correct ? 1 : 0, a.order_index ?? ai, a.match_value || null)
+      );
+    });
+
+    db.exec("COMMIT");
+  } catch (e) {
+    db.exec("ROLLBACK");
+    return res.status(500).json({ error: e.message });
+  }
+
+  res.json({
+    id: testId,
+    title,
+    questions_imported: questions.length,
+    errors: errors.length > 0 ? errors : undefined,
+  });
+});
+
 router.get("/tests", (req, res) => {
   const tests = all(`
     SELECT t.*,
@@ -31,7 +255,7 @@ router.get("/tests", (req, res) => {
 router.get("/tests/:id", (req, res) => {
   const test = get("SELECT * FROM tests WHERE id = ?", req.params.id);
   if (!test) return res.status(404).json({ error: "Тест не найден" });
-  const questions = all("SELECT * FROM questions WHERE test_id = ? ORDER BY order_index", req.params.id);
+  const questions = all("SELECT id, test_id, question_text, hint, explanation, order_index, image_data, question_type, correct_text, match_options, image_note, grading_criteria, max_points FROM questions WHERE test_id = ? ORDER BY order_index", req.params.id);
   for (const q of questions) {
     q.answers = all("SELECT * FROM answers WHERE question_id = ? ORDER BY order_index", q.id);
   }
@@ -52,10 +276,11 @@ router.post("/tests", (req, res) => {
 
     questions.forEach((q, qi) => {
       const qId = run(
-        "INSERT INTO questions (test_id, question_text, hint, explanation, order_index, image_data, question_type, correct_text, match_options) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        "INSERT INTO questions (test_id, question_text, hint, explanation, order_index, image_data, question_type, correct_text, match_options, image_note, grading_criteria, max_points) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         testId, q.text, q.hint || null, q.explanation || null, qi,
         q.image_data || null, q.question_type || "single", q.correct_text || null,
-        q.match_options ? JSON.stringify(q.match_options) : null
+        q.match_options ? JSON.stringify(q.match_options) : null,
+        q.image_note || null, q.grading_criteria || null, q.max_points || null
       ).lastInsertRowid;
 
       (q.answers || []).forEach((a, ai) =>
@@ -86,10 +311,11 @@ router.put("/tests/:id", (req, res) => {
       run("DELETE FROM questions WHERE test_id = ?", req.params.id);
       questions.forEach((q, qi) => {
         const qId = run(
-          "INSERT INTO questions (test_id, question_text, hint, explanation, order_index, image_data, question_type, correct_text, match_options) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+          "INSERT INTO questions (test_id, question_text, hint, explanation, order_index, image_data, question_type, correct_text, match_options, image_note, grading_criteria, max_points) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
           req.params.id, q.text, q.hint || null, q.explanation || null, qi,
           q.image_data || null, q.question_type || "single", q.correct_text || null,
-          q.match_options ? JSON.stringify(q.match_options) : null
+          q.match_options ? JSON.stringify(q.match_options) : null,
+          q.image_note || null, q.grading_criteria || null, q.max_points || null
         ).lastInsertRowid;
         (q.answers || []).forEach((a, ai) =>
           run("INSERT INTO answers (question_id, answer_text, is_correct, order_index, match_value) VALUES (?, ?, ?, ?, ?)",
@@ -108,6 +334,42 @@ router.put("/tests/:id", (req, res) => {
 router.delete("/tests/:id", (req, res) => {
   run("DELETE FROM tests WHERE id = ?", req.params.id);
   res.json({ ok: true });
+});
+
+router.post("/tests/:id/duplicate", (req, res) => {
+  const test = get("SELECT * FROM tests WHERE id = ?", req.params.id);
+  if (!test) return res.status(404).json({ error: "Тест не найден" });
+
+  const questions = all("SELECT * FROM questions WHERE test_id = ? ORDER BY order_index", req.params.id);
+  for (const q of questions) {
+    q.answers = all("SELECT * FROM answers WHERE question_id = ? ORDER BY order_index", q.id);
+  }
+
+  db.exec("BEGIN");
+  try {
+    const newTestId = run(
+      "INSERT INTO tests (title, topic, description, category, grade, section, part, line, source, is_draft, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+      test.title + " (копия)", test.topic, test.description, test.category, test.grade, test.section, test.part, test.line, test.source, 1, 1
+    ).lastInsertRowid;
+
+    for (const q of questions) {
+      const qId = run(
+        "INSERT INTO questions (test_id, question_text, hint, explanation, order_index, image_data, question_type, correct_text, match_options, image_note, grading_criteria, max_points) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        newTestId, q.question_text, q.hint, q.explanation, q.order_index, q.image_data, q.question_type, q.correct_text, q.match_options, q.image_note, q.grading_criteria, q.max_points
+      ).lastInsertRowid;
+
+      for (const a of q.answers) {
+        run("INSERT INTO answers (question_id, answer_text, is_correct, order_index, match_value) VALUES (?, ?, ?, ?, ?)",
+          qId, a.answer_text, a.is_correct, a.order_index, a.match_value);
+      }
+    }
+
+    db.exec("COMMIT");
+    res.json({ id: newTestId });
+  } catch (e) {
+    db.exec("ROLLBACK");
+    res.status(500).json({ error: e.message });
+  }
 });
 
 router.patch("/tests/:id/toggle", (req, res) => {
@@ -413,6 +675,9 @@ router.get("/results/:id", (req, res) => {
         is_correct: matches[a.id] === a.match_value ? 1 : 0,
       }));
       correctAnswer = allAnswers.map(a => ({ id: a.id, match_value: a.match_value }));
+    } else if (qType === "open_response") {
+      studentAnswer = { answer_text: studentAnswers[0]?.answer_text || "" };
+      correctAnswer = null;
     }
 
     return {

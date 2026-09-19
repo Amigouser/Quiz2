@@ -52,6 +52,7 @@ router.get("/tests/public/:id", (req, res) => {
         image_data: q.image_data || null,
         correct_text: null,
         match_options: q.match_options ? JSON.parse(q.match_options) : ["1", "2"],
+        grading_criteria: q.grading_criteria || null,
         answers: answers.map((a) => ({ id: a.id, text: a.answer_text, match_value: a.match_value || null })),
       };
     }),
@@ -157,6 +158,8 @@ router.get("/tests/:id", requireAuth, (req, res) => {
         image_data: q.image_data || null,
         correct_text: q.correct_text || null,
         match_options: q.match_options ? JSON.parse(q.match_options) : ["1", "2"],
+        grading_criteria: q.grading_criteria || null,
+        max_points: q.max_points || null,
         correct_index: correctIndex,
         answers: answers.map((a) => ({ id: a.id, text: a.answer_text, match_value: a.match_value || null, is_correct: a.is_correct })),
       };
@@ -192,6 +195,7 @@ router.post("/attempts/:id/submit", requireAuth, (req, res) => {
   if (!Array.isArray(answers)) return res.status(400).json({ error: "answers должен быть массивом" });
 
   let score = 0;
+  let hasOpenResponse = false;
   const results = [];
 
   db.exec("BEGIN");
@@ -252,6 +256,14 @@ router.post("/attempts/:id/submit", requireAuth, (req, res) => {
         if (allCorrect) score++;
         results.push({ question_id, matches, is_correct: allCorrect ? 1 : 0 });
 
+      } else if (qType === "open_response") {
+        hasOpenResponse = true;
+        run(
+          "INSERT INTO attempt_answers (attempt_id, question_id, answer_id, answer_text, is_correct) VALUES (?, ?, ?, ?, ?)",
+          attemptId, question_id, null, answer_text || "", 0
+        );
+        results.push({ question_id, answer_text, is_correct: 0, pending_review: true });
+
       } else {
         const correctAnswer = get(
           "SELECT id FROM answers WHERE question_id = ? AND is_correct = 1",
@@ -266,7 +278,8 @@ router.post("/attempts/:id/submit", requireAuth, (req, res) => {
         results.push({ question_id, answer_id, is_correct: isCorrect, correct_answer_id: correctAnswer?.id ?? null });
       }
     }
-    run("UPDATE attempts SET score = ?, completed_at = datetime('now') WHERE id = ?", score, attemptId);
+    const status = hasOpenResponse ? "pending_review" : "graded";
+    run("UPDATE attempts SET score = ?, status = ?, completed_at = datetime('now') WHERE id = ?", score, status, attemptId);
     db.exec("COMMIT");
   } catch (e) {
     db.exec("ROLLBACK");

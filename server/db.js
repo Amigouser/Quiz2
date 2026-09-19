@@ -159,6 +159,10 @@ try { db.exec("ALTER TABLE answers ADD COLUMN match_value TEXT"); } catch (_) {}
 try { db.exec("ALTER TABLE attempt_answers ADD COLUMN answer_text TEXT"); } catch (_) {}
 try { db.exec("ALTER TABLE tests ADD COLUMN grade TEXT"); } catch (_) {}
 try { db.exec("ALTER TABLE flashcard_sets ADD COLUMN grade TEXT"); } catch (_) {}
+try { db.exec("ALTER TABLE questions ADD COLUMN image_note TEXT"); } catch (_) {}
+try { db.exec("ALTER TABLE questions ADD COLUMN grading_criteria TEXT"); } catch (_) {}
+try { db.exec("ALTER TABLE questions ADD COLUMN max_points INTEGER"); } catch (_) {}
+try { db.exec("ALTER TABLE attempts ADD COLUMN status TEXT DEFAULT 'graded'"); } catch (_) {}
 
 // Таблицы для растений
 db.exec(`

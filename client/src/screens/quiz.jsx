@@ -60,6 +60,12 @@ export const QuizClassic = ({ quiz, onFinish, onExit }) => {
     if (correct) setTimeout(() => setBurst(true), 120);
   };
 
+  const lockOpenResponse = () => {
+    if (locked || !typedText.trim()) return;
+    setLocked(true);
+    setAnswers(a => [...a, { typed: typedText, correct: false, pending_review: true }]);
+  };
+
   const lockMatching = () => {
     if (locked) return;
     const items = q._matchAnswers || [];
@@ -418,6 +424,39 @@ export const QuizClassic = ({ quiz, onFinish, onExit }) => {
           </div>
         )}
 
+        {/* ── Open response ── */}
+        {qType === "open_response" && (
+          <div style={{ marginTop: 28 }}>
+            <div style={{ fontSize: 15, color: "var(--text-soft)", marginBottom: 10 }}>Напиши развёрнутый ответ:</div>
+            <textarea
+              className="input"
+              rows={5}
+              style={{ width: "100%", resize: "vertical", fontSize: 15, fontFamily: "var(--f-sans)", lineHeight: 1.6,
+                border: locked ? "2px solid var(--green-400)" : undefined }}
+              value={typedText}
+              onChange={e => !locked && setTypedText(e.target.value)}
+              disabled={locked}
+              autoFocus={!locked}
+              placeholder="Напиши свой ответ здесь…"
+            />
+            {!locked && (
+              <button className="btn btn-primary" style={{ marginTop: 10 }} onClick={lockOpenResponse} disabled={!typedText.trim()}>
+                Отправить
+              </button>
+            )}
+            {locked && (
+              <div style={{ marginTop: 14, fontSize: 14, color: "var(--green-700)", fontWeight: 600 }}>
+                ✍️ Ответ отправлен. Репетитор проверит его и выставит балл.
+              </div>
+            )}
+            {q.grading_criteria && (
+              <div style={{ marginTop: 12, padding: "10px 14px", background: "var(--bg-muted)", borderRadius: "var(--r-md)", fontSize: 13, color: "var(--text-soft)", lineHeight: 1.5 }}>
+                <b>Критерии:</b> {q.grading_criteria}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Feedback block (all types) */}
         {locked && q.explain && (
           <div style={{
@@ -444,6 +483,7 @@ export const QuizClassic = ({ quiz, onFinish, onExit }) => {
               : qType === "multiple_select" ? "Отметь все правильные ответы"
               : qType === "sequence" ? "Расставь элементы по порядку стрелками"
               : qType === "text_input" ? "Введи ответ и нажми Проверить"
+              : qType === "open_response" ? "Напиши развёрнутый ответ"
               : "Выбери один ответ"}
           </span>
           <button className="btn btn-primary btn-lg" onClick={next} disabled={!locked} style={{ opacity: locked ? 1 : 0.4, flexShrink: 0 }}>
