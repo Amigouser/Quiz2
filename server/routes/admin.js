@@ -258,6 +258,13 @@ router.get("/tests/:id", (req, res) => {
   const questions = all("SELECT id, test_id, question_text, hint, explanation, order_index, image_data, question_type, correct_text, match_options, image_note, grading_criteria, max_points FROM questions WHERE test_id = ? ORDER BY order_index", req.params.id);
   for (const q of questions) {
     q.answers = all("SELECT * FROM answers WHERE question_id = ? ORDER BY order_index", q.id);
+    // Safe parse match_options
+    try {
+      const parsed = typeof q.match_options === "string" ? JSON.parse(q.match_options) : q.match_options;
+      q.match_options = Array.isArray(parsed) ? parsed : ["1", "2"];
+    } catch (_) {
+      q.match_options = ["1", "2"];
+    }
   }
   res.json({ ...test, questions });
 });

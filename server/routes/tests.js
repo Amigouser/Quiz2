@@ -51,7 +51,7 @@ router.get("/tests/public/:id", (req, res) => {
         question_type: q.question_type || "single",
         image_data: q.image_data || null,
         correct_text: null,
-        match_options: q.match_options ? JSON.parse(q.match_options) : ["1", "2"],
+        match_options: (() => { try { const p = typeof q.match_options === "string" ? JSON.parse(q.match_options) : q.match_options; return Array.isArray(p) ? p : ["1","2"]; } catch(_) { return ["1","2"]; } })(),
         grading_criteria: q.grading_criteria || null,
         answers: answers.map((a) => ({ id: a.id, text: a.answer_text, match_value: a.match_value || null })),
       };
@@ -157,7 +157,7 @@ router.get("/tests/:id", requireAuth, (req, res) => {
         question_type: q.question_type || "single",
         image_data: q.image_data || null,
         correct_text: q.correct_text || null,
-        match_options: q.match_options ? JSON.parse(q.match_options) : ["1", "2"],
+        match_options: (() => { try { const p = typeof q.match_options === "string" ? JSON.parse(q.match_options) : q.match_options; return Array.isArray(p) ? p : ["1","2"]; } catch(_) { return ["1","2"]; } })(),
         grading_criteria: q.grading_criteria || null,
         max_points: q.max_points || null,
         correct_index: correctIndex,
