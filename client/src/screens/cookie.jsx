@@ -117,7 +117,7 @@ export default function CookiePage() {
       fontFamily: "var(--f-sans)",
     }}>
       {/* Шапка */}
-      <header style={{
+      <header className="legal-header" style={{
         position: "relative",
         padding: "56px 48px 72px",
         background: "linear-gradient(165deg, #0a1f14 0%, #0f2a1e 55%, #1b4332 100%)",
@@ -192,7 +192,7 @@ export default function CookiePage() {
       </header>
 
       {/* Контент */}
-      <main style={{
+      <main className="legal-main" style={{
         maxWidth: 860, margin: "0 auto",
         padding: "64px 48px 96px",
       }}>

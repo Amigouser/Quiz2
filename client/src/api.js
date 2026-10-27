@@ -35,6 +35,7 @@ const API = {
   uploadImage: (base64, folder) => req("/api/upload", { method: "POST", body: { data: base64, folder } }),
 
   getCardSets: () => req("/api/flashcard-sets"),
+  getVideos: () => req("/api/videos"),
   getCardSet: (id) => req(`/api/flashcard-sets/${id}`),
 
   admin: {
@@ -57,6 +58,8 @@ const API = {
     deleteStudent: (id) => req(`/api/admin/students/${id}`, { method: "DELETE" }),
     getResults: () => req("/api/admin/results"),
     getAttemptDetail: (id) => req(`/api/admin/results/${id}`),
+    gradeAnswer: (attemptId, question_id, points) =>
+      req(`/api/admin/results/${attemptId}/grade`, { method: "POST", body: { question_id, points } }),
     deleteResult: (id) => req(`/api/admin/results/${id}`, { method: "DELETE" }),
     deleteAllResults: () => req("/api/admin/results", { method: "DELETE", body: { confirm: "DELETE_ALL" } }),
     getCardSets: () => req("/api/admin/flashcard-sets"),
@@ -72,6 +75,11 @@ const API = {
     unassignCardSet: (studentId, setId) =>
       req(`/api/admin/students/${studentId}/card-sets/${setId}`, { method: "DELETE" }),
     restore: (data) => req("/api/admin/restore", { method: "POST", body: { data } }),
+    getVideos: () => req("/api/admin/videos"),
+    addVideo: (url, title) => req("/api/admin/videos", { method: "POST", body: { url, title } }),
+    updateVideo: (id, data) => req(`/api/admin/videos/${id}`, { method: "PUT", body: data }),
+    reorderVideos: (ids) => req("/api/admin/videos-order", { method: "PUT", body: { ids } }),
+    deleteVideo: (id) => req(`/api/admin/videos/${id}`, { method: "DELETE" }),
     getSections: () => req("/api/admin/sections"),
     createSection: (name) => req("/api/admin/sections", { method: "POST", body: { name } }),
     updateSection: (id, name) => req(`/api/admin/sections/${id}`, { method: "PUT", body: { name } }),

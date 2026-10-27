@@ -2,6 +2,8 @@ import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Lenis from "lenis";
 import { Leaf, Fern, Sprig, Cell, Helix } from "../botanical";
+import { DNAHero, DNA_HERO_STYLES } from "../components/DNAHero";
+import { VideoShowcase, VIDEO_STYLES } from "../components/VideoShowcase";
 
 // ─── Настройки — отредактируй под своё ─────────────────────────────────────
 const TUTOR_PHOTO = "/tutor.JPG";
@@ -12,8 +14,8 @@ const TUTOR = {
   tagline: "Студент-исследователь ТГУ, арахнолог.\nГотовлю к ОГЭ и ЕГЭ — понятно, системно, с результатом.",
   bio:     "Магистр фундаментальной и прикладной биологии, кафедра зоологии беспозвоночных Томского государственного университета (2025). С 2023 года работаю репетитором по биологии. Средняя оценка на Профи.ру — 5.0.",
   stats: [
-    { value: 2,  suffix: "+",  label: "года опыта" },
-    { value: 25, suffix: "+",  label: "учеников" },
+    { value: 3,  suffix: "+",  label: "года опыта" },
+    { value: 35, suffix: "+",  label: "учеников" },
     { value: 5,  suffix: ".0", label: "рейтинг Профи.ру" },
   ],
 };
@@ -25,7 +27,7 @@ const DIPLOMAS = [
     title: "Бакалавр биологии",
     institution: "Томский государственный университет",
     faculty: "Направление 06.03.01 «Биология»",
-    photo: "/tutor6.jpg",
+    photo: "/diploma-bachelor.jpg",
   },
   {
     year: "2023–2025",
@@ -33,7 +35,7 @@ const DIPLOMAS = [
     title: "Магистр фундаментальной и прикладной биологии",
     institution: "Томский государственный университет",
     faculty: "Кафедра зоологии беспозвоночных · 06.04.01",
-    photo: "/tutor5.jpg",
+    photo: "/diploma-master.jpg",
   },
 ];
 
@@ -108,6 +110,36 @@ const VK_EVENTS = [
   },
 ];
 
+// Результаты учеников за прошлый учебный год
+const RESULTS = [
+  {
+    exam: "ЕГЭ",
+    rows: [
+      { name: "Диана", prep: "9 месяцев подготовки", score: 74 },
+      { name: "Элина", prep: "6 месяцев подготовки", score: 70 },
+    ],
+  },
+  {
+    exam: "ОГЭ",
+    rows: [
+      { name: "Максим",    prep: "1 год подготовки",     score: 45 },
+      { name: "Ландыш",    prep: "9 месяцев подготовки", score: 45 },
+      { name: "София",     prep: null,                    score: 39 },
+      { name: "Кирилл",    prep: null,                    score: 35 },
+      { name: "Максим",    prep: null,                    score: 34 },
+      { name: "Анастасия", prep: null,                    score: 34 },
+    ],
+  },
+];
+
+// «балл», «балла», «баллов»
+const pointsWord = (n) => {
+  const d = n % 10, dd = n % 100;
+  if (d === 1 && dd !== 11) return "балл";
+  if (d >= 2 && d <= 4 && (dd < 12 || dd > 14)) return "балла";
+  return "баллов";
+};
+
 const FEATURES = [
   { icon: "🔬", title: "Научная основа",        text: "Действующий исследователь ТГУ — преподаю биологию на основе актуальной науки, а не только учебников." },
   { icon: "🎯", title: "Подготовка к экзаменам", text: "Специализируюсь на ОГЭ и ЕГЭ по биологии. Разбираем типичные ошибки и отрабатываем слабые места." },
@@ -132,8 +164,8 @@ const SERVICES_LIST = [
 ];
 
 const FACTS = [
-  { icon: "🎓", value: "25+",    label: "учеников",              note: "индивидуально · онлайн" },
-  { icon: "⏳", value: "2+",     label: "года опыта",             note: "репетитор с января 2024" },
+  { icon: "🎓", value: "35+",    label: "учеников",              note: "индивидуально · онлайн" },
+  { icon: "⏳", value: "3+",     label: "года опыта",             note: "преподаю с 2023 года" },
   { icon: "🔬", value: "1000+",  label: "часов полевых",          note: "практики и экспедиции" },
   { icon: "⭐", value: "5.0",    label: "рейтинг Профи.ру",       note: "средняя оценка учеников" },
   { icon: "🧬", value: "2",      label: "высших образования",     note: "бакалавр + магистр ТГУ" },
@@ -144,7 +176,7 @@ const TIMELINE = [
   { year: "2019", title: "Поступила на биофак ТГУ",                desc: "Направление 06.03.01 «Биология»" },
   { year: "2022", title: "Диплом I степени «Старт в науку»",       desc: "Лучший доклад в секции «Зоология и гидробиология»" },
   { year: "2023", title: "Бакалавр биологии",                      desc: "Томский государственный университет" },
-  { year: "2024", title: "Начало работы репетитором",              desc: "Индивидуальные занятия · ОГЭ, ЕГЭ, ДВИ" },
+  { year: "2023", title: "Начало работы репетитором",              desc: "Индивидуальные занятия · ОГЭ, ЕГЭ, ДВИ" },
   { year: "2025", title: "Магистр фунд. и прикл. биологии",        desc: "Кафедра зоологии беспозвоночных · ТГУ" },
   { year: "2025", title: "Зимняя школа Плавучего университета",    desc: "«Морская биология» · БФУ, Калининград" },
 ];
@@ -172,7 +204,7 @@ const PRICES = [
   {
     title: "ВПР по биологии",
     subtitle: "5–8 классы",
-    price: "600",
+    price: "700",
     unit: "₽ / 60 мин",
     tone: "soft",
     note: "Стандартная программа школы",
@@ -180,7 +212,7 @@ const PRICES = [
   {
     title: "ОГЭ по биологии",
     subtitle: "9 класс",
-    price: "800",
+    price: "850",
     unit: "₽ / 60 мин",
     tone: "mid",
     note: "Систематическая подготовка к экзамену",
@@ -489,10 +521,28 @@ const STYLES = `
     .lf-btn-login-full  { display: none !important; }
     .lf-btn-login-short { display: inline !important; }
 
+    /* Мероприятия: кнопки «Сертификат / ВК» переносим под текст */
+    .lf-event-row { flex-wrap: wrap; }
+    .lf-event-actions { width: 100%; padding-left: 54px; }
+
+    /* Публикации: компактнее, без декоративной веточки */
+    .lf-article-row { padding: 20px 16px !important; gap: 14px !important; }
+    .lf-article-row:hover { padding-left: 16px !important; }
+    .lf-article-year { width: 48px !important; height: 48px !important; font-size: 12px !important; }
+    .lf-article-sprig { display: none; }
+
     /* Секция Тесты+Запись — стак в колонку */
     .lf-duo-section { padding: 60px 20px 80px !important; }
     .lf-duo-grid    { grid-template-columns: 1fr !important; }
     .lf-duo-divider { display: none !important; }
+  }
+  /* Планшеты: меню + 3 кнопки не помещаются в шапку — оставляем только кнопки */
+  @media (max-width: 1100px) {
+    .lf-nav { display: none !important; }
+  }
+  .lf-nav-link { white-space: nowrap; }
+  @media (max-width: 360px) {
+    .lf-logo-text { display: none; }
   }
   @media (max-width: 900px) and (min-width: 641px) {
     .lf-stats-grid { grid-template-columns: repeat(3, 1fr) !important; }
@@ -547,7 +597,7 @@ const STYLES = `
   }
   @media (max-width: 900px) {
     .lf-about-intro { grid-template-columns: 1fr; gap: 32px; }
-    .lf-about-photo-wrap { margin-top: 0; max-height: 400px; aspect-ratio: 4/3; }
+    .lf-about-photo-wrap { margin-top: 0; max-height: 520px; aspect-ratio: 4/5; }
     .lf-about-mini-stats { grid-template-columns: 1fr 1fr; }
   }
 
@@ -623,6 +673,66 @@ const STYLES = `
     font-style: italic;
     text-shadow: 1px 1px 0 rgba(45,106,79,0.08);
   }
+
+  /* Результаты учеников */
+  .lf-results {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 14px; align-items: start;
+    margin: -4px 0 26px 46px;
+  }
+  .lf-results-group {
+    background: var(--surface);
+    border: 1.5px solid var(--border-soft);
+    border-radius: 18px;
+    padding: 16px 18px 10px;
+    box-shadow: var(--sh-sm);
+  }
+  .lf-results-exam {
+    display: inline-block;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.14em;
+    color: #fff; background: var(--green-800);
+    border-radius: 999px; padding: 4px 12px; margin-bottom: 8px;
+  }
+  .lf-results-group ul { list-style: none; margin: 0; padding: 0; }
+  .lf-results-group li {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    padding: 9px 0;
+    border-bottom: 1px dashed var(--border-soft);
+  }
+  .lf-results-group li:last-child { border-bottom: none; }
+  .lf-results-name { font-weight: 700; font-size: 15px; color: var(--text); }
+  .lf-results-prep { font-size: 12px; color: var(--text-muted); margin-top: 1px; }
+  .lf-results-score {
+    font-family: var(--f-serif); font-weight: 700; font-size: 24px;
+    color: var(--green-800); white-space: nowrap; line-height: 1;
+  }
+  .lf-results-score span { font-family: var(--f-sans); font-size: 12px; font-weight: 600; color: var(--text-muted); }
+
+  /* Пробное занятие */
+  .lf-trial {
+    position: relative; overflow: hidden;
+    margin: 6px 0 26px 46px;
+    padding: 24px 26px;
+    border-radius: 22px;
+    background: linear-gradient(135deg, #f4a261 0%, #f6b67f 55%, #f9cfa4 100%);
+    color: #3a1e0a;
+    box-shadow: 0 16px 40px rgba(244,162,97,0.35);
+  }
+  .lf-trial::after {
+    content: "🌱"; position: absolute; right: 18px; top: 14px;
+    font-size: 40px; opacity: 0.85;
+  }
+  .lf-trial-badge {
+    display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+    background: rgba(255,255,255,0.55); border-radius: 999px; padding: 4px 12px; margin-bottom: 10px;
+  }
+  .lf-trial-title {
+    font-family: var(--f-serif); font-weight: 700;
+    font-size: clamp(22px, 2.2vw, 28px); line-height: 1.15; margin-bottom: 8px;
+    padding-right: 48px;
+  }
+  .lf-trial-text { font-size: 15px; line-height: 1.6; margin-bottom: 16px; max-width: 460px; }
+  .lf-trial-btn { background: #1b3d2a; color: #fff; font-size: 14px; padding: 12px 22px; }
+  .lf-trial-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 26px rgba(27,61,42,0.35); }
 
   /* Numbered paragraph */
   .lf-about-para {
@@ -1240,6 +1350,8 @@ const STYLES = `
   @media (max-width: 900px) {
     .lf-about-photo-card { margin: 0 auto 32px; width: min(280px, 80%); }
     .lf-about-para { padding-left: 34px; }
+    .lf-results { grid-template-columns: 1fr; margin-left: 0; }
+    .lf-trial { margin-left: 0; padding: 20px; }
     .lf-about-list { padding-left: 38px; }
     .lf-about-list[data-num]::before { left: 10px; top: 18px; }
     .lf-dropcap::first-letter { font-size: 68px; padding: 6px 12px 0 0; }
@@ -1370,234 +1482,13 @@ const STYLES = `
     .lf-helix-spin,
     .lf-living-cell,
     .lf-cell-orbit,
-    .lf-ochre-dot,
-    .dna3d-spinner { animation: none !important; }
+    .lf-ochre-dot { animation: none !important; }
     .lf-helix-strand,
     .lf-helix-rung { stroke-dashoffset: 0 !important; animation: none !important; }
     .lf-letter { opacity: 1 !important; transform: none !important; animation: none !important; }
   }
 
-  /* ══ Hero — editorial two-column layout ════════════════════════════ */
-  .lf-hero-row {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    gap: 80px;
-    align-items: center;
-    width: min(96vw, 1200px);
-    padding: 0 40px;
-    position: relative;
-    z-index: 2;
-  }
-  .lf-hero-headline { max-width: 580px; display: flex; flex-direction: column; align-items: flex-start; }
-  .lf-hero-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 6px 14px 6px 8px;
-    border: 1.5px solid rgba(45, 106, 79, 0.3);
-    border-radius: 999px;
-    font-family: var(--f-sans);
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 0.12em;
-    color: var(--green-800);
-    text-transform: uppercase;
-    margin-bottom: 28px;
-    opacity: 0;
-    animation: lf-letter-rise 0.7s cubic-bezier(0.22, 0.8, 0.32, 1) 0.1s forwards;
-  }
-  .lf-hero-pill-icon {
-    width: 22px; height: 22px;
-    background: var(--green-800);
-    border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0;
-  }
-  .lf-hero-main-headline {
-    font-family: var(--f-serif);
-    font-size: clamp(48px, 8vw, 88px);
-    font-weight: 700;
-    line-height: 1.07;
-    letter-spacing: -0.025em;
-    color: #1a2e1f;
-    margin: 0 0 20px 0;
-    opacity: 0;
-    animation: lf-letter-rise 0.85s cubic-bezier(0.22, 0.8, 0.32, 1) 0.3s forwards;
-  }
-  .lf-hero-main-headline em {
-    font-style: italic;
-    color: var(--green-800);
-  }
-  .lf-hero-tagline {
-    margin-top: 0;
-    font-size: 15px;
-    line-height: 1.65;
-    color: rgba(26, 46, 31, 0.62);
-    max-width: 420px;
-    opacity: 0;
-    animation: lf-letter-rise 0.9s cubic-bezier(0.22, 0.8, 0.32, 1) 0.55s forwards;
-  }
-  .lf-hero-actions {
-    margin-top: 36px;
-    display: flex;
-    gap: 12px;
-    flex-wrap: wrap;
-    opacity: 0;
-    animation: lf-letter-rise 0.9s cubic-bezier(0.22, 0.8, 0.32, 1) 0.75s forwards;
-  }
-  /* CTA buttons on light bg */
-  .lf-hero-cta-primary {
-    background: var(--green-800);
-    color: #fff;
-    font-size: 14px;
-    padding: 13px 24px;
-    border-radius: 999px;
-  }
-  .lf-hero-cta-primary:hover {
-    background: var(--green-900);
-    transform: translateY(-2px) scale(1.02);
-    box-shadow: 0 12px 32px rgba(45, 106, 79, 0.28);
-  }
-  .lf-hero-cta-ghost {
-    background: transparent;
-    color: var(--green-900);
-    border: 1.5px solid rgba(45, 106, 79, 0.25);
-    backdrop-filter: none;
-    font-size: 14px;
-    padding: 13px 24px;
-    border-radius: 999px;
-  }
-  .lf-hero-cta-ghost:hover {
-    background: rgba(45, 106, 79, 0.06);
-    border-color: var(--green-800);
-    transform: translateY(-2px);
-  }
-
-  @media (max-width: 900px) {
-    .lf-hero-row {
-      grid-template-columns: 1fr;
-      gap: 0;
-      padding: 0 24px;
-    }
-    .lf-hero-headline { max-width: none; align-items: flex-start; }
-    .lf-hero-main-headline { font-size: clamp(38px, 10vw, 64px); }
-    .lf-hero-tagline { max-width: none; }
-    .lf-hero-actions { flex-direction: column; width: 100%; }
-    .lf-hero-cta-primary, .lf-hero-cta-ghost { width: 100%; justify-content: center; }
-    .lf-hero-3d-wrap { display: none; }
-  }
-
-  /* ══ 3D DNA molecular model (CSS-only, rotates around Y) ══════════════ */
-  .dna3d-stage {
-    width: 260px;
-    height: 580px;
-    position: relative;
-    perspective: 1500px;
-    margin: 0 auto;
-  }
-  .dna3d-spinner {
-    position: absolute;
-    inset: 0;
-    transform-style: preserve-3d;
-    animation: dna3d-spin 16s linear infinite;
-    will-change: transform;
-  }
-  @keyframes dna3d-spin {
-    from { transform: rotateX(8deg) rotateY(0deg); }
-    to   { transform: rotateX(8deg) rotateY(360deg); }
-  }
-  .dna3d-rung {
-    position: absolute;
-    left: 50%;
-    width: 220px;
-    height: 14px;
-    margin-left: -110px;
-    display: flex;
-    align-items: center;
-    transform-style: preserve-3d;
-    opacity: 0;
-    animation: dna3d-rung-in 0.6s cubic-bezier(0.22, 0.8, 0.32, 1) forwards;
-  }
-  @keyframes dna3d-rung-in {
-    from { opacity: 0; transform: rotateY(var(--rot, 0deg)) translateZ(-30px); }
-    to   { opacity: 1; transform: rotateY(var(--rot, 0deg)) translateZ(0); }
-  }
-  .dna3d-ball {
-    width: 16px;
-    height: 16px;
-    border-radius: 50%;
-    flex-shrink: 0;
-    box-shadow:
-      inset -2.5px -2.5px 4px rgba(0, 0, 0, 0.28),
-      inset 2px 2px 2.5px rgba(255, 255, 255, 0.55),
-      0 1px 3px rgba(0, 0, 0, 0.1);
-  }
-  .dna3d-ball-coral {
-    background: radial-gradient(circle at 32% 28%,
-      #f7b894 0%,
-      #e88865 35%,
-      #c46544 75%,
-      #8f4528 100%);
-  }
-  .dna3d-ball-sage {
-    background: radial-gradient(circle at 32% 28%,
-      #b8d2a9 0%,
-      #87ad7b 40%,
-      #5e8158 75%,
-      #3a5236 100%);
-  }
-  .dna3d-stick {
-    flex: 1;
-    height: 1.2px;
-    margin: 0 2px;
-    background: linear-gradient(90deg,
-      rgba(180, 160, 130, 0.1) 0%,
-      rgba(180, 160, 130, 0.55) 50%,
-      rgba(180, 160, 130, 0.1) 100%);
-    transform: translateZ(0);
-  }
-
-  @media (max-width: 900px) {
-    .dna3d-stage { width: 200px; height: 460px; }
-    .dna3d-rung { width: 170px; margin-left: -85px; }
-    .dna3d-ball { width: 14px; height: 14px; }
-  }
-  @media (max-width: 480px) {
-    .dna3d-stage { width: 170px; height: 380px; }
-    .dna3d-rung { width: 140px; margin-left: -70px; }
-  }
 `;
-
-// ─── Компонент: 3D DNA модель (CSS-only, вращается вокруг оси Y) ────────────
-function DNA3D({ rungs = 26, rise = 22, twist = 16 }) {
-  return (
-    <div className="dna3d-stage" aria-hidden="true">
-      <div className="dna3d-spinner">
-        {Array.from({ length: rungs }).map((_, i) => {
-          const rot = i * twist;
-          const top = i * rise;
-          const flipped = i % 2 === 1;
-          return (
-            <div
-              key={i}
-              className="dna3d-rung"
-              style={{
-                top: `${top}px`,
-                transform: `rotateY(${rot}deg)`,
-                animationDelay: `${0.05 * i}s`,
-                "--rot": `${rot}deg`,
-              }}
-            >
-              <div className={`dna3d-ball ${flipped ? "dna3d-ball-sage" : "dna3d-ball-coral"}`} />
-              <div className="dna3d-stick" />
-              <div className={`dna3d-ball ${flipped ? "dna3d-ball-coral" : "dna3d-ball-sage"}`} />
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
 
 // ─── Хук: активная секция в навигации ────────────────────────────────────────
 function useActiveSection(ids) {
@@ -2013,8 +1904,8 @@ export function LandingPage() {
   }, []);
 
   return (
-    <div style={{ background: "var(--bg)", minHeight: "100vh", fontFamily: "var(--f-sans)", overflowX: "hidden" }}>
-      <style>{STYLES}</style>
+    <div style={{ background: "var(--bg)", minHeight: "100vh", fontFamily: "var(--f-sans)", overflowX: "clip" }}>
+      <style>{STYLES + DNA_HERO_STYLES + VIDEO_STYLES}</style>
 
       {/* ══ SCROLL PROGRESS BAR ═══════════════════════════════════════════════ */}
       <div style={{
@@ -2049,7 +1940,7 @@ export function LandingPage() {
             boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
             flexShrink: 0,
           }} />
-          <div style={{ fontFamily: "var(--f-serif)", fontWeight: 600, fontSize: 16, color: "#fff", lineHeight: 1.1 }}>
+          <div className="lf-logo-text" style={{ fontFamily: "var(--f-serif)", fontWeight: 600, fontSize: 16, color: "#fff", lineHeight: 1.1 }}>
             Vikokon
           </div>
         </a>
@@ -2143,91 +2034,351 @@ export function LandingPage() {
         </div>
       </header>
 
-      {/* ══ HERO ═══════════════════════════════════════════════════════════════ */}
-      <section className="lf-hero-section" style={{
-        minHeight: "100vh",
-        background: "linear-gradient(135deg, #b8d4b0 0%, #d4e8c8 30%, #ece4d0 65%, #e8c89a 100%)",
-        position: "relative", overflow: "hidden",
-        display: "flex", alignItems: "center", justifyContent: "center",
-        paddingTop: 64,
+      {/* ══ HERO: 3D ДНК ════════════════════════════════════════════════════ */}
+      <DNAHero
+        onSignup={() => setContactPanel(true)}
+        onPrograms={() => scrollToTarget("#prices")}
+      />
+
+      {/* ══ О РЕПЕТИТОРЕ ══════════════════════════════════════════════════════ */}
+      <section id="about" className="lf-section-pad" style={{
+        padding: "120px 48px 96px",
+        overflow: "visible",
+        position: "relative", zIndex: 2,
+        background: "linear-gradient(160deg, #f8f6ef 0%, #f3f0e6 60%, #ece8d9 100%)",
       }}>
-        {/* Decorative corner lines */}
-        <svg style={{ position: "absolute", bottom: 0, right: 0, opacity: 0.12, pointerEvents: "none" }} width="260" height="180" viewBox="0 0 260 180" fill="none">
-          <line x1="260" y1="0" x2="0" y2="180" stroke="#2d6a4f" strokeWidth="1"/>
-          <line x1="260" y1="40" x2="40" y2="180" stroke="#2d6a4f" strokeWidth="1"/>
-          <line x1="260" y1="80" x2="80" y2="180" stroke="#2d6a4f" strokeWidth="1"/>
-        </svg>
-        <svg style={{ position: "absolute", top: 80, left: 0, opacity: 0.07, pointerEvents: "none" }} width="200" height="200" viewBox="0 0 200 200" fill="none">
-          <line x1="0" y1="200" x2="200" y2="0" stroke="#2d6a4f" strokeWidth="1"/>
-          <line x1="0" y1="160" x2="160" y2="0" stroke="#2d6a4f" strokeWidth="1"/>
-        </svg>
+        <div style={{ maxWidth: 1280, margin: "0 auto" }}>
 
-        <div className="lf-hero-row">
-          {/* Left: text */}
-          <div className="lf-hero-headline">
-            {/* Pill badge */}
-            <div className="lf-hero-pill">
-              <span className="lf-hero-pill-icon">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M12 2a10 10 0 0 1 0 20M12 2C6.5 2 2 6.5 2 12M12 2c2 4 2 12 0 20M2 12h20"/>
-                </svg>
-              </span>
-              ОГЭ · ЕГЭ · ВПР · ОЛИМПИАДЫ
+          {/* ── Фото + шапка ──────────────────────────────────────────── */}
+          <div className="lf-about-intro">
+            {/* Фото — вылетает за верхнюю границу секции */}
+            <div className="lf-about-photo-wrap lf-reveal-left">
+              <img src={TUTOR_PHOTO} alt={TUTOR.name} />
+              {/* Бейдж поверх фото */}
+              <div className="lf-about-photo-badge">
+                <div style={{
+                  width: 40, height: 40, borderRadius: 12, flexShrink: 0,
+                  background: "var(--green-800)",
+                  display: "grid", placeItems: "center",
+                }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 2a10 10 0 0 1 0 20M12 2c-2.5 3-4 7-4 10s1.5 7 4 10M12 2c2.5 3 4 7 4 10s-1.5 7-4 10M2 12h20"/>
+                  </svg>
+                </div>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: 14, color: "#1a2e1f" }}>{TUTOR.name}</div>
+                  <div style={{ fontSize: 12, color: "rgba(26,46,31,0.55)", marginTop: 2 }}>Репетитор по биологии · ТГУ</div>
+                </div>
+              </div>
             </div>
 
-            {/* Main headline */}
-            <h1 className="lf-hero-main-headline">
-              Подготовка<br />
-              по <em>биологии</em><br />
-              без стресса и<br />
-              с интересом
-            </h1>
+            {/* Правая колонка — заголовок + мини-статистика */}
+            <div className="lf-reveal-right" style={{ paddingBottom: 20 }}>
+              <div style={{
+                display: "inline-block", background: "var(--green-100)",
+                color: "var(--green-800)", borderRadius: 999,
+                padding: "5px 16px", fontSize: 11, fontWeight: 700,
+                letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 20,
+              }}>
+                Об авторе
+              </div>
+              <h2 style={{
+                fontFamily: "var(--f-serif)", fontSize: "clamp(30px, 3vw, 48px)",
+                lineHeight: 1.1, letterSpacing: "-0.02em", marginBottom: 18,
+              }}>
+                Почему ученики<br/>
+                <em style={{ color: "var(--green-800)" }}>выбирают меня</em>
+              </h2>
+              <p style={{ fontSize: 15, lineHeight: 1.65, color: "var(--text-soft)", maxWidth: 420, marginBottom: 0 }}>
+                Молодой учёный-арахнолог — со мной биология станет интереснее! Готовлю к ЕГЭ, ОГЭ и ВПР — понятно, системно, с любовью к предмету и вниманием к каждому ученику.
+              </p>
 
-            {/* Tagline */}
-            <p className="lf-hero-tagline">
-              Виктория Никитенко — индивидуальные занятия с 5 по 11&nbsp;класс.
-              Очно и онлайн. Системно, без зубрёжки, с любовью к предмету.
-            </p>
-
-            {/* Actions */}
-            <div className="lf-hero-actions">
-              <button
-                className="lf-hero-btn lf-hero-cta-primary"
-                onClick={() => setContactPanel(true)}
-              >
-                Записаться на пробное
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M7 17L17 7M17 7H7M17 7v10"/>
-                </svg>
-              </button>
-              <button
-                className="lf-hero-btn lf-hero-cta-ghost"
-                onClick={() => document.getElementById("about")?.scrollIntoView({ behavior: "smooth" })}
-              >
-                Программы подготовки
-              </button>
+              {/* Мини-статистика */}
+              <div className="lf-about-mini-stats">
+                {FACTS.slice(0, 4).map((f, i) => (
+                  <div key={i} className="lf-about-mini-stat">
+                    <div style={{
+                      fontFamily: "var(--f-serif)",
+                      fontSize: "clamp(28px, 3vw, 36px)",
+                      fontWeight: 700, lineHeight: 1,
+                      letterSpacing: "-0.02em",
+                      color: "var(--green-800)",
+                      marginBottom: 4,
+                    }}>{f.value}</div>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>{f.label}</div>
+                    <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2, opacity: 0.7 }}>{f.note}</div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
 
-          {/* Right: rotating 3D DNA molecular model */}
-          <div className="lf-hero-3d-wrap">
-            <DNA3D />
-          </div>
-        </div>
+          <div className="lf-about-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 64, alignItems: "start" }}>
+            {/* Текст */}
+            <div className="lf-reveal-left">
+              <p className="lf-about-para lf-dropcap" data-num="§ 01">
+                Меня зовут Виктория, и я — биолог по призванию. Преподаю уже <em>3 года</em>,
+                и вот результаты моих учеников за прошлый год:
+              </p>
 
-        {/* Scroll indicator */}
-        <div style={{
-          position: "absolute", bottom: 28, left: "50%", transform: "translateX(-50%)",
-          display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
-          opacity: 0.35,
-        }}>
-          <div style={{ fontSize: 10, color: "var(--green-800)", letterSpacing: "0.18em", fontWeight: 600 }}>СКРОЛЛ</div>
-          <div style={{ width: 1, height: 36, background: "linear-gradient(180deg, var(--green-800), transparent)" }} />
+              <div className="lf-results">
+                {RESULTS.map((group) => (
+                  <div key={group.exam} className="lf-results-group">
+                    <div className="lf-results-exam">{group.exam}</div>
+                    <ul>
+                      {group.rows.map((r, i) => (
+                        <li key={i}>
+                          <div>
+                            <div className="lf-results-name">{r.name}</div>
+                            {r.prep && <div className="lf-results-prep">{r.prep}</div>}
+                          </div>
+                          <div className="lf-results-score">
+                            {r.score}<span> {pointsWord(r.score)}</span>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+
+              <div className="lf-about-list" data-num="§ 02">
+                <div className="lf-about-list-title">Из моих умений</div>
+                <ul>
+                  {SKILLS.map((s, i) => (
+                    <li key={i}>{s}</li>
+                  ))}
+                </ul>
+              </div>
+
+              <p className="lf-about-para" data-num="§ 03">
+                На занятиях стараюсь объяснять просто и понятно, использую индивидуальный
+                подход с опорой на сильные стороны ученика и обязательно сверяюсь
+                с актуальностью научных данных по каждой теме.
+              </p>
+
+              <div className="lf-about-list" data-num="§ 04">
+                <div className="lf-about-list-title">С чем я могу помочь</div>
+                <ul className="lf-about-list-tags">
+                  {SERVICES_LIST.map((s, i) => (
+                    <li key={i}>
+                      <span className="lf-about-tag-icon">{s.icon}</span>
+                      {s.text}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <p className="lf-about-para" data-num="§ 05" style={{ marginBottom: 12 }}>
+                Преподаю <em>дистанционно</em>.
+              </p>
+
+              {/* Пробное занятие — отдельный яркий акцент */}
+              <div className="lf-trial">
+                <div className="lf-trial-badge">Первое занятие</div>
+                <div className="lf-trial-title">Пробное занятие — знакомимся!</div>
+                <p className="lf-trial-text">
+                  Обсудим организационные моменты, определим цели и вместе построим учебный план.
+                </p>
+                <button className="lf-hero-btn lf-trial-btn" onClick={() => setContactPanel(true)}>
+                  Записаться на пробное
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M7 17L17 7M17 7H7M17 7v10"/>
+                  </svg>
+                </button>
+              </div>
+
+              <div className="lf-fleuron"><span>❦ · ❦ · ❦</span></div>
+
+              {/* Ссылка на Профи.ру */}
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginBottom: 24 }}>
+                <a
+                  href="https://profi.ru/profile/NikitenkoVY"
+                  target="_blank" rel="noopener noreferrer"
+                  style={{
+                    display: "inline-flex", alignItems: "center", gap: 8,
+                    padding: "10px 18px", borderRadius: 999,
+                    background: "var(--green-100)", color: "var(--green-900)",
+                    fontWeight: 600, fontSize: 14, textDecoration: "none",
+                    border: "1.5px solid var(--green-300)",
+                    transition: "transform 0.2s, box-shadow 0.2s",
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 8px 20px rgba(45,106,79,0.15)"; }}
+                  onMouseLeave={e => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = ""; }}
+                >
+                  <span style={{ fontSize: 16 }}>⭐</span> Профиль на Профи.ру
+                </a>
+              </div>
+
+              <button
+                className="lf-hero-btn"
+                style={{
+                  background: "var(--green-800)", color: "#fff",
+                  boxShadow: "0 8px 28px rgba(45,106,79,0.3)",
+                  transition: "transform 0.25s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.25s",
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.transform = "translateY(-3px)";
+                  e.currentTarget.style.boxShadow = "0 16px 40px rgba(45,106,79,0.4)";
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.transform = "";
+                  e.currentTarget.style.boxShadow = "0 8px 28px rgba(45,106,79,0.3)";
+                }}
+                onClick={() => navigate("/login")}
+              >
+                Войти в кабинет 🌱
+              </button>
+
+              {/* Мероприятия ВК */}
+              <div style={{ marginTop: 36 }}>
+                <div style={{
+                  fontSize: 11, fontWeight: 700, letterSpacing: "0.1em",
+                  textTransform: "uppercase", color: "var(--text-muted)",
+                  marginBottom: 14,
+                }}>
+                  Мероприятия и проекты
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  {VK_EVENTS.map((ev, i) => (
+                    <div key={i} style={{
+                      borderRadius: 14, background: "var(--surface)",
+                      border: "1.5px solid var(--border-soft)",
+                      overflow: "hidden",
+                      transition: "border-color 0.2s, box-shadow 0.2s",
+                    }}
+                      onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--green-300)"; e.currentTarget.style.boxShadow = "0 4px 16px rgba(45,106,79,0.1)"; }}
+                      onMouseLeave={e => { e.currentTarget.style.borderColor = ""; e.currentTarget.style.boxShadow = ""; }}
+                    >
+                      {/* Основная строка */}
+                      <div className="lf-event-row" style={{ display: "flex", alignItems: "center", gap: 14, padding: "12px 16px" }}>
+                        <div style={{ width: 40, height: 40, borderRadius: 10, flexShrink: 0, background: "#e8f0ff", display: "grid", placeItems: "center", fontSize: 18 }}>
+                          {ev.icon}
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                            <span style={{ fontWeight: 600, fontSize: 14, color: "var(--text)" }}>{ev.title}</span>
+                            <span style={{ fontSize: 11, color: "var(--text-muted)", background: "var(--bg-muted)", padding: "2px 8px", borderRadius: 999 }}>{ev.date}</span>
+                          </div>
+                          <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2, lineHeight: 1.4 }}>{ev.desc}</div>
+                        </div>
+                        {/* Кнопки действий */}
+                        <div className="lf-event-actions" style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+                          {ev.cert && (
+                            <button onClick={() => setLightbox(ev.cert)} style={{
+                              display: "inline-flex", alignItems: "center", gap: 5,
+                              padding: "5px 10px", borderRadius: 8, border: "1.5px solid var(--green-300)",
+                              background: "var(--green-50)", color: "var(--green-800)",
+                              fontSize: 12, fontWeight: 600, cursor: "pointer",
+                              transition: "background 0.15s",
+                            }}
+                              onMouseEnter={e => e.currentTarget.style.background = "var(--green-100)"}
+                              onMouseLeave={e => e.currentTarget.style.background = "var(--green-50)"}
+                            >
+                              📄 Сертификат
+                            </button>
+                          )}
+                          {ev.url && (
+                            <a href={ev.url} target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none" }}>
+                              <button style={{
+                                display: "inline-flex", alignItems: "center", gap: 5,
+                                padding: "5px 10px", borderRadius: 8, border: "1.5px solid #c5d8f0",
+                                background: "#eef3fb", color: "#5181b8",
+                                fontSize: 12, fontWeight: 600, cursor: "pointer",
+                                transition: "background 0.15s",
+                              }}
+                                onMouseEnter={e => e.currentTarget.style.background = "#dde8f7"}
+                                onMouseLeave={e => e.currentTarget.style.background = "#eef3fb"}
+                              >
+                                ВК ↗
+                              </button>
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Feature cards */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+              {FEATURES.map((item, i) => {
+                const romans = ["I", "II", "III", "IV"];
+                return (
+                <div
+                  key={i}
+                  className={`lf-feature-card lf-reveal`}
+                  style={{
+                    padding: "22px 26px",
+                    display: "flex", gap: 18, alignItems: "flex-start",
+                    transitionDelay: `${i * 0.07}s`,
+                  }}
+                >
+                  <span className="lf-feat-roman">{romans[i]}</span>
+                  <div style={{
+                    width: 44, height: 44, borderRadius: 12, flexShrink: 0,
+                    background: "var(--green-100)",
+                    display: "grid", placeItems: "center", fontSize: 20,
+                    position: "relative", zIndex: 1,
+                  }}>
+                    {item.icon}
+                  </div>
+                  <div style={{ position: "relative", zIndex: 1 }}>
+                    <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 5 }}>{item.title}</div>
+                    <div style={{ fontSize: 14, color: "var(--text-soft)", lineHeight: 1.55 }}>{item.text}</div>
+                  </div>
+                </div>
+                );
+              })}
+
+              {/* Видео с уроков — ссылки добавляются в админке */}
+              <VideoShowcase />
+            </div>
+          </div>
+
+          {/* Путь в биологии — timeline */}
+          <div className="lf-timeline-wrap">
+            <div className="lf-reveal" style={{ textAlign: "center", marginBottom: 44 }}>
+              <div style={{
+                display: "inline-block", background: "var(--green-100)",
+                color: "var(--green-800)", borderRadius: 999,
+                padding: "5px 16px", fontSize: 11, fontWeight: 700,
+                letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 16,
+              }}>
+                Путь в биологии
+              </div>
+              <h3 style={{
+                fontFamily: "var(--f-serif)",
+                fontSize: "clamp(24px, 2.4vw, 34px)",
+                lineHeight: 1.15, letterSpacing: "-0.01em",
+              }}>
+                От первого курса до <em style={{ color: "var(--green-800)" }}>магистратуры</em>
+              </h3>
+            </div>
+
+            <ol className="lf-timeline">
+              {TIMELINE.map((t, i) => (
+                <li
+                  key={i}
+                  className={`lf-timeline-item lf-reveal ${i % 2 === 0 ? "lf-timeline-left" : "lf-timeline-right"}`}
+                  style={{ transitionDelay: `${i * 0.08}s` }}
+                >
+                  <div className="lf-timeline-node">
+                    <span className="lf-timeline-dot" />
+                  </div>
+                  <div className="lf-timeline-card">
+                    <div className="lf-timeline-year">{t.year}</div>
+                    <div className="lf-timeline-title">{t.title}</div>
+                    <div className="lf-timeline-desc">{t.desc}</div>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </div>
         </div>
       </section>
-
-      <WaveDivider fill="var(--bg)" fromColor="#efeadd" />
-
 
       {/* ══ ТЕСТЫ + ЗАПИСЬ ════════════════════════════════════════════════════ */}
       <section className="lf-duo-section" style={{ padding: "80px 48px 160px" }}>
@@ -2326,13 +2477,13 @@ export function LandingPage() {
               fontWeight: 600, letterSpacing: "-0.01em",
               color: "var(--text)", marginBottom: 16, lineHeight: 1.1,
             }}>
-              ЗАПИСЬ<br/>НА КУРС
+              ПРОБНОЕ<br/>ЗАНЯТИЕ
             </div>
             <p style={{
               fontSize: 15, color: "var(--text-soft)",
               lineHeight: 1.65, maxWidth: 240, margin: "0 auto 32px",
             }}>
-              Индивидуальные занятия с репетитором — свяжитесь с нами
+              Первое занятие — пробное: знакомимся, ставим цели и строим учебный план
             </p>
             <button
               className="lf-hero-btn lf-hero-btn-primary"
@@ -2346,310 +2497,6 @@ export function LandingPage() {
             </button>
           </div>
 
-        </div>
-      </section>
-
-      {/* ══ О РЕПЕТИТОРЕ ══════════════════════════════════════════════════════ */}
-      <section id="about" className="lf-section-pad" style={{
-        padding: "120px 48px 96px",
-        overflow: "visible",
-        position: "relative",
-        background: "linear-gradient(160deg, #f8f6ef 0%, #f3f0e6 60%, #ece8d9 100%)",
-      }}>
-        <div style={{ maxWidth: 1280, margin: "0 auto" }}>
-
-          {/* ── Фото + шапка ──────────────────────────────────────────── */}
-          <div className="lf-about-intro">
-            {/* Фото — вылетает за верхнюю границу секции */}
-            <div className="lf-about-photo-wrap lf-reveal-left">
-              <img src={TUTOR_PHOTO} alt={TUTOR.name} />
-              {/* Бейдж поверх фото */}
-              <div className="lf-about-photo-badge">
-                <div style={{
-                  width: 40, height: 40, borderRadius: 12, flexShrink: 0,
-                  background: "var(--green-800)",
-                  display: "grid", placeItems: "center",
-                }}>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M12 2a10 10 0 0 1 0 20M12 2c-2.5 3-4 7-4 10s1.5 7 4 10M12 2c2.5 3 4 7 4 10s-1.5 7-4 10M2 12h20"/>
-                  </svg>
-                </div>
-                <div>
-                  <div style={{ fontWeight: 700, fontSize: 14, color: "#1a2e1f" }}>{TUTOR.name}</div>
-                  <div style={{ fontSize: 12, color: "rgba(26,46,31,0.55)", marginTop: 2 }}>Репетитор по биологии · ТГУ</div>
-                </div>
-              </div>
-            </div>
-
-            {/* Правая колонка — заголовок + мини-статистика */}
-            <div className="lf-reveal-right" style={{ paddingBottom: 20 }}>
-              <div style={{
-                display: "inline-block", background: "var(--green-100)",
-                color: "var(--green-800)", borderRadius: 999,
-                padding: "5px 16px", fontSize: 11, fontWeight: 700,
-                letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 20,
-              }}>
-                Об авторе
-              </div>
-              <h2 style={{
-                fontFamily: "var(--f-serif)", fontSize: "clamp(30px, 3vw, 48px)",
-                lineHeight: 1.1, letterSpacing: "-0.02em", marginBottom: 18,
-              }}>
-                Почему ученики<br/>
-                <em style={{ color: "var(--green-800)" }}>выбирают меня</em>
-              </h2>
-              <p style={{ fontSize: 15, lineHeight: 1.65, color: "var(--text-soft)", maxWidth: 420, marginBottom: 0 }}>
-                Студент-исследователь ТГУ и арахнолог. Готовлю к ОГЭ, ЕГЭ и ВПР — понятно, системно, с любовью к предмету и вниманием к каждому ученику.
-              </p>
-
-              {/* Мини-статистика */}
-              <div className="lf-about-mini-stats">
-                {FACTS.slice(0, 4).map((f, i) => (
-                  <div key={i} className="lf-about-mini-stat">
-                    <div style={{
-                      fontFamily: "var(--f-serif)",
-                      fontSize: "clamp(28px, 3vw, 36px)",
-                      fontWeight: 700, lineHeight: 1,
-                      letterSpacing: "-0.02em",
-                      color: "var(--green-800)",
-                      marginBottom: 4,
-                    }}>{f.value}</div>
-                    <div style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>{f.label}</div>
-                    <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2, opacity: 0.7 }}>{f.note}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <div className="lf-about-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 64, alignItems: "start" }}>
-            {/* Текст */}
-            <div className="lf-reveal-left">
-              <p className="lf-about-para lf-dropcap" data-num="§ 01">
-                Меня зовут Виктория, и я — биолог по призванию. В 2025 году получила
-                <em> второе высшее </em> образование и готова делиться не только фундаментальными
-                знаниями по биологии, но и опытом проживания стрессового периода экзаменов.
-              </p>
-
-              <div className="lf-about-list" data-num="§ 02">
-                <div className="lf-about-list-title">Из моих умений</div>
-                <ul>
-                  {SKILLS.map((s, i) => (
-                    <li key={i}>{s}</li>
-                  ))}
-                </ul>
-              </div>
-
-              <p className="lf-about-para" data-num="§ 03">
-                На занятиях стараюсь объяснять просто и понятно, использую индивидуальный
-                подход с опорой на сильные стороны ученика и обязательно сверяюсь
-                с актуальностью научных данных по каждой теме.
-              </p>
-
-              <div className="lf-about-list" data-num="§ 04">
-                <div className="lf-about-list-title">С чем я могу помочь</div>
-                <ul className="lf-about-list-tags">
-                  {SERVICES_LIST.map((s, i) => (
-                    <li key={i}>
-                      <span className="lf-about-tag-icon">{s.icon}</span>
-                      {s.text}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              <p className="lf-about-para" data-num="§ 05" style={{ marginBottom: 12 }}>
-                Преподаю <em>дистанционно</em>. Первое занятие пробное — на нём мы обсудим
-                организационные моменты и вместе построим учебный план. После каждого урока
-                ты проходишь короткий тест прямо здесь, в «Живой клетке», — так мы видим прогресс.
-              </p>
-
-              <div className="lf-fleuron"><span>❦ · ❦ · ❦</span></div>
-
-              {/* Ссылка на Профи.ру */}
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginBottom: 24 }}>
-                <a
-                  href="https://profi.ru/profile/NikitenkoVY"
-                  target="_blank" rel="noopener noreferrer"
-                  style={{
-                    display: "inline-flex", alignItems: "center", gap: 8,
-                    padding: "10px 18px", borderRadius: 999,
-                    background: "var(--green-100)", color: "var(--green-900)",
-                    fontWeight: 600, fontSize: 14, textDecoration: "none",
-                    border: "1.5px solid var(--green-300)",
-                    transition: "transform 0.2s, box-shadow 0.2s",
-                  }}
-                  onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 8px 20px rgba(45,106,79,0.15)"; }}
-                  onMouseLeave={e => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = ""; }}
-                >
-                  <span style={{ fontSize: 16 }}>⭐</span> Профиль на Профи.ру
-                </a>
-              </div>
-
-              <button
-                className="lf-hero-btn"
-                style={{
-                  background: "var(--green-800)", color: "#fff",
-                  boxShadow: "0 8px 28px rgba(45,106,79,0.3)",
-                  transition: "transform 0.25s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.25s",
-                }}
-                onMouseEnter={e => {
-                  e.currentTarget.style.transform = "translateY(-3px)";
-                  e.currentTarget.style.boxShadow = "0 16px 40px rgba(45,106,79,0.4)";
-                }}
-                onMouseLeave={e => {
-                  e.currentTarget.style.transform = "";
-                  e.currentTarget.style.boxShadow = "0 8px 28px rgba(45,106,79,0.3)";
-                }}
-                onClick={() => navigate("/login")}
-              >
-                Войти в кабинет 🌱
-              </button>
-
-              {/* Мероприятия ВК */}
-              <div style={{ marginTop: 36 }}>
-                <div style={{
-                  fontSize: 11, fontWeight: 700, letterSpacing: "0.1em",
-                  textTransform: "uppercase", color: "var(--text-muted)",
-                  marginBottom: 14,
-                }}>
-                  Мероприятия и проекты
-                </div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                  {VK_EVENTS.map((ev, i) => (
-                    <div key={i} style={{
-                      borderRadius: 14, background: "var(--surface)",
-                      border: "1.5px solid var(--border-soft)",
-                      overflow: "hidden",
-                      transition: "border-color 0.2s, box-shadow 0.2s",
-                    }}
-                      onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--green-300)"; e.currentTarget.style.boxShadow = "0 4px 16px rgba(45,106,79,0.1)"; }}
-                      onMouseLeave={e => { e.currentTarget.style.borderColor = ""; e.currentTarget.style.boxShadow = ""; }}
-                    >
-                      {/* Основная строка */}
-                      <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "12px 16px" }}>
-                        <div style={{ width: 40, height: 40, borderRadius: 10, flexShrink: 0, background: "#e8f0ff", display: "grid", placeItems: "center", fontSize: 18 }}>
-                          {ev.icon}
-                        </div>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                            <span style={{ fontWeight: 600, fontSize: 14, color: "var(--text)" }}>{ev.title}</span>
-                            <span style={{ fontSize: 11, color: "var(--text-muted)", background: "var(--bg-muted)", padding: "2px 8px", borderRadius: 999 }}>{ev.date}</span>
-                          </div>
-                          <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2, lineHeight: 1.4 }}>{ev.desc}</div>
-                        </div>
-                        {/* Кнопки действий */}
-                        <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-                          {ev.cert && (
-                            <button onClick={() => setLightbox(ev.cert)} style={{
-                              display: "inline-flex", alignItems: "center", gap: 5,
-                              padding: "5px 10px", borderRadius: 8, border: "1.5px solid var(--green-300)",
-                              background: "var(--green-50)", color: "var(--green-800)",
-                              fontSize: 12, fontWeight: 600, cursor: "pointer",
-                              transition: "background 0.15s",
-                            }}
-                              onMouseEnter={e => e.currentTarget.style.background = "var(--green-100)"}
-                              onMouseLeave={e => e.currentTarget.style.background = "var(--green-50)"}
-                            >
-                              📄 Сертификат
-                            </button>
-                          )}
-                          {ev.url && (
-                            <a href={ev.url} target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none" }}>
-                              <button style={{
-                                display: "inline-flex", alignItems: "center", gap: 5,
-                                padding: "5px 10px", borderRadius: 8, border: "1.5px solid #c5d8f0",
-                                background: "#eef3fb", color: "#5181b8",
-                                fontSize: 12, fontWeight: 600, cursor: "pointer",
-                                transition: "background 0.15s",
-                              }}
-                                onMouseEnter={e => e.currentTarget.style.background = "#dde8f7"}
-                                onMouseLeave={e => e.currentTarget.style.background = "#eef3fb"}
-                              >
-                                ВК ↗
-                              </button>
-                            </a>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Feature cards */}
-            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-              {FEATURES.map((item, i) => {
-                const romans = ["I", "II", "III", "IV"];
-                return (
-                <div
-                  key={i}
-                  className={`lf-feature-card lf-reveal`}
-                  style={{
-                    padding: "22px 26px",
-                    display: "flex", gap: 18, alignItems: "flex-start",
-                    transitionDelay: `${i * 0.07}s`,
-                  }}
-                >
-                  <span className="lf-feat-roman">{romans[i]}</span>
-                  <div style={{
-                    width: 44, height: 44, borderRadius: 12, flexShrink: 0,
-                    background: "var(--green-100)",
-                    display: "grid", placeItems: "center", fontSize: 20,
-                    position: "relative", zIndex: 1,
-                  }}>
-                    {item.icon}
-                  </div>
-                  <div style={{ position: "relative", zIndex: 1 }}>
-                    <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 5 }}>{item.title}</div>
-                    <div style={{ fontSize: 14, color: "var(--text-soft)", lineHeight: 1.55 }}>{item.text}</div>
-                  </div>
-                </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Путь в биологии — timeline */}
-          <div className="lf-timeline-wrap">
-            <div className="lf-reveal" style={{ textAlign: "center", marginBottom: 44 }}>
-              <div style={{
-                display: "inline-block", background: "var(--green-100)",
-                color: "var(--green-800)", borderRadius: 999,
-                padding: "5px 16px", fontSize: 11, fontWeight: 700,
-                letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 16,
-              }}>
-                Путь в биологии
-              </div>
-              <h3 style={{
-                fontFamily: "var(--f-serif)",
-                fontSize: "clamp(24px, 2.4vw, 34px)",
-                lineHeight: 1.15, letterSpacing: "-0.01em",
-              }}>
-                От первого курса до <em style={{ color: "var(--green-800)" }}>магистратуры</em>
-              </h3>
-            </div>
-
-            <ol className="lf-timeline">
-              {TIMELINE.map((t, i) => (
-                <li
-                  key={i}
-                  className={`lf-timeline-item lf-reveal ${i % 2 === 0 ? "lf-timeline-left" : "lf-timeline-right"}`}
-                  style={{ transitionDelay: `${i * 0.08}s` }}
-                >
-                  <div className="lf-timeline-node">
-                    <span className="lf-timeline-dot" />
-                  </div>
-                  <div className="lf-timeline-card">
-                    <div className="lf-timeline-year">{t.year}</div>
-                    <div className="lf-timeline-title">{t.title}</div>
-                    <div className="lf-timeline-desc">{t.desc}</div>
-                  </div>
-                </li>
-              ))}
-            </ol>
-          </div>
         </div>
       </section>
 
@@ -2742,7 +2589,7 @@ export function LandingPage() {
                     aspectRatio: "4 / 3",
                     overflow: "hidden",
                     borderRadius: 3,
-                    background: "linear-gradient(135deg, var(--green-50) 0%, var(--green-100) 100%)",
+                    background: "#fff",
                   }}>
                     <img
                       src={d.photo}
@@ -2751,7 +2598,8 @@ export function LandingPage() {
                       className="lf-diploma-img"
                       style={{
                         width: "100%", height: "100%",
-                        objectFit: "cover",
+                        // диплом целиком, без обрезки печати и краёв
+                        objectFit: "contain",
                         display: "block",
                         transition: "transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1)",
                       }}
@@ -2968,7 +2816,7 @@ export function LandingPage() {
                   transitionDelay: `${i * 0.08}s`,
                 }}
               >
-                <div style={{
+                <div className="lf-article-year" style={{
                   flexShrink: 0, width: 60, height: 60, borderRadius: 14,
                   background: "linear-gradient(135deg, var(--green-100), var(--green-200))",
                   display: "grid", placeItems: "center",
@@ -3000,7 +2848,7 @@ export function LandingPage() {
                   </div>
                 </div>
 
-                <div style={{ flexShrink: 0, color: "var(--green-300)", marginTop: 4 }}>
+                <div className="lf-article-sprig" style={{ flexShrink: 0, color: "var(--green-300)", marginTop: 4 }}>
                   <Sprig size={28} />
                 </div>
               </div>

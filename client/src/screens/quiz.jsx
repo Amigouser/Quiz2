@@ -1,5 +1,8 @@
 import React from "react";
 import { Leaf, Fern, Cell, Sprig, PlatePlaceholder, BotanicalBg, LeafBurst } from "../botanical";
+import { ogeGrade, egeTestScore } from "../exams";
+
+const pointsLabel = (n) => (n === 1 ? "балл" : n >= 2 && n <= 4 ? "балла" : "баллов");
 
 // ── Variant A: textbook-style stepper ──
 export const QuizClassic = ({ quiz, onFinish, onExit }) => {
@@ -141,7 +144,10 @@ export const QuizClassic = ({ quiz, onFinish, onExit }) => {
 
       {/* Question body */}
       <div className="quiz-body" style={{ position: "relative", maxWidth: 760, margin: "0 auto", padding: "56px 40px 80px" }}>
-        <div className="eyebrow" style={{ marginBottom: 14 }}>Вопрос {String(idx + 1).padStart(2, "0")}</div>
+        <div className="eyebrow" style={{ marginBottom: 14 }}>
+          {quiz.mock_exam ? `Задание ${idx + 1}` : `Вопрос ${String(idx + 1).padStart(2, "0")}`}
+          {q.max_points > 1 && ` · ${q.max_points} ${pointsLabel(q.max_points)}`}
+        </div>
 
         {/* Image */}
         {q.image_data && (
@@ -616,7 +622,7 @@ export const QuizFocused = ({ quiz, onFinish }) => {
 };
 
 // ── Results screen ──
-export const QuizResults = ({ total = 0, correct = 0, quizTitle, onRetry, onHome, isPreview = false }) => {
+export const QuizResults = ({ total = 0, correct = 0, quizTitle, onRetry, onHome, isPreview = false, mockExam = null, pendingReview = false, guest = false }) => {
   const [burst, setBurst] = React.useState(false);
   React.useEffect(() => { const t = setTimeout(() => setBurst(true), 300); return () => clearTimeout(t); }, []);
 
@@ -667,9 +673,24 @@ export const QuizResults = ({ total = 0, correct = 0, quizTitle, onRetry, onHome
                 <div className="quiz-result-total" style={{ fontFamily: "var(--f-serif)", fontSize: 36, color: "var(--text-muted)" }}>/ {total}</div>
               </div>
               <div style={{ fontSize: 13, color: "var(--text-muted)", letterSpacing: "0.04em", marginTop: 6 }}>
-                {pct}% правильных ответов
+                {mockExam ? `первичных ${pointsLabel(total)} · пробник ${mockExam}` : `${pct}% правильных ответов`}
               </div>
             </div>
+
+            {mockExam && (
+              <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 16px", borderRadius: 14, background: "var(--green-50)", border: "1.5px solid var(--green-200)", position: "relative" }}>
+                <div style={{ fontFamily: "var(--f-serif)", fontSize: 40, fontWeight: 700, color: "var(--green-800)", lineHeight: 1 }}>
+                  {mockExam === "ОГЭ" ? ogeGrade(correct) : egeTestScore(correct)}
+                </div>
+                <div style={{ fontSize: 13, color: "var(--text-soft)", lineHeight: 1.45 }}>
+                  {mockExam === "ОГЭ" ? "оценка по шкале ОГЭ" : "тестовый балл ЕГЭ из 100"}
+                  {pendingReview && <div style={{ color: "var(--text-muted)", fontSize: 12 }}>{guest ? "без учёта развёрнутых ответов — без входа в кабинет они не проверяются" : "без учёта развёрнутых ответов — их проверит репетитор"}</div>}
+                </div>
+              </div>
+            )}
+            {!mockExam && pendingReview && (
+              <div style={{ fontSize: 13, color: "var(--text-muted)" }}>{guest ? "Развёрнутые ответы без входа в кабинет не проверяются." : "Развёрнутые ответы проверит репетитор — баллы добавятся после проверки."}</div>
+            )}
 
             <div>
               <div className="progress" style={{ height: 8 }}>

@@ -128,6 +128,8 @@ try { db.exec("ALTER TABLE flashcard_sets ADD COLUMN line TEXT"); } catch (_) {}
 try { db.exec("ALTER TABLE flashcard_sets ADD COLUMN source TEXT"); } catch (_) {}
 try { db.exec("ALTER TABLE flashcard_sets ADD COLUMN section TEXT"); } catch (_) {}
 try { db.exec("ALTER TABLE flashcard_cards ADD COLUMN image_data TEXT"); } catch (_) {}
+// На какой стороне карточки показывать фото: front (термин) | back (определение)
+try { db.exec("ALTER TABLE flashcard_cards ADD COLUMN image_side TEXT DEFAULT 'front'"); } catch (_) {}
 // Таблицы разделов и тем
 db.exec(`
   CREATE TABLE IF NOT EXISTS sections (
@@ -163,6 +165,27 @@ try { db.exec("ALTER TABLE questions ADD COLUMN image_note TEXT"); } catch (_) {
 try { db.exec("ALTER TABLE questions ADD COLUMN grading_criteria TEXT"); } catch (_) {}
 try { db.exec("ALTER TABLE questions ADD COLUMN max_points INTEGER"); } catch (_) {}
 try { db.exec("ALTER TABLE attempts ADD COLUMN status TEXT DEFAULT 'graded'"); } catch (_) {}
+// Пробник по шаблону экзамена: NULL — обычный тест, 'ОГЭ' | 'ЕГЭ' — пробник
+try { db.exec("ALTER TABLE tests ADD COLUMN mock_exam TEXT"); } catch (_) {}
+// Видео на главной: ссылки YouTube / Rutube / VK
+db.exec(`
+  CREATE TABLE IF NOT EXISTS videos (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    url TEXT NOT NULL,
+    title TEXT,
+    order_index INTEGER DEFAULT 0,
+    created_at TEXT DEFAULT (datetime('now'))
+  );
+`);
+// Видео-файлы: kind = 'link' | 'file'; у файлов status = processing | ready | failed
+try { db.exec("ALTER TABLE videos ADD COLUMN kind TEXT DEFAULT 'link'"); } catch (_) {}
+try { db.exec("ALTER TABLE videos ADD COLUMN status TEXT DEFAULT 'ready'"); } catch (_) {}
+try { db.exec("ALTER TABLE videos ADD COLUMN poster TEXT"); } catch (_) {}
+try { db.exec("ALTER TABLE videos ADD COLUMN error TEXT"); } catch (_) {}
+try { db.exec("ALTER TABLE videos ADD COLUMN size_original INTEGER"); } catch (_) {}
+try { db.exec("ALTER TABLE videos ADD COLUMN size_final INTEGER"); } catch (_) {}
+// Баллы за задание в попытке (для 2-3-балльных и развёрнутых ответов)
+try { db.exec("ALTER TABLE attempt_answers ADD COLUMN points INTEGER"); } catch (_) {}
 
 // Таблицы для растений
 db.exec(`

@@ -1,6 +1,7 @@
 import React, { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Fern, BotanicalBg } from "../botanical";
+import { BotanicalBg } from "../botanical";
+import { TestCover } from "../components/TestCover";
 import PlantWidget from "../components/PlantWidget";
 import PlantSVG from "../components/PlantSVG";
 import API from "../api";
@@ -85,15 +86,7 @@ function QuizTile({ q, onStart }) {
       onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-4px)"; e.currentTarget.style.boxShadow = "0 16px 48px rgba(26,52,36,0.12)"; }}
       onMouseLeave={e => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = "var(--sh-sm)"; }}
     >
-      <div style={{
-        height: 110,
-        background: "linear-gradient(135deg, var(--green-100) 0%, var(--green-200) 100%)",
-        display: "flex", alignItems: "center", justifyContent: "center",
-        fontSize: 44, position: "relative", overflow: "hidden",
-      }}>
-        <div style={{ position: "absolute", inset: 0, color: "var(--green-700)", opacity: 0.1 }}>
-          <Fern size={160} style={{ position: "absolute", top: -20, right: -20 }} />
-        </div>
+      <TestCover item={q} icon={TOPIC_ICONS[q.topic] || "🌱"}>
         {q.is_assigned && (
           <span style={{
             position: "absolute", top: 12, left: 12,
@@ -104,8 +97,7 @@ function QuizTile({ q, onStart }) {
             boxShadow: "0 4px 10px rgba(26,52,36,0.2)",
           }}>🌱 Назначено</span>
         )}
-        <span style={{ position: "relative" }}>{TOPIC_ICONS[q.topic] || "🌱"}</span>
-      </div>
+      </TestCover>
       <div style={{ padding: "16px 18px", display: "flex", flexDirection: "column", gap: 8, flex: 1 }}>
         <div style={{
           display: "inline-block", background: "var(--green-100)",

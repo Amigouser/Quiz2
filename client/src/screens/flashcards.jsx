@@ -19,7 +19,7 @@ function FlashcardResults({ set, known, onRetry, onHome }) {
   const pct = total > 0 ? Math.round((knownCount / total) * 100) : 0;
 
   return (
-    <div style={{
+    <div className="fc-results-wrap" style={{
       minHeight: "100vh", background: "var(--bg)",
       display: "flex", flexDirection: "column",
       alignItems: "center", justifyContent: "center",
@@ -29,7 +29,7 @@ function FlashcardResults({ set, known, onRetry, onHome }) {
       <div style={{ position: "fixed", bottom: 0, right: 0, color: "var(--green-800)", opacity: 0.08, pointerEvents: "none" }}>
         <Fern size={400} />
       </div>
-      <div className="card" style={{ padding: "48px 56px", maxWidth: 480, textAlign: "center", position: "relative" }}>
+      <div className="card fc-results-card" style={{ padding: "48px 56px", maxWidth: 480, textAlign: "center", position: "relative" }}>
         <div style={{ fontSize: 52, marginBottom: 16 }}>🌿</div>
         <h1 style={{ fontFamily: "var(--f-serif)", fontSize: 32, marginBottom: 8 }}>Молодец!</h1>
         <p style={{ color: "var(--text-soft)", marginBottom: 32, fontSize: 15 }}>
@@ -140,6 +140,9 @@ export default function FlashcardsRoute() {
   }
 
   const card = cards[index];
+  // фото показываем только на той стороне, где его поставил репетитор
+  const backImage = card.image_data && card.image_side === "back";
+  const frontImage = card.image_data && !backImage;
   const progress = cards.length > 1 ? (index / (cards.length - 1)) * 100 : 100;
 
   return (
@@ -226,14 +229,14 @@ export default function FlashcardsRoute() {
               overflowY: "auto",
               overflowX: "hidden",
             }}>
-              {card.image_data && (
+              {frontImage && (
                 <img src={card.image_data} alt="" loading="eager" style={{
                   display: "block", maxWidth: "100%", height: "auto", maxHeight: 120,
                   borderRadius: 10, objectFit: "contain", marginBottom: 12, flexShrink: 0,
                   WebkitTransform: "translateZ(0)", transform: "translateZ(0)",
                 }} />
               )}
-              <div style={{ fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: card.image_data ? 10 : 16, fontWeight: 600, flexShrink: 0 }}>
+              <div style={{ fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: frontImage ? 10 : 16, fontWeight: 600, flexShrink: 0 }}>
                 Термин
               </div>
               <div className="fc-term pre-line" style={{ fontFamily: "var(--f-serif)", fontSize: 24, fontWeight: 500, textAlign: "center", lineHeight: 1.35 }}>
@@ -260,14 +263,14 @@ export default function FlashcardsRoute() {
               overflowY: "auto",
               overflowX: "hidden",
             }}>
-              {card.image_data && (
+              {backImage && (
                 <img src={card.image_data} alt="" loading="eager" style={{
                   display: "block", maxWidth: "100%", height: "auto", maxHeight: 100,
                   borderRadius: 10, objectFit: "contain", marginBottom: 12, flexShrink: 0,
                   WebkitTransform: "translateZ(0)", transform: "translateZ(0)",
                 }} />
               )}
-              <div style={{ fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--green-800)", marginBottom: card.image_data ? 10 : 16, fontWeight: 600, opacity: 0.7, flexShrink: 0 }}>
+              <div style={{ fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--green-800)", marginBottom: backImage ? 10 : 16, fontWeight: 600, opacity: 0.7, flexShrink: 0 }}>
                 Определение
               </div>
               <div className="fc-def pre-line" style={{ fontFamily: "var(--f-serif)", fontSize: 20, fontWeight: 400, textAlign: "center", lineHeight: 1.55 }}>

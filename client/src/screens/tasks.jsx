@@ -1,8 +1,10 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import API from "../api";
-import { Leaf, Fern } from "../botanical";
+import { Leaf } from "../botanical";
+import { findCover } from "../components/TestCover";
 import { QuizClassic, QuizResults } from "./quiz";
+import { scoreQuiz, EXAM_MINUTES } from "../exams";
 
 const VK_LINK  = "https://vk.com/public219644318";
 const LIMIT    = 3; // порог для тестов И для карточек
@@ -128,6 +130,8 @@ function GuestCards({ set, onFinish, onClose }) {
 
   const card = cards[step];
   const total = cards.length;
+  // фото только на своей стороне карточки
+  const cardImage = card?.image_data && (card.image_side === "back") === flipped;
 
   function shuffleCards() {
     const arr = [...cards];
@@ -213,13 +217,13 @@ function GuestCards({ set, onFinish, onClose }) {
             userSelect: "none",
             overflow: "visible",          }}
         >
-          {card.image_data && (
+          {cardImage && (
             <img src={card.image_data} alt="" style={{
               maxWidth: "100%", maxHeight: 140, borderRadius: 10,
               objectFit: "contain", marginBottom: 16,
             }} />
           )}
-          <div style={{ fontSize: 11, color: "var(--text-muted)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: card.image_data ? 8 : 12 }}>
+          <div style={{ fontSize: 11, color: "var(--text-muted)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: cardImage ? 8 : 12 }}>
             {flipped ? "Определение" : "Термин"}
           </div>
           <div className="pre-line" style={{ fontFamily: "var(--f-serif)", fontSize: 22, lineHeight: 1.4, color: flipped ? "var(--green-900)" : "var(--text)" }}>
@@ -274,6 +278,129 @@ function FilterSelect({ label, value, onChange, options }) {
   );
 }
 
+// ── Библиотека заданий: обложка-миниатюра ─────────────────────────────────────
+function LibraryThumb({ item, size, fallback }) {
+  const cover = findCover(item);
+  return (
+    <span className="lib-thumb" style={{ width: size, height: size, background: cover ? cover.bg : "var(--green-100)" }}>
+      {cover ? <img src={cover.src} alt="" loading="lazy" /> : <span>{fallback}</span>}
+    </span>
+  );
+}
+
+// «1 вопрос», «2 вопроса», «5 вопросов»
+function plural(n, one, few, many) {
+  const d = n % 10, dd = n % 100;
+  if (d === 1 && dd !== 11) return one;
+  if (d >= 2 && d <= 4 && (dd < 12 || dd > 14)) return few;
+  return many;
+}
+
+// Короткие подписи длинных разделов для бокового меню
+const shortSection = (name) => ({
+  "Биология как наука. Методы. Уровни организации": "Биология как наука",
+  "Прокариоты и вирусы": "Прокариоты",
+  "Грибы и лишайники": "Грибы",
+}[name] || name);
+
+const LIBRARY_STYLES = `
+  .lib-layout { display: grid; grid-template-columns: 270px minmax(0, 1fr); min-height: 100vh; padding-top: 64px; }
+  .lib-side {
+    background: var(--green-50); border-right: 1px solid var(--border-soft);
+    padding: 26px 16px; position: sticky; top: 64px; align-self: start;
+    height: calc(100vh - 64px); overflow-y: auto;
+  }
+  .lib-side-title { font-size: 11px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--text-muted); margin: 20px 10px 10px; }
+  .lib-nav {
+    width: 100%; display: flex; align-items: center; gap: 10px; padding: 8px; border: none; background: none;
+    border-radius: 12px; font: 600 14px var(--f-sans); color: var(--text-soft); cursor: pointer; text-align: left;
+    transition: background .15s, box-shadow .15s;
+  }
+  .lib-nav:hover { background: rgba(255,255,255,.7); }
+  .lib-nav.on { background: #fff; color: var(--text); box-shadow: 0 4px 14px rgba(20,40,30,.08); }
+  .lib-nav i { margin-left: auto; font-style: normal; font-size: 12px; color: var(--text-muted); }
+  .lib-nav-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .lib-dot { width: 34px; height: 34px; flex-shrink: 0; border-radius: 9px; background: var(--green-100); color: var(--green-800); display: grid; place-items: center; font-weight: 800; }
+  .lib-thumb { flex-shrink: 0; border-radius: 10px; overflow: hidden; display: grid; place-items: center; font-size: 22px; color: var(--green-800); font-weight: 800; }
+  .lib-thumb img { width: 100%; height: 100%; object-fit: contain; display: block; }
+
+  .lib-main { padding: 30px 40px 80px; min-width: 0; }
+  .lib-top { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; margin-bottom: 18px; flex-wrap: wrap; }
+  .lib-title { font-family: var(--f-serif); font-size: clamp(28px, 3vw, 40px); line-height: 1.1; letter-spacing: -.02em; }
+  .lib-sub { color: var(--text-muted); margin-top: 4px; }
+  .lib-seg { display: inline-flex; background: var(--green-50); border-radius: 12px; padding: 4px; }
+  .lib-seg button { border: none; background: none; padding: 8px 16px; border-radius: 9px; font: 700 13px var(--f-sans); color: var(--text-soft); cursor: pointer; }
+  .lib-seg button.on { background: #fff; color: var(--green-900); box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+
+  .lib-filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 22px; }
+  .lib-search { position: relative; flex: 1 1 260px; max-width: 420px; color: var(--text-muted); }
+  .lib-search svg { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); pointer-events: none; }
+  .lib-search input {
+    width: 100%; padding: 10px 16px 10px 38px; border-radius: 999px; border: 1.5px solid var(--border-soft);
+    background: var(--surface); font: 14px var(--f-sans); outline: none; color: var(--text);
+  }
+  .lib-search input:focus { border-color: var(--green-600); }
+  .lib-reset { padding: 9px 16px; border-radius: 999px; font-size: 13px; border: 1.5px solid var(--border-soft); background: transparent; color: var(--text-muted); cursor: pointer; }
+
+  .lib-mocks { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr)); gap: 14px; margin-bottom: 22px; }
+  .lib-mock {
+    position: relative; overflow: hidden; text-align: left; border: none; cursor: pointer;
+    border-radius: 22px; padding: 22px 24px 24px; color: #fff; font-family: var(--f-sans);
+    transition: transform .25s cubic-bezier(.22,.8,.32,1), box-shadow .25s;
+  }
+  .lib-mock.oge { background: var(--green-800); }
+  .lib-mock.ege { background: var(--green-900); }
+  .lib-mock:hover { transform: translateY(-3px); box-shadow: 0 16px 40px rgba(20,40,30,.22); }
+  .lib-mock small { font-size: 11px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--green-300); }
+  .lib-mock h3 { font-family: var(--f-serif); font-weight: 500; font-size: 24px; line-height: 1.15; color: #fff; margin: 6px 0 14px; padding-right: 110px; }
+  .lib-mock-nums { display: flex; gap: 24px; }
+  .lib-mock-nums b { display: block; font: 700 26px/1 var(--f-serif); }
+  .lib-mock-nums span { font-size: 12px; color: var(--green-300); }
+  .lib-mock-cta { position: absolute; right: 22px; bottom: 22px; background: var(--amber); color: #3a1e0a; border-radius: 999px; padding: 10px 18px; font-weight: 800; font-size: 14px; }
+
+  .lib-list { border: 1px solid var(--border-soft); border-radius: 18px; overflow: hidden; background: var(--surface); }
+  .lib-row {
+    width: 100%; display: flex; align-items: center; gap: 16px; padding: 12px 16px; border: none;
+    border-bottom: 1px solid var(--border-soft); background: none; cursor: pointer; text-align: left;
+    font-family: var(--f-sans); color: var(--text); transition: background .15s;
+  }
+  .lib-row:last-child { border-bottom: none; }
+  .lib-row:hover { background: var(--green-50); }
+  .lib-row:hover .lib-play { transform: scale(1.08); }
+  .lib-row-body { flex: 1; min-width: 0; }
+  .lib-row-title { font-family: var(--f-serif); font-size: 17px; line-height: 1.3; margin-bottom: 4px; }
+  .lib-row-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 12px; color: var(--text-muted); }
+  .lib-tag { font-size: 11px; font-weight: 700; border-radius: 999px; padding: 3px 9px; background: var(--green-100); color: var(--green-800); }
+  .lib-tag.cards { background: var(--amber-soft); color: #7a3e10; }
+  .lib-play { flex-shrink: 0; width: 40px; height: 40px; border-radius: 50%; background: var(--green-800); color: #fff; display: grid; place-items: center; transition: transform .2s; }
+  .lib-play svg { margin-left: 2px; }
+  .lib-empty { text-align: center; padding: 60px 0; color: var(--text-muted); font-size: 15px; }
+
+  /* ── Телефоны и планшеты: меню превращается в строку кнопок ── */
+  @media (max-width: 900px) {
+    .lib-layout { grid-template-columns: 1fr; align-content: start; padding-top: 56px; }
+    .lib-side {
+      position: sticky; top: 56px; z-index: 20; height: auto; display: flex; gap: 6px; overflow-x: auto;
+      padding: 10px 16px; border-right: none; border-bottom: 1px solid var(--border-soft); scrollbar-width: none;
+    }
+    .lib-side::-webkit-scrollbar { display: none; }
+    .lib-side-title { display: none; }
+    .lib-nav { width: auto; flex-shrink: 0; padding: 5px 12px 5px 5px; border-radius: 999px; background: #fff; border: 1px solid var(--border-soft); font-size: 13px; }
+    .lib-nav.on { background: var(--green-800); color: #fff; border-color: var(--green-800); }
+    .lib-nav.on i { color: var(--green-300); }
+    .lib-nav .lib-dot, .lib-nav .lib-thumb { width: 26px !important; height: 26px !important; border-radius: 50%; font-size: 12px; }
+    .lib-main { padding: 20px 16px 60px; }
+    .lib-seg { width: 100%; } .lib-seg button { flex: 1; }
+    .lib-search { flex-basis: 100%; max-width: none; }
+    .lib-mock h3 { padding-right: 0; }
+    .lib-mock-cta { position: static; display: inline-block; margin-top: 16px; }
+    .lib-row { gap: 12px; padding: 12px; }
+    .lib-row .lib-thumb { width: 44px !important; height: 44px !important; }
+    .lib-row-title { font-size: 15px; }
+    .lib-play { width: 34px; height: 34px; }
+  }
+`;
+
 // ── Главный компонент ─────────────────────────────────────────────────────────
 export default function TasksPage() {
   const navigate = useNavigate();
@@ -294,6 +421,8 @@ export default function TasksPage() {
   const [topicFilter, setTopicFilter] = useState("");
   const [sourceFilter, setSourceFilter] = useState("");
   const [search, setSearch] = useState("");
+  const [view, setView] = useState("all");   // all | mocks
+  const [kind, setKind] = useState("all");   // all | tests | cards
 
   useEffect(() => {
     Promise.all([
@@ -341,6 +470,28 @@ export default function TasksPage() {
     setTopicFilter(""); setSourceFilter(""); setSearch("");
   }
 
+  // Боковое меню и списки
+  const mockTests = tests.filter(t => t.mock_exam);
+  const sideSections = SECTION_OPTIONS.concat(dataSections.filter(s => !SECTION_OPTIONS.includes(s)).sort())
+    .map(name => ({ name, count: [...tests, ...cardSets].filter(i => itemHasValue(i.section, name)).length }))
+    .filter(s => s.count > 0);
+
+  function pickNav(nextView, section = "", e) {
+    // на телефоне меню — строка кнопок: подкручиваем выбранную в зону видимости
+    e?.currentTarget?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+    setView(nextView);
+    setSectionFilter(section);
+    if (nextView === "mocks") setKind("tests");
+    else if (view === "mocks") setKind("all");
+  }
+
+  const filteredTests = applyFilters(tests);
+  const shownMocks = kind === "cards" ? [] : filteredTests.filter(t => t.mock_exam);
+  const rows = view === "mocks" ? [] : [
+    ...(kind === "cards" ? [] : filteredTests.filter(t => !t.mock_exam).map(item => ({ type: "test", item }))),
+    ...(kind === "tests" ? [] : applyFilters(cardSets).map(item => ({ type: "cards", item }))),
+  ];
+
   function checkLimit(t, c) {
     if (t >= LIMIT && c >= LIMIT) setShowLimit(true);
   }
@@ -359,6 +510,7 @@ export default function TasksPage() {
     return {
       title: quiz.title,
       topic: quiz.topic,
+      mock_exam: quiz.mock_exam || null,
       questions: quiz.questions.map(q => ({
         q: q.text,
         note: q.hint,
@@ -371,6 +523,7 @@ export default function TasksPage() {
         correct_text: q.correct_text || null,
         match_options: q.match_options || ["1", "2"],
         grading_criteria: q.grading_criteria || null,
+        max_points: q.max_points || null,
         _questionId: q.id,
         _answerIds: q.answers.map(a => a.id),
         _matchAnswers: q.answers,
@@ -379,8 +532,8 @@ export default function TasksPage() {
   }
 
   function handleQuizFinish(answers) {
-    const score = answers.filter(a => a.correct).length;
-    setGuestResult({ score, max_score: activeQuiz.questions.length, title: activeQuiz.title });
+    const r = scoreQuiz(transformGuestQuiz(activeQuiz), answers);
+    setGuestResult({ ...r, title: activeQuiz.title, mock_exam: activeQuiz.mock_exam || null });
   }
 
   function handleGuestClose() {
@@ -419,7 +572,7 @@ export default function TasksPage() {
           </span>
         </button>
 
-        <button onClick={() => navigate("/login")} style={{
+        <button className="tasks-login-btn" onClick={() => navigate("/login")} style={{
           display: "inline-flex", alignItems: "center", gap: 8,
           padding: "10px 22px", borderRadius: 999,
           background: "#b7e4c7", color: "#0f2a1e",
@@ -432,188 +585,120 @@ export default function TasksPage() {
         </button>
       </header>
 
-      <div className="tasks-container" style={{ maxWidth: 1280, margin: "0 auto", padding: "100px 48px 80px" }}>
+      <style>{LIBRARY_STYLES}</style>
+      <div className="lib-layout">
 
-        {/* Title */}
-        <div style={{ marginBottom: 48 }}>
-          <div style={{
-            display: "inline-block", background: "var(--green-100)",
-            color: "var(--green-800)", borderRadius: 999,
-            padding: "5px 16px", fontSize: 11, fontWeight: 700,
-            letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 16,
-          }}>
-            Задания
-          </div>
-          <h1 style={{
-            fontFamily: "var(--f-serif)", fontSize: "clamp(30px, 3vw, 48px)",
-            lineHeight: 1.1, letterSpacing: "-0.02em", marginBottom: 12,
-          }}>
-            Тесты и карточки<br/>
-            <em style={{ color: "var(--green-800)" }}>по биологии</em>
-          </h1>
-          <p style={{ fontSize: 16, color: "var(--text-soft)", lineHeight: 1.7 }}>
-            Попробуй бесплатно — никакой регистрации не нужно.
-          </p>
-        </div>
-
-        {/* Фильтры */}
-        <div className="tasks-filters" style={{ marginBottom: 36, display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center" }}>
-          <FilterSelect label="Класс" value={gradeFilter} onChange={setGradeFilter} options={GRADE_OPTIONS} />
-          <FilterSelect label="Экзамен" value={examFilter} onChange={setExamFilter} options={EXAM_OPTIONS} />
-          {uniqueParts.length > 0 && (
-            <FilterSelect label="Часть" value={partFilter} onChange={setPartFilter} options={uniqueParts} />
-          )}
-          <FilterSelect label="Раздел" value={sectionFilter} onChange={setSectionFilter} options={uniqueSections} />
-          {uniqueTopics.length > 0 && (
-            <FilterSelect label="Тема" value={topicFilter} onChange={setTopicFilter} options={uniqueTopics} />
-          )}
-          {uniqueSources.length > 0 && (
-            <FilterSelect label="Источник" value={sourceFilter} onChange={setSourceFilter} options={uniqueSources} />
-          )}
-          <div style={{ position: "relative" }}>
-            <input
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              placeholder="Поиск..."
-              style={{
-                padding: "9px 16px 9px 38px", borderRadius: 999,
-                border: "1.5px solid var(--border-soft)",
-                background: "var(--surface)", fontSize: 14, outline: "none",
-                fontFamily: "var(--f-sans)", minWidth: 180, maxWidth: "100%",
-              }}
-            />
-            <svg style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)", pointerEvents: "none" }} width="14" height="14" viewBox="0 0 14 14" fill="none">
-              <circle cx="6" cy="6" r="4.5" stroke="currentColor" strokeWidth="1.5"/>
-              <path d="M10 10l2.5 2.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-            </svg>
-          </div>
-          {hasFilters && (
-            <button onClick={resetFilters} style={{
-              padding: "9px 16px", borderRadius: 999, fontSize: 13,
-              border: "1.5px solid var(--border-soft)", background: "transparent",
-              color: "var(--text-muted)", cursor: "pointer",
-            }}>
-              Сбросить
+        {/* ── Боковое меню: все / пробники / разделы ── */}
+        <aside className="lib-side">
+          <button className={`lib-nav${view === "all" && !sectionFilter ? " on" : ""}`} onClick={e => pickNav("all", "", e)}>
+            <span className="lib-dot">★</span>Все задания<i>{tests.length + cardSets.length}</i>
+          </button>
+          {mockTests.length > 0 && (
+            <button className={`lib-nav${view === "mocks" ? " on" : ""}`} onClick={e => pickNav("mocks", "", e)}>
+              <span className="lib-dot">П</span>Пробники<i>{mockTests.length}</i>
             </button>
           )}
-        </div>
+          {sideSections.length > 0 && <div className="lib-side-title">Разделы</div>}
+          {sideSections.map(({ name, count }) => (
+            <button key={name} className={`lib-nav${sectionFilter === name ? " on" : ""}`} onClick={e => pickNav("section", name, e)}>
+              <LibraryThumb item={{ section: name }} size={34} fallback={name[0]} />
+              <span className="lib-nav-name">{shortSection(name)}</span><i>{count}</i>
+            </button>
+          ))}
+        </aside>
 
-        {loading ? (
-          <div style={{ textAlign: "center", padding: "80px 0", color: "var(--text-muted)", fontSize: 16 }}>Загрузка…</div>
-        ) : (
-          <>
-            {tests.length === 0 && cardSets.length === 0 && (
-              <div style={{ textAlign: "center", padding: "80px 0", color: "var(--text-muted)", fontSize: 16 }}>
-                Пока нет доступных заданий.
+        <main className="lib-main">
+          <div className="lib-top">
+            <div>
+              <h1 className="lib-title">{view === "mocks" ? "Пробники" : sectionFilter ? shortSection(sectionFilter) : "Все задания"}</h1>
+              <p className="lib-sub">Бесплатно, без регистрации</p>
+            </div>
+            {view !== "mocks" && (
+              <div className="lib-seg">
+                {[["all", "Всё"], ["tests", "Тесты"], ["cards", "Карточки"]].map(([k, l]) => (
+                  <button key={k} className={kind === k ? "on" : ""} onClick={() => setKind(k)}>{l}</button>
+                ))}
               </div>
             )}
+          </div>
 
-            {/* Two-column layout: Cards left, Tests right */}
-            <div className="tasks-two-col" style={{ display: "grid", gridTemplateColumns: "1fr 1.6fr", gap: 32, alignItems: "start" }}>
-              {/* Left: Cards */}
-              <div>
-                <h2 style={{ fontFamily: "var(--f-serif)", fontSize: 22, marginBottom: 20, letterSpacing: "-0.01em" }}>Карточки</h2>
-                {applyFilters(cardSets).length > 0 ? (
-                  <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                    {applyFilters(cardSets).map((set) => (
-                      <div key={set.id} onClick={() => openCards(set.id)} style={{
-                        borderRadius: 16,
-                        border: "1.5px solid var(--border-soft)",
-                        background: "var(--surface)", boxShadow: "var(--sh-sm)",
-                        padding: "14px 18px", cursor: "pointer",
-                        transition: "transform 0.2s cubic-bezier(0.22,0.8,0.32,1), box-shadow 0.2s",
-                        display: "flex", alignItems: "center", gap: 14,
-                      }}
-                        onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 8px 28px rgba(26,52,36,0.1)"; }}
-                        onMouseLeave={e => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = "var(--sh-sm)"; }}
-                      >
-                        <div style={{
-                          width: 44, height: 44, borderRadius: 12, flexShrink: 0,
-                          background: "linear-gradient(135deg, var(--green-100) 0%, var(--green-200) 100%)",
-                          display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22,
-                        }}>🃏</div>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontFamily: "var(--f-serif)", fontSize: 15, fontWeight: 500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                            {set.title}
-                          </div>
-                          <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>
-                            {set.cards_count ?? "—"} карточек
-                          </div>
-                        </div>
-                        <span style={{ fontSize: 12, fontWeight: 600, color: "var(--green-800)", flexShrink: 0 }}>→</span>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div style={{ textAlign: "center", padding: "40px 0", color: "var(--text-muted)", fontSize: 14 }}>
-                    {cardSets.length === 0 ? "Карточек пока нет" : "Ничего не найдено"}
-                  </div>
-                )}
-              </div>
-
-              {/* Right: Tests */}
-              <div>
-                <h2 style={{ fontFamily: "var(--f-serif)", fontSize: 22, marginBottom: 20, letterSpacing: "-0.01em" }}>Тесты</h2>
-                {applyFilters(tests).length > 0 ? (
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(260px, 100%), 1fr))", gap: 16 }}>
-                    {applyFilters(tests).map((test) => (
-                      <div key={test.id} onClick={() => openTest(test.id)} style={{
-                        borderRadius: 20, overflow: "hidden",
-                        border: "1.5px solid var(--border-soft)",
-                        background: "var(--surface)", boxShadow: "var(--sh-sm)",
-                        cursor: "pointer",
-                        transition: "transform 0.25s cubic-bezier(0.22,0.8,0.32,1), box-shadow 0.25s",
-                      }}
-                        onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-4px)"; e.currentTarget.style.boxShadow = "0 16px 48px rgba(26,52,36,0.12)"; }}
-                        onMouseLeave={e => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = "var(--sh-sm)"; }}
-                      >
-                        <div style={{
-                          height: 110,
-                          background: "linear-gradient(135deg, var(--green-100) 0%, var(--green-200) 100%)",
-                          display: "flex", alignItems: "center", justifyContent: "center",
-                          fontSize: 44, position: "relative", overflow: "hidden",
-                        }}>
-                          <div style={{ position: "absolute", inset: 0, color: "var(--green-700)", opacity: 0.1 }}>
-                            <Fern size={160} style={{ position: "absolute", top: -20, right: -20 }} />
-                          </div>
-                          <span style={{ position: "relative" }}>{TOPIC_ICONS[test.topic] || "🌱"}</span>
-                        </div>
-                        <div style={{ padding: "16px 18px" }}>
-                          <div style={{
-                            display: "inline-block", background: "var(--green-100)",
-                            color: "var(--green-800)", borderRadius: 999,
-                            padding: "2px 10px", fontSize: 10, fontWeight: 700,
-                            letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 8,
-                          }}>
-                            {test.topic}
-                          </div>
-                          <div style={{ fontFamily: "var(--f-serif)", fontSize: 17, fontWeight: 500, marginBottom: 6, lineHeight: 1.3 }}>
-                            {test.title}
-                          </div>
-                          {test.description && (
-                            <div style={{ fontSize: 13, color: "var(--text-muted)", lineHeight: 1.5, marginBottom: 10 }}>
-                              {test.description}
-                            </div>
-                          )}
-                          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                            <span style={{ fontSize: 12, color: "var(--text-muted)" }}>
-                              {test.questions_count} вопр. · ~{test.est_minutes} мин
-                            </span>
-                            <span style={{ fontSize: 12, fontWeight: 600, color: "var(--green-800)" }}>Начать →</span>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div style={{ textAlign: "center", padding: "40px 0", color: "var(--text-muted)", fontSize: 14 }}>
-                    {tests.length === 0 ? "Тестов пока нет" : "Ничего не найдено"}
-                  </div>
-                )}
-              </div>
+          {/* Поиск и уточняющие фильтры */}
+          <div className="lib-filters">
+            <div className="lib-search">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <circle cx="6" cy="6" r="4.5" stroke="currentColor" strokeWidth="1.5"/>
+                <path d="M10 10l2.5 2.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+              </svg>
+              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Поиск: фотосинтез, митоз…" />
             </div>
-          </>
-        )}
+            <FilterSelect label="Класс" value={gradeFilter} onChange={setGradeFilter} options={GRADE_OPTIONS} />
+            <FilterSelect label="Экзамен" value={examFilter} onChange={setExamFilter} options={EXAM_OPTIONS} />
+            {uniqueParts.length > 0 && (
+              <FilterSelect label="Часть" value={partFilter} onChange={setPartFilter} options={uniqueParts} />
+            )}
+            {uniqueSources.length > 0 && (
+              <FilterSelect label="Источник" value={sourceFilter} onChange={setSourceFilter} options={uniqueSources} />
+            )}
+            {hasFilters && (
+              <button className="lib-reset" onClick={resetFilters}>Сбросить</button>
+            )}
+          </div>
+
+          {loading ? (
+            <div className="lib-empty">Загрузка…</div>
+          ) : (
+            <>
+              {/* Пробники — крупные плашки */}
+              {shownMocks.length > 0 && (
+                <div className="lib-mocks">
+                  {shownMocks.map(t => (
+                    <button key={t.id} className={`lib-mock ${t.mock_exam === "ЕГЭ" ? "ege" : "oge"}`} onClick={() => openTest(t.id)}>
+                      <small>Пробник {t.mock_exam}</small>
+                      <h3>{t.title}</h3>
+                      <div className="lib-mock-nums">
+                        <div><b>{t.questions_count}</b><span>{plural(t.questions_count, "задание", "задания", "заданий")}</span></div>
+                        <div><b>{t.points_total}</b><span>{plural(t.points_total, "балл", "балла", "баллов")}</span></div>
+                        {EXAM_MINUTES[t.mock_exam] && <div><b>{EXAM_MINUTES[t.mock_exam]}</b><span>минут</span></div>}
+                      </div>
+                      <span className="lib-mock-cta">Решать →</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Тесты и карточки — списком */}
+              {rows.length > 0 ? (
+                <div className="lib-list">
+                  {rows.map(({ type, item }) => (
+                    <button key={type + item.id} className="lib-row" onClick={() => (type === "test" ? openTest(item.id) : openCards(item.id))}>
+                      <LibraryThumb item={item} size={52} fallback={type === "cards" ? "🃏" : TOPIC_ICONS[item.topic] || "🌱"} />
+                      <div className="lib-row-body">
+                        <div className="lib-row-title">{item.title}</div>
+                        <div className="lib-row-meta">
+                          {type === "cards"
+                            ? <span className="lib-tag cards">Карточки</span>
+                            : (item.category || "").split(", ").filter(Boolean).map(c => <span key={c} className="lib-tag">{c}</span>)}
+                          <span>
+                            {type === "cards"
+                              ? `${item.cards_count ?? 0} ${plural(item.cards_count ?? 0, "карточка", "карточки", "карточек")}`
+                              : `${item.questions_count} ${plural(item.questions_count, "вопрос", "вопроса", "вопросов")} · ~${item.est_minutes} мин`}
+                          </span>
+                        </div>
+                      </div>
+                      <span className="lib-play" aria-hidden="true">
+                        <svg width="14" height="14" viewBox="0 0 14 14"><path d="M4 2.5v9l7.5-4.5z" fill="currentColor"/></svg>
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              ) : shownMocks.length === 0 && (
+                <div className="lib-empty">
+                  {tests.length === 0 && cardSets.length === 0 ? "Пока нет доступных заданий." : "Ничего не найдено — попробуй сбросить фильтры."}
+                </div>
+              )}
+            </>
+          )}
+        </main>
       </div>
 
       {activeQuiz && !guestResult && (
@@ -633,6 +718,9 @@ export default function TasksPage() {
             total={guestResult.max_score}
             correct={guestResult.score}
             quizTitle={guestResult.title}
+            mockExam={guestResult.mock_exam}
+            pendingReview={guestResult.status === "pending_review"}
+            guest
             onRetry={() => { setGuestResult(null); setQuizKey(k => k + 1); }}
             onHome={handleGuestClose}
           />

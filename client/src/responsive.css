@@ -122,6 +122,8 @@
   .fc-actions { gap: 10px !important; flex-wrap: wrap !important; }
   .fc-actions button { flex: 1 !important; min-width: 120px !important; }
   .fc-nav     { margin-top: 16px !important; flex-wrap: wrap !important; justify-content: center !important; }
+  .fc-results-wrap { padding: 24px 16px !important; }
+  .fc-results-card { padding: 32px 20px !important; width: 100% !important; }
 
   /* ─ Quiz answers text wrapping ───────────────────────────── */
   .answer { word-break: break-word !important; overflow-wrap: anywhere !important; font-size: 14px !important; }
@@ -174,6 +176,12 @@
   /* ─ Modals padding ──────────────────────────────────────── */
   .quiz-modal-panel { padding: 24px 20px 20px !important; }
 
+  /* ─ Privacy / Cookie pages ─────────────────────────────── */
+  .legal-header { padding: 40px 20px 52px !important; }
+  .legal-main   { padding: 40px 20px 72px !important; }
+  .policy-row   { grid-template-columns: 1fr !important; gap: 4px !important; }
+  .legal-main h2 { font-size: 21px !important; flex-wrap: wrap; gap: 8px !important; }
+
   /* ─ Generic utility ─────────────────────────────────────── */
   .rsp-hide-mobile { display: none !important; }
   .rsp-full-mobile { width: 100% !important; }
@@ -188,8 +196,11 @@
   .fc-card .fc-def  { font-size: 17px !important; }
 
   /* Login 8-digit code — shrink inputs to fit narrow screens */
-  .login-digits { gap: 4px !important; }
-  .login-digit-input { width: 32px !important; height: 46px !important; font-size: 18px !important; }
+  .login-digits { gap: 4px !important; width: 100%; }
+  .login-digit-input { width: auto !important; flex: 1 1 0; min-width: 0; max-width: 40px; height: 46px !important; font-size: 18px !important; padding: 0 !important; }
+
+  /* Tasks header — компактная кнопка входа */
+  .tasks-login-btn { padding: 8px 14px !important; font-size: 13px !important; }
 
   /* Tasks filters — stack on very narrow */
   .tasks-filters { flex-direction: column !important; align-items: stretch !important; }

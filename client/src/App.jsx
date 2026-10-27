@@ -5,6 +5,7 @@ import { LandingPage } from "./screens/landing";
 import { LoginCompact } from "./screens/login";
 import { StudentDashboard } from "./screens/dashboard";
 import { QuizClassic, QuizResults } from "./screens/quiz";
+import { scoreQuiz } from "./exams";
 import { AdminPanel } from "./screens/admin";
 import FlashcardsRoute from "./screens/flashcards";
 import TasksPage from "./screens/tasks";
@@ -239,6 +240,7 @@ function QuizPage() {
       setQuiz({
         title: data.title,
         topic: data.topic,
+        mock_exam: data.mock_exam || null,
         questions: data.questions.map((q) => ({
           q: q.text,
           note: q.hint,
@@ -251,6 +253,7 @@ function QuizPage() {
           correct_text: q.correct_text || null,
           match_options: q.match_options || ["1", "2"],
           grading_criteria: q.grading_criteria || null,
+          max_points: q.max_points || null,
           _questionId: q.id,
           _answerIds: q.answers.map((a) => a.id),
           _matchAnswers: q.answers,
@@ -276,11 +279,11 @@ function QuizPage() {
   const handleFinish = async (answers) => {
     if (!quiz) return;
 
-    const localScore = answers.filter((a) => a.correct).length;
-    const localMax = quiz.questions.length;
+    // баллы с учётом стоимости заданий (у обычных тестов — по 1 за вопрос)
+    const local = scoreQuiz(quiz, answers);
 
     if (isAdmin || !attemptId) {
-      setResult({ score: localScore, max_score: localMax });
+      setResult(local);
       return;
     }
 
@@ -300,7 +303,7 @@ function QuizPage() {
       setResult(r);
     } catch (err) {
       console.error("submitAttempt failed:", err);
-      setResult({ score: localScore, max_score: localMax });
+      setResult(local);
     }
   };
 
@@ -312,6 +315,8 @@ function QuizPage() {
         total={result.max_score}
         correct={result.score}
         quizTitle={quiz.title}
+        mockExam={quiz.mock_exam}
+        pendingReview={result.status === "pending_review"}
         isPreview={isAdmin}
         onRetry={() => { setResult(null); setAttemptId(null); handleStart(); }}
         onHome={() => navigate(isAdmin ? "/admin" : "/dashboard")}

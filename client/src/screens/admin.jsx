@@ -2,6 +2,8 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Leaf } from "../botanical";
 import API from "../api";
+import { parseVideoUrl, embedUrl, PROVIDER_NAMES } from "../videoEmbed";
+import { MOCK_EXAMS, buildMockQuestions, mockMaxScore, ogeGrade, egeTestScore } from "../exams";
 
 // Встроенные разделы биологии (используются в формах тестов и карточек)
 const BIO_SECTIONS = [
@@ -562,6 +564,7 @@ const AdminSidebar = ({ active, onTab }) => {
     { id: "cards", label: "Карточки", icon: "🃏" },
     { id: "students", label: "Ученики", icon: "👥" },
     { id: "results", label: "Результаты", icon: "📈" },
+    { id: "videos", label: "Видео", icon: "🎬" },
   ];
   return (
     <div className="sidebar" style={{ minHeight: "100%" }}>
@@ -1004,6 +1007,39 @@ const EMPTY_QUESTION = () => ({
   ],
 });
 
+// Тип теста: обычный или пробник по шаблону экзамена
+const MockExamPicker = ({ value, onChange }) => (
+  <div className="field" style={{ marginBottom: 16 }}>
+    <label>Тип теста</label>
+    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+      {[[null, "Обычный тест"], ["ОГЭ", "Пробник ОГЭ"], ["ЕГЭ", "Пробник ЕГЭ"]].map(([exam, label]) => (
+        <button key={label} type="button" className={`btn btn-sm ${value === exam ? "btn-primary" : "btn-ghost"}`}
+          onClick={() => onChange(exam)}>{label}</button>
+      ))}
+    </div>
+    {value && (
+      <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 6, lineHeight: 1.5 }}>
+        Шаблон ФИПИ: {MOCK_EXAMS[value].points.length} заданий, максимум {mockMaxScore(value)} первичных баллов.
+        Часть 1 — краткий ответ (проверяется автоматически, за ошибку в 2–3-балльном задании минус балл),
+        часть 2 — развёрнутый ответ (баллы ставишь сама в «Результатах»).
+        Ученик увидит {value === "ОГЭ" ? "оценку по шкале ОГЭ" : "тестовый балл ЕГЭ"}.
+      </div>
+    )}
+  </div>
+);
+
+// Переключение типа: при выборе пробника предлагаем заполнить вопросы по шаблону
+function applyMockExam(exam, { questions, setQuestions, setMockExam, setCategory, setGrade, title, setTitle }) {
+  setMockExam(exam);
+  if (!exam) return;
+  const hasContent = questions.some(q => q.text?.trim());
+  if (hasContent && !window.confirm(`Заменить вопросы шаблоном «Пробник ${exam}» (${MOCK_EXAMS[exam].points.length} заданий)? Текущие вопросы будут удалены.`)) return;
+  setQuestions(buildMockQuestions(exam, EMPTY_QUESTION));
+  setCategory([exam]);
+  setGrade([MOCK_EXAMS[exam].grade]);
+  if (!title.trim()) setTitle(`Пробник ${exam} по биологии`);
+}
+
 const AdminCreateTest = ({ onCreated, autoImport = false }) => {
   const [title, setTitle] = React.useState("");
   const [section, setSection] = React.useState([]);
@@ -1015,6 +1051,7 @@ const AdminCreateTest = ({ onCreated, autoImport = false }) => {
   const [line, setLine] = React.useState([]);
   const [source, setSource] = React.useState([]);
   const [isDraft, setIsDraft] = React.useState(false);
+  const [mockExam, setMockExam] = React.useState(null);
   const [questions, setQuestions] = React.useState([EMPTY_QUESTION()]);
   const [saving, setSaving] = React.useState(false);
   const [error, setError] = React.useState(null);
@@ -1089,8 +1126,9 @@ const AdminCreateTest = ({ onCreated, autoImport = false }) => {
 
   const handleSubmit = async (draft) => {
     if (!title.trim()) { setError("Введи название теста"); return; }
-    const invalidQ = questions.findIndex(q => !q.text.trim());
-    if (invalidQ !== -1) { setError(`Вопрос ${invalidQ + 1} пустой`); return; }
+    // черновик пробника можно сохранить недозаполненным
+    const invalidQ = draft ? -1 : questions.findIndex(q => !q.text.trim());
+    if (invalidQ !== -1) { setError(`${mockExam ? "Задание" : "Вопрос"} ${invalidQ + 1} пустое`); return; }
 
     setSaving(true);
     setError(null);
@@ -1105,6 +1143,7 @@ const AdminCreateTest = ({ onCreated, autoImport = false }) => {
         part: part.length > 0 ? part.join(", ") : null,
         line: line.length > 0 ? line.join(", ") : null,
         source: source.length > 0 ? source.join(", ") : null,
+        mock_exam: mockExam,
         is_draft: draft ? 1 : 0,
         questions: questions.map(q => {
           let correctText = null;
@@ -1167,6 +1206,7 @@ const AdminCreateTest = ({ onCreated, autoImport = false }) => {
             <label>Название теста</label>
             <input className="input input-lg" value={title} onChange={e => setTitle(e.target.value)} placeholder="Например: Фотосинтез" />
           </div>
+          <MockExamPicker value={mockExam} onChange={exam => applyMockExam(exam, { questions, setQuestions, setMockExam, setCategory, setGrade, title, setTitle })} />
           <div className="field" style={{ marginBottom: 16 }}>
             <label>Краткое описание (необязательно)</label>
             <textarea className="input" rows={2} value={description} onChange={e => setDescription(e.target.value)}
@@ -1225,8 +1265,13 @@ const AdminCreateTest = ({ onCreated, autoImport = false }) => {
                   {qi + 1}
                 </div>
                 <div style={{ flex: 1, fontWeight: 500, color: q.text ? "var(--text)" : "var(--text-muted)" }} className="pre-line">
-                  {q.text || "Новый вопрос"}
+                  {q.text || (mockExam ? `Задание ${qi + 1}` : "Новый вопрос")}
                 </div>
+                {(mockExam || q.max_points > 1) && (
+                  <span className="pill" style={{ background: "var(--green-800)", color: "#fff" }}>
+                    {q.max_points || 1} б.
+                  </span>
+                )}
                 <span className="pill pill-muted">{q.answers.length} варианта</span>
                 <button className="btn btn-ghost btn-sm" onClick={() => updateQ(qi, "expand", !q.expand)}>
                   {q.expand ? "Свернуть" : "Открыть"}
@@ -1271,6 +1316,19 @@ const AdminCreateTest = ({ onCreated, autoImport = false }) => {
                       ))}
                     </div>
                   </div>
+                  {q.question_type !== "open_response" && (
+                    <div className="field">
+                      <label>Баллы за задание</label>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                        <input className="input" type="number" min={1} max={10} value={q.max_points || ""}
+                          onChange={e => updateQ(qi, "max_points", Number(e.target.value) || null)}
+                          placeholder="1" style={{ width: 80 }} />
+                        <span style={{ fontSize: 12, color: "var(--text-muted)" }}>
+                          1 балл — всё или ничего; 2–3 балла — за каждую ошибку минус балл
+                        </span>
+                      </div>
+                    </div>
+                  )}
                   {q.image_note && (
                     <div style={{ padding: "8px 12px", background: "var(--accent-soft, #fff3e0)", border: "1px solid var(--accent, #e6a23c)", borderRadius: "var(--r-md)", fontSize: 13, color: "var(--text)" }}>
                       <span style={{ fontWeight: 600 }}>Нет картинки:</span> {q.image_note}
@@ -1568,6 +1626,7 @@ const AdminEditTest = ({ testId, onSaved }) => {
   const [part, setPart] = React.useState([]);
   const [line, setLine] = React.useState([]);
   const [source, setSource] = React.useState([]);
+  const [mockExam, setMockExam] = React.useState(null);
   const [questions, setQuestions] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
   const [saving, setSaving] = React.useState(false);
@@ -1584,6 +1643,7 @@ const AdminEditTest = ({ testId, onSaved }) => {
       setPart(data.part ? data.part.split(", ").filter(Boolean) : []);
       setLine(data.line ? data.line.split(", ").filter(Boolean) : []);
       setSource(data.source ? data.source.split(", ").filter(Boolean) : []);
+      setMockExam(data.mock_exam || null);
       setQuestions(data.questions.map(q => {
         let textAnswers = undefined;
         if ((q.question_type || "single") === "text_input" && q.correct_text) {
@@ -1647,6 +1707,7 @@ const AdminEditTest = ({ testId, onSaved }) => {
         title: title.trim(), section: section.length > 0 ? section.join(", ") : null, topic: topic.length > 0 ? topic.join(", ") : null,
         description: description.trim() || null, grade: grade.length > 0 ? grade.join(", ") : null, category: category.length > 0 ? category.join(", ") : null,
         part: part.length > 0 ? part.join(", ") : null, line: line.length > 0 ? line.join(", ") : null, source: source.length > 0 ? source.join(", ") : null,
+        mock_exam: mockExam,
         questions: questions.map(q => {
           let correctText = null;
           if (q.question_type === "text_input") {
@@ -1698,6 +1759,7 @@ const AdminEditTest = ({ testId, onSaved }) => {
             <label>Название теста</label>
             <input className="input input-lg" value={title} onChange={e => setTitle(e.target.value)} />
           </div>
+          <MockExamPicker value={mockExam} onChange={exam => applyMockExam(exam, { questions, setQuestions, setMockExam, setCategory, setGrade, title, setTitle })} />
           <div className="field" style={{ marginBottom: 16 }}>
             <label>Описание</label>
             <textarea className="input" rows={2} value={description} onChange={e => setDescription(e.target.value)}
@@ -1756,8 +1818,13 @@ const AdminEditTest = ({ testId, onSaved }) => {
                   {qi + 1}
                 </div>
                 <div style={{ flex: 1, fontWeight: 500, color: q.text ? "var(--text)" : "var(--text-muted)" }} className="pre-line">
-                  {q.text || "Новый вопрос"}
+                  {q.text || (mockExam ? `Задание ${qi + 1}` : "Новый вопрос")}
                 </div>
+                {(mockExam || q.max_points > 1) && (
+                  <span className="pill" style={{ background: "var(--green-800)", color: "#fff" }}>
+                    {q.max_points || 1} б.
+                  </span>
+                )}
                 <button className="btn btn-ghost btn-sm" onClick={() => updateQ(qi, "expand", !q.expand)}>
                   {q.expand ? "Свернуть" : "Открыть"}
                 </button>
@@ -1801,6 +1868,19 @@ const AdminEditTest = ({ testId, onSaved }) => {
                       ))}
                     </div>
                   </div>
+                  {q.question_type !== "open_response" && (
+                    <div className="field">
+                      <label>Баллы за задание</label>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                        <input className="input" type="number" min={1} max={10} value={q.max_points || ""}
+                          onChange={e => updateQ(qi, "max_points", Number(e.target.value) || null)}
+                          placeholder="1" style={{ width: 80 }} />
+                        <span style={{ fontSize: 12, color: "var(--text-muted)" }}>
+                          1 балл — всё или ничего; 2–3 балла — за каждую ошибку минус балл
+                        </span>
+                      </div>
+                    </div>
+                  )}
                   {q.image_note && (
                     <div style={{ padding: "8px 12px", background: "var(--accent-soft, #fff3e0)", border: "1px solid var(--accent, #e6a23c)", borderRadius: "var(--r-md)", fontSize: 13, color: "var(--text)" }}>
                       <span style={{ fontWeight: 600 }}>Нет картинки:</span> {q.image_note}
@@ -2582,7 +2662,7 @@ const AdminStudents = () => {
 };
 
 // ── Flashcard set editor ────────────────────────────────────────────────────
-const EMPTY_CARD = () => ({ id: Date.now() + Math.random(), term: "", definition: "", image_data: null });
+const EMPTY_CARD = () => ({ id: Date.now() + Math.random(), term: "", definition: "", image_data: null, image_side: "front" });
 
 const AdminEditCardSet = ({ editId, onSaved, autoImport = false }) => {
   const [title, setTitle] = React.useState("");
@@ -2611,6 +2691,7 @@ const AdminEditCardSet = ({ editId, onSaved, autoImport = false }) => {
         term: c.term || c.front || "",
         definition: c.definition || c.back || "",
         image_data: c.image_data || null,
+        image_side: c.image_side || "front",
       })));
     }
     setShowImport(false);
@@ -2628,7 +2709,7 @@ const AdminEditCardSet = ({ editId, onSaved, autoImport = false }) => {
       setPart(data.part ? data.part.split(", ").filter(Boolean) : []);
       setLine(data.line ? data.line.split(", ").filter(Boolean) : []);
       setSource(data.source ? data.source.split(", ").filter(Boolean) : []);
-      setCards(data.cards.map(c => ({ id: c.id, term: c.term, definition: c.definition, image_data: c.image_data || null })));
+      setCards(data.cards.map(c => ({ id: c.id, term: c.term, definition: c.definition, image_data: c.image_data || null, image_side: c.image_side || "front" })));
     });
   }, [editId]);
 
@@ -2661,7 +2742,7 @@ const AdminEditCardSet = ({ editId, onSaved, autoImport = false }) => {
         title: title.trim(), section: section.length > 0 ? section.join(", ") : null, topic: topic.length > 0 ? topic.join(", ") : null,
         description: description.trim() || null, grade: Array.isArray(grade) ? grade.join(", ") : (grade || null), category: category.length > 0 ? category.join(", ") : null,
         part: part.length > 0 ? part.join(", ") : null, line: line.length > 0 ? line.join(", ") : null, source: source.length > 0 ? source.join(", ") : null,
-        cards: validCards.map(c => ({ term: c.term.trim(), definition: c.definition.trim(), image_data: c.image_data || null })),
+        cards: validCards.map(c => ({ term: c.term.trim(), definition: c.definition.trim(), image_data: c.image_data || null, image_side: c.image_side || "front" })),
       };
       if (editId) await API.admin.updateCardSet(editId, payload);
       else await API.admin.createCardSet(payload);
@@ -2798,10 +2879,26 @@ const AdminEditCardSet = ({ editId, onSaved, autoImport = false }) => {
               {/* Image */}
               <div style={{ marginTop: 8 }}>
                 {c.image_data ? (
-                  <div style={{ position: "relative", display: "inline-block" }}>
-                    <img src={c.image_data} alt="" style={{ maxHeight: 120, maxWidth: "100%", borderRadius: 8, border: "1px solid var(--border-soft)", display: "block" }} />
-                    <button onClick={() => updateCard(i, "image_data", null)}
-                      style={{ position: "absolute", top: 4, right: 4, width: 22, height: 22, borderRadius: "50%", border: "none", background: "rgba(0,0,0,0.55)", color: "#fff", cursor: "pointer", fontSize: 12, display: "grid", placeItems: "center" }}>✕</button>
+                  <div style={{ display: "flex", alignItems: "flex-end", gap: 12, flexWrap: "wrap" }}>
+                    <div style={{ position: "relative", display: "inline-block" }}>
+                      <img src={c.image_data} alt="" style={{ maxHeight: 120, maxWidth: "100%", borderRadius: 8, border: "1px solid var(--border-soft)", display: "block" }} />
+                      <button onClick={() => updateCard(i, "image_data", null)}
+                        style={{ position: "absolute", top: 4, right: 4, width: 22, height: 22, borderRadius: "50%", border: "none", background: "rgba(0,0,0,0.55)", color: "#fff", cursor: "pointer", fontSize: 12, display: "grid", placeItems: "center" }}>✕</button>
+                    </div>
+                    {/* Фото показывается только на одной стороне карточки */}
+                    <div style={{ display: "inline-flex", border: "1px solid var(--border)", borderRadius: 8, overflow: "hidden", fontSize: 12 }}>
+                      {[["front", "На термине"], ["back", "На определении"]].map(([side, label]) => {
+                        const active = (c.image_side || "front") === side;
+                        return (
+                          <button key={side} type="button" onClick={() => updateCard(i, "image_side", side)}
+                            style={{ padding: "5px 10px", border: "none", cursor: "pointer", fontWeight: 600,
+                              background: active ? "var(--green-800)" : "transparent",
+                              color: active ? "#fff" : "var(--text-muted)" }}>
+                            {label}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
                 ) : (
                   <label
@@ -2955,7 +3052,7 @@ const AdminFlashcardSets = () => {
   );
 };
 
-const AttemptDetailModal = ({ attempt, onClose }) => {
+const AttemptDetailModal = ({ attempt, onClose, onGraded }) => {
   const [detail, setDetail] = React.useState(null);
   const [loading, setLoading] = React.useState(true);
 
@@ -2988,6 +3085,21 @@ const AttemptDetailModal = ({ attempt, onClose }) => {
 
   const { attempt: att, questions } = detail;
 
+  // Репетитор ставит баллы за развёрнутый ответ
+  const gradeQuestion = async (questionId, points) => {
+    try {
+      const r = await API.admin.gradeAnswer(att.id, questionId, points);
+      setDetail(d => ({
+        attempt: { ...d.attempt, score: r.score, status: r.status },
+        questions: d.questions.map(q => q.question_id === questionId
+          ? { ...q, points, is_correct: points === q.max_points ? 1 : 0 } : q),
+      }));
+      onGraded?.();
+    } catch (e) {
+      alert(e.message);
+    }
+  };
+
   return (
     <div style={{
       position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex",
@@ -3014,15 +3126,21 @@ const AttemptDetailModal = ({ attempt, onClose }) => {
               {att.score}/{att.max_score}
             </div>
             <div style={{ fontSize: 13, color: "var(--text-muted)" }}>
-              {att.max_score > 0 ? `${Math.round(att.score / att.max_score * 100)}%` : ""}
+              {att.mock_exam
+                ? `пробник ${att.mock_exam} · ${att.mock_exam === "ОГЭ" ? `оценка ${ogeGrade(att.score)}` : `${egeTestScore(att.score)} тест. баллов`}`
+                : att.max_score > 0 ? `${Math.round(att.score / att.max_score * 100)}%` : ""}
             </div>
+            {att.status === "pending_review" && (
+              <div style={{ fontSize: 12, color: "var(--accent, #e6a23c)", fontWeight: 600, marginTop: 2 }}>есть непроверенные ответы</div>
+            )}
           </div>
         </div>
 
         {/* Questions */}
         <div style={{ padding: "16px 24px" }}>
           {questions.map((q, i) => {
-            const isCorrect = q.is_correct === 1;
+            // верность задания — по баллам (у соответствия is_correct относится к первой строке)
+            const isCorrect = q.points != null ? q.points === q.max_points : q.is_correct === 1;
             const qType = q.question_type || "single";
 
             return (
@@ -3039,8 +3157,11 @@ const AttemptDetailModal = ({ attempt, onClose }) => {
                     background: isCorrect ? "#2d9e5f" : "#c0392b", color: "#fff", flexShrink: 0,
                   }}>{i + 1}</span>
                   <span style={{ fontSize: 13, fontWeight: 600, color: isCorrect ? "#2d9e5f" : "#c0392b" }}>
-                    {isCorrect ? "Верно" : "Неверно"}
+                    {qType === "open_response" && q.points == null ? "На проверке" : isCorrect ? "Верно" : q.points > 0 ? "Частично" : "Неверно"}
                   </span>
+                  {(q.max_points > 1 || att.mock_exam) && q.points != null && (
+                    <span style={{ marginLeft: "auto", fontSize: 13, fontWeight: 700 }}>{q.points} / {q.max_points} б.</span>
+                  )}
                 </div>
 
                 {/* Question text */}
@@ -3103,8 +3224,20 @@ const AttemptDetailModal = ({ attempt, onClose }) => {
                         {q.student_answer?.answer_text || "(пусто)"}
                       </div>
                     </div>
-                    <div style={{ marginTop: 8, fontSize: 12, color: "var(--accent, #e6a23c)", fontWeight: 600 }}>
-                      ⏳ Ожидает ручной проверки
+                    {q.grading_criteria && (
+                      <div style={{ marginTop: 8, fontSize: 12, color: "var(--text-muted)", whiteSpace: "pre-wrap" }}>
+                        <b>Критерии:</b> {q.grading_criteria}
+                      </div>
+                    )}
+                    <div style={{ marginTop: 10, display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                      <span style={{ fontSize: 12, color: q.points == null ? "var(--accent, #e6a23c)" : "var(--text-muted)", fontWeight: 600, marginRight: 4 }}>
+                        {q.points == null ? "⏳ Поставь баллы:" : "Баллы:"}
+                      </span>
+                      {Array.from({ length: (q.max_points || 1) + 1 }, (_, p) => (
+                        <button key={p} type="button" onClick={() => gradeQuestion(q.question_id, p)}
+                          className={`btn btn-sm ${q.points === p ? "btn-primary" : "btn-ghost"}`}
+                          style={{ minWidth: 36, justifyContent: "center" }}>{p}</button>
+                      ))}
                     </div>
                   </div>
                 )}
@@ -3280,7 +3413,228 @@ const AdminResults = () => {
       )}
 
       {selectedAttempt && (
-        <AttemptDetailModal attempt={selectedAttempt} onClose={() => setSelectedAttempt(null)} />
+        <AttemptDetailModal attempt={selectedAttempt} onClose={() => setSelectedAttempt(null)}
+          onGraded={() => API.admin.getResults().then(setResults).catch(() => {})} />
+      )}
+    </div>
+  );
+};
+
+// ── Видео на главной ────────────────────────────────────────────────────────
+const formatMB = (bytes) => bytes ? `${(bytes / 1024 / 1024).toFixed(bytes > 100 * 1024 * 1024 ? 0 : 1)} МБ` : "—";
+
+// Загрузка файла с прогрессом (fetch не умеет показывать процент отправки)
+function uploadVideoFile(file, title, onProgress) {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", `/api/admin/videos/upload?title=${encodeURIComponent(title || "")}`);
+    xhr.withCredentials = true;
+    xhr.setRequestHeader("Content-Type", file.type || "application/octet-stream");
+    xhr.upload.onprogress = (e) => { if (e.lengthComputable) onProgress(e.loaded / e.total); };
+    xhr.onload = () => {
+      let data = {};
+      try { data = JSON.parse(xhr.responseText); } catch (_) {}
+      if (xhr.status >= 200 && xhr.status < 300) resolve(data);
+      else reject(new Error(data.error || (xhr.status === 413 ? "Файл слишком большой для сервера" : `Ошибка ${xhr.status}`)));
+    };
+    xhr.onerror = () => reject(new Error("Нет связи с сервером"));
+    xhr.send(file);
+  });
+}
+
+const AdminVideos = () => {
+  const [videos, setVideos] = React.useState([]);
+  const [loading, setLoading] = React.useState(true);
+  const [mode, setMode] = React.useState("file"); // file | link
+  const [url, setUrl] = React.useState("");
+  const [title, setTitle] = React.useState("");
+  const [file, setFile] = React.useState(null);
+  const [progress, setProgress] = React.useState(null);
+  const [error, setError] = React.useState(null);
+  const [saving, setSaving] = React.useState(false);
+  const fileRef = React.useRef(null);
+
+  const load = () => API.admin.getVideos()
+    .then(list => { setVideos(list); setLoading(false); })
+    .catch(e => { setError(e.message); setLoading(false); });
+  React.useEffect(() => { load(); }, []);
+
+  // пока что-то сжимается — обновляем список раз в 4 секунды
+  const processing = videos.some(v => v.status === "processing");
+  React.useEffect(() => {
+    if (!processing) return;
+    const t = setInterval(load, 4000);
+    return () => clearInterval(t);
+  }, [processing]);
+
+  const parsed = url.trim() ? parseVideoUrl(url) : null;
+
+  const submit = async (e) => {
+    e.preventDefault();
+    setError(null);
+    if (mode === "link") {
+      if (!parsed) { setError("Не похоже на ссылку на видео. Вставь ссылку с YouTube, Rutube или ВКонтакте."); return; }
+      setSaving(true);
+      try { await API.admin.addVideo(url.trim(), title.trim()); setUrl(""); setTitle(""); await load(); }
+      catch (err) { setError(err.message); }
+      finally { setSaving(false); }
+      return;
+    }
+    if (!file) { setError("Выбери видеофайл"); return; }
+    setSaving(true); setProgress(0);
+    try {
+      await uploadVideoFile(file, title.trim(), setProgress);
+      setFile(null); setTitle("");
+      if (fileRef.current) fileRef.current.value = "";
+      await load();
+    } catch (err) { setError(err.message); }
+    finally { setSaving(false); setProgress(null); }
+  };
+
+  const remove = async (v) => {
+    if (!window.confirm("Убрать это видео с главной?")) return;
+    await API.admin.deleteVideo(v.id);
+    load();
+  };
+
+  const move = async (i, dir) => {
+    const next = [...videos];
+    const j = i + dir;
+    if (j < 0 || j >= next.length) return;
+    [next[i], next[j]] = [next[j], next[i]];
+    setVideos(next);
+    await API.admin.reorderVideos(next.map(v => v.id));
+  };
+
+  const rename = async (v, newTitle) => {
+    if ((v.title || "") === newTitle.trim()) return;
+    await API.admin.updateVideo(v.id, { title: newTitle });
+    load();
+  };
+
+  const firstReady = videos.find(v => (v.status || "ready") === "ready");
+
+  return (
+    <div style={{ padding: "32px 40px", flex: 1, maxWidth: 1000 }}>
+      <h1 style={{ fontFamily: "var(--f-serif)", fontSize: 32, marginBottom: 6 }}>Видео на главной</h1>
+      <p style={{ color: "var(--text-soft)", marginBottom: 20, lineHeight: 1.6 }}>
+        Видео появляются на главной в блоке «Об авторе», справа. Первое запускается само без звука —
+        ученик может включить звук в плеере.
+      </p>
+
+      <form onSubmit={submit} className="card" style={{ padding: 20, marginBottom: 24, display: "flex", flexDirection: "column", gap: 14 }}>
+        <div style={{ display: "inline-flex", alignSelf: "flex-start", background: "var(--bg-muted)", borderRadius: 12, padding: 4, gap: 4 }}>
+          {[["file", "📁 Загрузить файл"], ["link", "🔗 По ссылке"]].map(([k, l]) => (
+            <button key={k} type="button" onClick={() => { setMode(k); setError(null); }}
+              className={`btn btn-sm ${mode === k ? "btn-primary" : "btn-ghost"}`}>{l}</button>
+          ))}
+        </div>
+
+        {mode === "file" ? (
+          <div className="field">
+            <label>Видеофайл</label>
+            <input ref={fileRef} type="file" accept="video/*" className="input"
+              onChange={e => { setFile(e.target.files[0] || null); setError(null); }} style={{ padding: 10 }} />
+            <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 6, lineHeight: 1.5 }}>
+              {file ? `Выбрано: ${file.name} · ${formatMB(file.size)}. ` : ""}
+              Любой формат (mp4, mov, avi…), до 2 ГБ. После загрузки сервер сожмёт видео до 720p —
+              обычно в 3–10 раз меньше. Без рекламы и чужих логотипов.
+            </div>
+          </div>
+        ) : (
+          <div className="field">
+            <label>Ссылка на видео</label>
+            <input className="input" value={url} onChange={e => { setUrl(e.target.value); setError(null); }}
+              placeholder="https://rutube.ru/video/… или https://youtu.be/… или https://vk.com/video-…" />
+            <div style={{ fontSize: 12, marginTop: 6, color: url.trim() ? (parsed ? "var(--green-800)" : "var(--wrong)") : "var(--text-muted)" }}>
+              {url.trim()
+                ? (parsed ? `✓ Видео ${PROVIDER_NAMES[parsed.provider]}` : "Ссылка не распознана")
+                : "YouTube, Rutube или ВКонтакте. Учти: сайты сами показывают рекламу в своём плеере."}
+            </div>
+          </div>
+        )}
+
+        <div className="field">
+          <label>Подпись (необязательно)</label>
+          <input className="input" value={title} onChange={e => setTitle(e.target.value)} placeholder="Например: Кладограмма ЕГЭ 2027" />
+        </div>
+
+        {progress !== null && (
+          <div>
+            <div className="progress" style={{ height: 8 }}><div className="progress-fill" style={{ width: `${Math.round(progress * 100)}%` }} /></div>
+            <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 4 }}>
+              {progress < 1 ? `Загружаем… ${Math.round(progress * 100)}%` : "Файл загружен, сервер начинает сжатие…"}
+            </div>
+          </div>
+        )}
+        {error && <div style={{ fontSize: 13, color: "var(--wrong)" }}>{error}</div>}
+        <div>
+          <button type="submit" className="btn btn-primary" disabled={saving}>
+            {saving ? (mode === "file" ? "Загружаем…" : "Добавляем…") : (mode === "file" ? "Загрузить видео" : "Добавить видео")}
+          </button>
+        </div>
+      </form>
+
+      {loading ? (
+        <div style={{ color: "var(--text-muted)" }}>Загрузка…</div>
+      ) : videos.length === 0 ? (
+        <div style={{ color: "var(--text-muted)" }}>Видео пока нет — на главной этот блок скрыт.</div>
+      ) : (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16 }}>
+          {videos.map((v, i) => {
+            const isFile = v.kind === "file";
+            const p = isFile ? null : parseVideoUrl(v.url);
+            const status = v.status || "ready";
+            return (
+              <div key={v.id} className="card" style={{ padding: 0, overflow: "hidden" }}>
+                <div style={{ position: "relative", aspectRatio: "16 / 9", background: "#0f2a1e", color: "#fff" }}>
+                  {isFile && status === "ready" && (
+                    <video src={v.url} poster={v.poster || undefined} controls preload="metadata" playsInline
+                      style={{ position: "absolute", inset: 0, width: "100%", height: "100%", background: "#000" }} />
+                  )}
+                  {isFile && status === "processing" && (
+                    <div style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", textAlign: "center", padding: 16, fontSize: 14 }}>
+                      <div>⏳ Сжимаем видео…<div style={{ fontSize: 12, opacity: 0.7, marginTop: 4 }}>обычно 1–5 минут, страницу можно закрыть</div></div>
+                    </div>
+                  )}
+                  {isFile && status === "failed" && (
+                    <div style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", textAlign: "center", padding: 16, fontSize: 13, background: "#5a1d14" }}>
+                      <div>⚠ Не удалось обработать видео<div style={{ fontSize: 11, opacity: 0.75, marginTop: 4 }}>{v.error}</div></div>
+                    </div>
+                  )}
+                  {!isFile && (p ? (
+                    <iframe src={embedUrl(p)} title={v.title || "Видео"} loading="lazy"
+                      allow="encrypted-media; fullscreen; picture-in-picture" allowFullScreen
+                      style={{ position: "absolute", inset: 0, width: "100%", height: "100%", border: 0 }} />
+                  ) : (
+                    <div style={{ padding: 16, fontSize: 13 }}>Ссылка не распознана</div>
+                  ))}
+                  {v === firstReady && (
+                    <span style={{ position: "absolute", top: 8, left: 8, background: "var(--amber)", color: "#3a1e0a", fontSize: 11, fontWeight: 700, borderRadius: 999, padding: "3px 10px" }}>
+                      запускается само
+                    </span>
+                  )}
+                </div>
+                <div style={{ padding: "12px 14px", display: "flex", flexDirection: "column", gap: 8 }}>
+                  <input className="input" defaultValue={v.title || ""} placeholder="Подпись"
+                    onBlur={e => rename(v, e.target.value)} style={{ fontSize: 14 }} />
+                  <div style={{ fontSize: 12, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {isFile
+                      ? (status === "ready"
+                          ? `Файл · было ${formatMB(v.size_original)} → стало ${formatMB(v.size_final)}`
+                          : `Файл · ${formatMB(v.size_original)}`)
+                      : `${p ? PROVIDER_NAMES[p.provider] : ""} · ${v.url}`}
+                  </div>
+                  <div style={{ display: "flex", gap: 6 }}>
+                    <button className="btn btn-ghost btn-sm" disabled={i === 0} onClick={() => move(i, -1)} title="Выше">↑</button>
+                    <button className="btn btn-ghost btn-sm" disabled={i === videos.length - 1} onClick={() => move(i, 1)} title="Ниже">↓</button>
+                    <button className="btn btn-ghost btn-sm" style={{ marginLeft: "auto", color: "var(--wrong)" }} onClick={() => remove(v)}>Удалить</button>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
       )}
     </div>
   );
@@ -3305,6 +3659,7 @@ export const AdminPanel = ({ initialTab = "tests" }) => {
       {tab === "cards" && <AdminFlashcardSets />}
       {tab === "students" && <AdminStudents />}
       {tab === "results" && <AdminResults />}
+      {tab === "videos" && <AdminVideos />}
     </div>
   );
 };

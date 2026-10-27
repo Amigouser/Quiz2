@@ -1,5 +1,6 @@
 const router = require("express").Router();
 const { db, run, get, all } = require("../db");
+const { NO_CREDIT, textErrors, setErrors, orderErrors, pointsFor } = require("../utils/scoring");
 
 function requireAuth(req, res, next) {
   if (!req.session.user) return res.status(401).json({ error: "Не авторизован" });
@@ -8,8 +9,8 @@ function requireAuth(req, res, next) {
 
 router.get("/tests/public", (req, res) => {
   const tests = all(`
-    SELECT t.id, t.title, t.topic, t.description, t.category, t.grade, t.section, t.part, t.line, t.source,
-           COUNT(q.id) AS questions_count
+    SELECT t.id, t.title, t.topic, t.description, t.category, t.grade, t.section, t.part, t.line, t.source, t.mock_exam,
+           COUNT(q.id) AS questions_count, COALESCE(SUM(COALESCE(q.max_points, 1)), 0) AS points_total
     FROM tests t
     LEFT JOIN questions q ON q.test_id = t.id
     WHERE t.is_active = 1 AND t.is_draft = 0
@@ -28,7 +29,9 @@ router.get("/tests/public", (req, res) => {
     part: t.part || null,
     line: t.line || null,
     source: t.source || null,
+    mock_exam: t.mock_exam || null,
     questions_count: t.questions_count,
+    points_total: t.points_total,
     est_minutes: Math.max(1, Math.ceil(t.questions_count * 0.8)),
   })));
 });
@@ -41,8 +44,11 @@ router.get("/tests/public/:id", (req, res) => {
     id: test.id,
     title: test.title,
     topic: test.topic,
+    mock_exam: test.mock_exam || null,
     questions: questions.map((q) => {
       const answers = all("SELECT * FROM answers WHERE question_id = ? ORDER BY order_index", q.id);
+      // Гостевой тест проверяется прямо в браузере, поэтому ему нужны правильные
+      // ответы (как и в /tests/:id для учеников) — без них верные ответы не засчитывались.
       return {
         id: q.id,
         text: q.question_text,
@@ -50,10 +56,12 @@ router.get("/tests/public/:id", (req, res) => {
         explanation: q.explanation,
         question_type: q.question_type || "single",
         image_data: q.image_data || null,
-        correct_text: null,
+        correct_text: q.correct_text || null,
+        correct_index: answers.findIndex((a) => a.is_correct === 1),
+        max_points: q.max_points || null,
         match_options: (() => { try { const p = typeof q.match_options === "string" ? JSON.parse(q.match_options) : q.match_options; return Array.isArray(p) ? p : ["1","2"]; } catch(_) { return ["1","2"]; } })(),
         grading_criteria: q.grading_criteria || null,
-        answers: answers.map((a) => ({ id: a.id, text: a.answer_text, match_value: a.match_value || null })),
+        answers: answers.map((a) => ({ id: a.id, text: a.answer_text, match_value: a.match_value || null, is_correct: a.is_correct })),
       };
     }),
   });
@@ -74,7 +82,7 @@ router.get("/tests", requireAuth, (req, res) => {
 
   const tests = all(`
     SELECT t.id, t.title, t.topic, t.description,
-           t.category, t.grade, t.section, t.part, t.line, t.source,
+           t.category, t.grade, t.section, t.part, t.line, t.source, t.mock_exam,
            COUNT(q.id) AS questions_count,
            CASE WHEN ta.id IS NOT NULL THEN 1 ELSE 0 END AS is_assigned
     FROM tests t
@@ -110,6 +118,7 @@ router.get("/tests", requireAuth, (req, res) => {
       part: t.part || null,
       line: t.line || null,
       source: t.source || null,
+      mock_exam: t.mock_exam || null,
       questions_count: t.questions_count,
       est_minutes,
       status: attempt ? "done" : "new",
@@ -143,6 +152,7 @@ router.get("/tests/:id", requireAuth, (req, res) => {
     id: test.id,
     title: test.title,
     topic: test.topic,
+    mock_exam: test.mock_exam || null,
     questions: questions.map((q) => {
       const answers = all(
         "SELECT * FROM answers WHERE question_id = ? ORDER BY order_index",
@@ -174,10 +184,10 @@ router.post("/attempts", requireAuth, (req, res) => {
   const test = get("SELECT id FROM tests WHERE id = ?", test_id);
   if (!test) return res.status(404).json({ error: "Тест не найден" });
 
-  const qCount = get("SELECT COUNT(*) as c FROM questions WHERE test_id = ?", test_id).c;
+  const maxScore = get("SELECT COALESCE(SUM(COALESCE(max_points, 1)), 0) as s FROM questions WHERE test_id = ?", test_id).s;
   const r = run(
     "INSERT INTO attempts (user_id, test_id, max_score) VALUES (?, ?, ?)",
-    req.session.user.id, test_id, qCount
+    req.session.user.id, test_id, maxScore
   );
 
   res.json({ attempt_id: r.lastInsertRowid });
@@ -198,84 +208,66 @@ router.post("/attempts/:id/submit", requireAuth, (req, res) => {
   let hasOpenResponse = false;
   const results = [];
 
+  const saveAnswer = (questionId, answerId, answerText, isCorrect, points) => run(
+    "INSERT INTO attempt_answers (attempt_id, question_id, answer_id, answer_text, is_correct, points) VALUES (?, ?, ?, ?, ?, ?)",
+    attemptId, questionId, answerId, answerText, isCorrect, points
+  );
+
   db.exec("BEGIN");
   try {
     for (const ans of answers) {
       const { question_id, answer_id, answer_text, matches } = ans;
-      const question = get("SELECT question_type, correct_text FROM questions WHERE id = ?", question_id);
-      const qType = question?.question_type || "single";
+      const question = get("SELECT question_type, correct_text, max_points FROM questions WHERE id = ?", question_id);
+      if (!question) continue;
+      const qType = question.question_type || "single";
+      const maxPoints = question.max_points || 1;
 
+      if (qType === "open_response") {
+        // проверяет репетитор вручную — баллы появятся после проверки
+        hasOpenResponse = true;
+        saveAnswer(question_id, null, answer_text || "", 0, null);
+        results.push({ question_id, answer_text, is_correct: 0, points: null, max_points: maxPoints, pending_review: true });
+        continue;
+      }
+
+      let errors = NO_CREDIT;
       if (qType === "text_input") {
-        const raw = (question?.correct_text || "").trim();
-        let accepted = [];
-        try { const parsed = JSON.parse(raw); if (Array.isArray(parsed)) accepted = parsed.map(s => String(s).trim().toLowerCase()); } catch (_) {}
-        if (accepted.length === 0 && raw) accepted = [raw.toLowerCase()];
-        const given = (answer_text || "").trim().toLowerCase();
-        const isCorrect = accepted.length > 0 && accepted.includes(given) ? 1 : 0;
-        if (isCorrect) score++;
-        run(
-          "INSERT INTO attempt_answers (attempt_id, question_id, answer_id, answer_text, is_correct) VALUES (?, ?, ?, ?, ?)",
-          attemptId, question_id, null, answer_text || "", isCorrect
-        );
-        results.push({ question_id, answer_text, is_correct: isCorrect, correct_text: question?.correct_text });
-
+        errors = textErrors(answer_text, question.correct_text);
       } else if (qType === "multiple_select") {
-        const selectedIds = (answer_text || "").split(",").map(Number).filter(Boolean).sort((a, b) => a - b);
-        const correctIds = all("SELECT id FROM answers WHERE question_id = ? AND is_correct = 1", question_id).map(a => a.id).sort((a, b) => a - b);
-        const isCorrect = selectedIds.length === correctIds.length && selectedIds.every((id, i) => id === correctIds[i]) ? 1 : 0;
-        if (isCorrect) score++;
-        run(
-          "INSERT INTO attempt_answers (attempt_id, question_id, answer_id, answer_text, is_correct) VALUES (?, ?, ?, ?, ?)",
-          attemptId, question_id, null, answer_text || "", isCorrect
-        );
-        results.push({ question_id, answer_text, is_correct: isCorrect });
-
+        const selectedIds = (answer_text || "").split(",").map(Number).filter(Boolean);
+        const correctIds = all("SELECT id FROM answers WHERE question_id = ? AND is_correct = 1", question_id).map(a => a.id);
+        errors = setErrors(selectedIds, correctIds);
       } else if (qType === "sequence") {
         const studentOrder = (answer_text || "").split(",").map(Number).filter(Boolean);
         const correctOrder = all("SELECT id FROM answers WHERE question_id = ? ORDER BY order_index", question_id).map(a => a.id);
-        const isCorrect = studentOrder.length === correctOrder.length && studentOrder.every((id, i) => id === correctOrder[i]) ? 1 : 0;
-        if (isCorrect) score++;
-        run(
-          "INSERT INTO attempt_answers (attempt_id, question_id, answer_id, answer_text, is_correct) VALUES (?, ?, ?, ?, ?)",
-          attemptId, question_id, null, answer_text || "", isCorrect
-        );
-        results.push({ question_id, answer_text, is_correct: isCorrect });
-
+        errors = orderErrors(studentOrder, correctOrder);
       } else if (qType === "matching" || qType === "fill_blanks") {
-        const matchEntries = Object.entries(matches || {});
-        let allCorrect = matchEntries.length > 0;
-        for (const [aid, selectedVal] of matchEntries) {
-          const expected = get("SELECT match_value FROM answers WHERE id = ?", Number(aid));
-          const itemCorrect = expected && expected.match_value === selectedVal ? 1 : 0;
-          if (!itemCorrect) allCorrect = false;
-          run(
-            "INSERT INTO attempt_answers (attempt_id, question_id, answer_id, answer_text, is_correct) VALUES (?, ?, ?, ?, ?)",
-            attemptId, question_id, Number(aid), selectedVal, itemCorrect
-          );
-        }
-        if (allCorrect) score++;
-        results.push({ question_id, matches, is_correct: allCorrect ? 1 : 0 });
-
-      } else if (qType === "open_response") {
-        hasOpenResponse = true;
-        run(
-          "INSERT INTO attempt_answers (attempt_id, question_id, answer_id, answer_text, is_correct) VALUES (?, ?, ?, ?, ?)",
-          attemptId, question_id, null, answer_text || "", 0
-        );
-        results.push({ question_id, answer_text, is_correct: 0, pending_review: true });
-
+        const items = all("SELECT id, match_value FROM answers WHERE question_id = ? ORDER BY order_index", question_id);
+        const given = matches || {};
+        errors = items.length > 0 ? items.filter(it => given[it.id] !== it.match_value).length : NO_CREDIT;
       } else {
-        const correctAnswer = get(
-          "SELECT id FROM answers WHERE question_id = ? AND is_correct = 1",
-          question_id
-        );
-        const isCorrect = correctAnswer && Number(correctAnswer.id) === Number(answer_id) ? 1 : 0;
-        if (isCorrect) score++;
-        run(
-          "INSERT INTO attempt_answers (attempt_id, question_id, answer_id, is_correct) VALUES (?, ?, ?, ?)",
-          attemptId, question_id, answer_id, isCorrect
-        );
-        results.push({ question_id, answer_id, is_correct: isCorrect, correct_answer_id: correctAnswer?.id ?? null });
+        const correctAnswer = get("SELECT id FROM answers WHERE question_id = ? AND is_correct = 1", question_id);
+        errors = correctAnswer && Number(correctAnswer.id) === Number(answer_id) ? 0 : NO_CREDIT;
+      }
+
+      const points = pointsFor(errors, maxPoints);
+      const isCorrect = points === maxPoints ? 1 : 0;
+      score += points;
+
+      if (qType === "matching" || qType === "fill_blanks") {
+        // по строке на каждый элемент; баллы за задание — в первой строке
+        const items = all("SELECT id, match_value FROM answers WHERE question_id = ? ORDER BY order_index", question_id);
+        items.forEach((it, i) => {
+          const selectedVal = (matches || {})[it.id] ?? null;
+          saveAnswer(question_id, it.id, selectedVal, selectedVal === it.match_value ? 1 : 0, i === 0 ? points : null);
+        });
+        results.push({ question_id, matches, is_correct: isCorrect, points, max_points: maxPoints });
+      } else if (qType === "single") {
+        saveAnswer(question_id, answer_id ?? null, null, isCorrect, points);
+        results.push({ question_id, answer_id, is_correct: isCorrect, points, max_points: maxPoints });
+      } else {
+        saveAnswer(question_id, null, answer_text || "", isCorrect, points);
+        results.push({ question_id, answer_text, is_correct: isCorrect, points, max_points: maxPoints, correct_text: qType === "text_input" ? question.correct_text : undefined });
       }
     }
     const status = hasOpenResponse ? "pending_review" : "graded";
@@ -286,7 +278,14 @@ router.post("/attempts/:id/submit", requireAuth, (req, res) => {
     return res.status(500).json({ error: e.message });
   }
 
-  res.json({ score, max_score: Number(attempt.max_score), results });
+  const test = get("SELECT mock_exam FROM tests WHERE id = ?", attempt.test_id);
+  res.json({
+    score,
+    max_score: Number(attempt.max_score),
+    status: hasOpenResponse ? "pending_review" : "graded",
+    mock_exam: test?.mock_exam || null,
+    results,
+  });
 });
 
 module.exports = router;

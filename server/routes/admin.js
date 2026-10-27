@@ -185,8 +185,12 @@ router.post("/tests/import", (req, res) => {
     const topic = data.source || null;
     const description = data.instructions || data.description || null;
 
+    // Загруженный пробник ОГЭ/ЕГЭ сразу помечаем, чтобы считались баллы и шкала экзамена
+    const mockExam = normalizeMock(data.mock_exam) || normalizeMock(data.exam) ||
+      (/пробн/i.test(title) ? normalizeMock(data.category) || (/ОГЭ/.test(title) ? "ОГЭ" : /ЕГЭ/.test(title) ? "ЕГЭ" : null) : null);
+
     testId = run(
-      "INSERT INTO tests (title, topic, description, category, grade, section, part, line, source, is_draft) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)",
+      "INSERT INTO tests (title, topic, description, category, grade, section, part, line, source, mock_exam, is_draft) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)",
       title,
       topic,
       description,
@@ -195,7 +199,8 @@ router.post("/tests/import", (req, res) => {
       data.section || null,
       data.part || null,
       data.line || null,
-      data.source || null
+      data.source || null,
+      mockExam
     ).lastInsertRowid;
 
     questions.forEach((q, qi) => {
@@ -237,6 +242,8 @@ router.post("/tests/import", (req, res) => {
   });
 });
 
+const normalizeMock = (v) => (v === "ОГЭ" || v === "ЕГЭ" ? v : null);
+
 router.get("/tests", (req, res) => {
   const tests = all(`
     SELECT t.*,
@@ -270,15 +277,15 @@ router.get("/tests/:id", (req, res) => {
 });
 
 router.post("/tests", (req, res) => {
-  const { title, topic, description, category, grade, section, part, line, source, questions = [], is_draft = 0 } = req.body;
+  const { title, topic, description, category, grade, section, part, line, source, mock_exam, questions = [], is_draft = 0 } = req.body;
   if (!title) return res.status(400).json({ error: "Название обязательно" });
 
   db.exec("BEGIN");
   let testId;
   try {
     testId = run(
-      "INSERT INTO tests (title, topic, description, category, grade, section, part, line, source, is_draft) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-      title, topic || null, description || null, category || null, grade || null, section || null, part || null, line || null, source || null, is_draft ? 1 : 0
+      "INSERT INTO tests (title, topic, description, category, grade, section, part, line, source, mock_exam, is_draft) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+      title, topic || null, description || null, category || null, grade || null, section || null, part || null, line || null, source || null, normalizeMock(mock_exam), is_draft ? 1 : 0
     ).lastInsertRowid;
 
     questions.forEach((q, qi) => {
@@ -306,13 +313,13 @@ router.post("/tests", (req, res) => {
 });
 
 router.put("/tests/:id", (req, res) => {
-  const { title, topic, description, category, grade, section, part, line, source, questions } = req.body;
+  const { title, topic, description, category, grade, section, part, line, source, mock_exam, questions } = req.body;
   if (!title) return res.status(400).json({ error: "Название обязательно" });
 
   db.exec("BEGIN");
   try {
-    run("UPDATE tests SET title = ?, topic = ?, description = ?, category = ?, grade = ?, section = ?, part = ?, line = ?, source = ? WHERE id = ?",
-      title, topic || null, description || null, category || null, grade || null, section || null, part || null, line || null, source || null, req.params.id);
+    run("UPDATE tests SET title = ?, topic = ?, description = ?, category = ?, grade = ?, section = ?, part = ?, line = ?, source = ?, mock_exam = ? WHERE id = ?",
+      title, topic || null, description || null, category || null, grade || null, section || null, part || null, line || null, source || null, normalizeMock(mock_exam), req.params.id);
 
     if (Array.isArray(questions)) {
       run("DELETE FROM questions WHERE test_id = ?", req.params.id);
@@ -339,8 +346,18 @@ router.put("/tests/:id", (req, res) => {
 });
 
 router.delete("/tests/:id", (req, res) => {
-  run("DELETE FROM tests WHERE id = ?", req.params.id);
-  res.json({ ok: true });
+  // попытки ссылаются на тест без каскада — удаляем их вместе с тестом
+  db.exec("BEGIN");
+  try {
+    run("DELETE FROM attempt_answers WHERE attempt_id IN (SELECT id FROM attempts WHERE test_id = ?)", req.params.id);
+    run("DELETE FROM attempts WHERE test_id = ?", req.params.id);
+    run("DELETE FROM tests WHERE id = ?", req.params.id);
+    db.exec("COMMIT");
+    res.json({ ok: true });
+  } catch (e) {
+    db.exec("ROLLBACK");
+    res.status(500).json({ error: e.message });
+  }
 });
 
 router.post("/tests/:id/duplicate", (req, res) => {
@@ -355,8 +372,8 @@ router.post("/tests/:id/duplicate", (req, res) => {
   db.exec("BEGIN");
   try {
     const newTestId = run(
-      "INSERT INTO tests (title, topic, description, category, grade, section, part, line, source, is_draft, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-      test.title + " (копия)", test.topic, test.description, test.category, test.grade, test.section, test.part, test.line, test.source, 1, 1
+      "INSERT INTO tests (title, topic, description, category, grade, section, part, line, source, mock_exam, is_draft, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+      test.title + " (копия)", test.topic, test.description, test.category, test.grade, test.section, test.part, test.line, test.source, test.mock_exam || null, 1, 1
     ).lastInsertRowid;
 
     for (const q of questions) {
@@ -612,8 +629,8 @@ router.get("/results", (req, res) => {
 
 router.get("/results/:id", (req, res) => {
   const attempt = get(`
-    SELECT a.id, a.score, a.max_score, a.completed_at,
-           u.name AS user_name, t.title AS test_title, t.topic
+    SELECT a.id, a.score, a.max_score, a.completed_at, a.status,
+           u.name AS user_name, t.title AS test_title, t.topic, t.mock_exam
     FROM attempts a
     JOIN users u ON u.id = a.user_id
     JOIN tests t ON t.id = a.test_id
@@ -622,14 +639,14 @@ router.get("/results/:id", (req, res) => {
   if (!attempt) return res.status(404).json({ error: "Попытка не найдена" });
 
   const questions = all(`
-    SELECT q.id, q.question_text, q.question_type, q.correct_text, q.explanation, q.order_index
+    SELECT q.id, q.question_text, q.question_type, q.correct_text, q.explanation, q.order_index, q.max_points, q.grading_criteria
     FROM questions q
     WHERE q.test_id = (SELECT test_id FROM attempts WHERE id = ?)
     ORDER BY q.order_index
   `, req.params.id);
 
   const attemptAnswers = all(`
-    SELECT aa.question_id, aa.answer_id, aa.answer_text, aa.is_correct
+    SELECT aa.question_id, aa.answer_id, aa.answer_text, aa.is_correct, aa.points
     FROM attempt_answers aa
     WHERE aa.attempt_id = ?
   `, req.params.id);
@@ -692,6 +709,13 @@ router.get("/results/:id", (req, res) => {
       question_text: q.question_text,
       question_type: qType,
       explanation: q.explanation,
+      grading_criteria: q.grading_criteria || null,
+      max_points: q.max_points || 1,
+      // баллы за задание (null — развёрнутый ответ ещё не проверен; старые попытки — по верности)
+      points: studentAnswers.length === 0 ? 0
+        : studentAnswers.some(a => a.points != null) ? studentAnswers.reduce((s, a) => s + (a.points || 0), 0)
+        : qType === "open_response" ? null
+        : (studentAnswers[0].is_correct ? 1 : 0),
       is_correct: studentAnswers.length > 0 ? studentAnswers[0].is_correct : 0,
       student_answer: studentAnswer,
       correct_answer: correctAnswer,
@@ -700,6 +724,38 @@ router.get("/results/:id", (req, res) => {
   });
 
   res.json({ attempt, questions: enriched });
+});
+
+// Проверка развёрнутого ответа: репетитор ставит баллы за задание
+router.post("/results/:id/grade", (req, res) => {
+  const { question_id, points } = req.body;
+  const attempt = get("SELECT id, score FROM attempts WHERE id = ?", req.params.id);
+  if (!attempt) return res.status(404).json({ error: "Попытка не найдена" });
+  const question = get("SELECT max_points FROM questions WHERE id = ?", question_id);
+  if (!question) return res.status(404).json({ error: "Задание не найдено" });
+  const max = question.max_points || 1;
+  const p = Math.round(Number(points));
+  if (!Number.isFinite(p) || p < 0 || p > max) return res.status(400).json({ error: `Баллы должны быть от 0 до ${max}` });
+
+  const row = get("SELECT id, points FROM attempt_answers WHERE attempt_id = ? AND question_id = ? ORDER BY id LIMIT 1", attempt.id, question_id);
+  if (!row) return res.status(404).json({ error: "Ответ ученика не найден" });
+
+  db.exec("BEGIN");
+  try {
+    run("UPDATE attempt_answers SET points = ?, is_correct = ? WHERE id = ?", p, p === max ? 1 : 0, row.id);
+    const score = Number(attempt.score) - (row.points || 0) + p;
+    const left = get(`
+      SELECT COUNT(*) AS c FROM attempt_answers aa
+      JOIN questions q ON q.id = aa.question_id
+      WHERE aa.attempt_id = ? AND q.question_type = 'open_response' AND aa.points IS NULL
+    `, attempt.id).c;
+    run("UPDATE attempts SET score = ?, status = ? WHERE id = ?", score, left > 0 ? "pending_review" : "graded", attempt.id);
+    db.exec("COMMIT");
+    res.json({ ok: true, score, status: left > 0 ? "pending_review" : "graded" });
+  } catch (e) {
+    db.exec("ROLLBACK");
+    res.status(500).json({ error: e.message });
+  }
 });
 
 router.delete("/results/:id", (req, res) => {

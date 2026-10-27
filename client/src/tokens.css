@@ -194,6 +194,8 @@ h1,h2,h3,h4,h5 {
   font-variation-settings: "opsz" 24, "SOFT" 30;
 }
 p { margin: 0; }
+/* длинные слова в заголовках не должны вылезать за экран на телефонах */
+h1,h2,h3,h4,h5 { overflow-wrap: break-word; hyphens: auto; }
 
 button { font-family: inherit; }
 input, textarea, select { font-family: inherit; color: inherit; }

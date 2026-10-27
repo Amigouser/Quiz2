@@ -100,11 +100,17 @@ app.use("/api/admin", require("./routes/admin"));
 const flashcards = require("./routes/flashcards");
 app.use("/api", flashcards.student);
 app.use("/api/admin", flashcards.admin);
+// видео — до plant: его роутер требует входа для всего /api
+const videos = require("./routes/videos");
+app.use("/api", videos.publicRouter);
+app.use("/api/admin", videos.adminRouter);
 app.use("/api", require("./routes/plant"));
 
 const uploadsDir = path.join(__dirname, "..", "data", "uploads");
 app.use("/api/uploads", express.static(uploadsDir));
 app.use("/uploads", express.static(uploadsDir));
+// Сжатые видео с главной (отдельно от uploads — не раздувают бэкап)
+app.use("/media/videos", express.static(path.join(__dirname, "..", "data", "videos"), { maxAge: "7d" }));
 
 app.get("/api/health", (_req, res) => res.json({ ok: true }));
 
@@ -135,6 +141,8 @@ setInterval(cleanupSessions, 6 * 60 * 60 * 1000);
 cleanupSessions();
 
 const server = app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
+// большие видео грузятся дольше стандартных 5 минут
+server.requestTimeout = 60 * 60 * 1000;
 
 function gracefulShutdown(signal) {
   console.log(`\n${signal} received. Shutting down...`);

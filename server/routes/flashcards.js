@@ -102,8 +102,8 @@ adminRouter.post("/flashcard-sets", requireAuth, requireAdmin, (req, res) => {
     ).lastInsertRowid;
     cards.forEach((c, i) => {
       run(
-        "INSERT INTO flashcard_cards (set_id, term, definition, image_data, order_index) VALUES (?, ?, ?, ?, ?)",
-        setId, c.term, c.definition, c.image_data || null, i
+        "INSERT INTO flashcard_cards (set_id, term, definition, image_data, image_side, order_index) VALUES (?, ?, ?, ?, ?, ?)",
+        setId, c.term, c.definition, c.image_data || null, c.image_side === "back" ? "back" : "front", i
       );
     });
     db.exec("COMMIT");
@@ -129,8 +129,8 @@ adminRouter.put("/flashcard-sets/:id", requireAuth, requireAdmin, (req, res) => 
       run("DELETE FROM flashcard_cards WHERE set_id = ?", id);
       cards.forEach((c, i) => {
         run(
-          "INSERT INTO flashcard_cards (set_id, term, definition, image_data, order_index) VALUES (?, ?, ?, ?, ?)",
-          id, c.term, c.definition, c.image_data || null, i
+          "INSERT INTO flashcard_cards (set_id, term, definition, image_data, image_side, order_index) VALUES (?, ?, ?, ?, ?, ?)",
+          id, c.term, c.definition, c.image_data || null, c.image_side === "back" ? "back" : "front", i
         );
       });
     }
@@ -162,8 +162,8 @@ adminRouter.post("/flashcard-sets/:id/duplicate", requireAuth, requireAdmin, (re
     ).lastInsertRowid;
 
     for (const c of cards) {
-      run("INSERT INTO flashcard_cards (set_id, term, definition, image_data, order_index) VALUES (?, ?, ?, ?, ?)",
-        newSetId, c.term, c.definition, c.image_data, c.order_index);
+      run("INSERT INTO flashcard_cards (set_id, term, definition, image_data, image_side, order_index) VALUES (?, ?, ?, ?, ?, ?)",
+        newSetId, c.term, c.definition, c.image_data, c.image_side || "front", c.order_index);
     }
 
     db.exec("COMMIT");
