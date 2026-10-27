@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /dashboard
+Disallow: /quiz/
+Disallow: /cards/
+Disallow: /login
+Disallow: /api/
+
+Sitemap: https://vikokon.ru/sitemap.xml

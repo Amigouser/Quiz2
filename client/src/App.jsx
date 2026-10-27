@@ -6,7 +6,8 @@ import { LoginCompact } from "./screens/login";
 import { StudentDashboard } from "./screens/dashboard";
 import { QuizClassic, QuizResults } from "./screens/quiz";
 import { scoreQuiz } from "./exams";
-import { AdminPanel } from "./screens/admin";
+// Админка грузится отдельным файлом — ученикам и гостям её код не нужен
+const AdminPanel = React.lazy(() => import("./screens/admin").then(m => ({ default: m.AdminPanel })));
 import FlashcardsRoute from "./screens/flashcards";
 import TasksPage from "./screens/tasks";
 import PrivacyPage from "./screens/privacy";
@@ -334,7 +335,7 @@ function QuizPage() {
 }
 
 function AdminPage() {
-  return <AdminPanel />;
+  return <React.Suspense fallback={<Spinner />}><AdminPanel /></React.Suspense>;
 }
 
 export default function App() {

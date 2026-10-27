@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Leaf } from "../botanical";
 import API from "../api";
 import { parseVideoUrl, embedUrl, PROVIDER_NAMES } from "../videoEmbed";
+import { AdminLeads, AdminReviews } from "./adminSite";
 import { MOCK_EXAMS, buildMockQuestions, mockMaxScore, ogeGrade, egeTestScore } from "../exams";
 
 // Встроенные разделы биологии (используются в формах тестов и карточек)
@@ -564,6 +565,8 @@ const AdminSidebar = ({ active, onTab }) => {
     { id: "cards", label: "Карточки", icon: "🃏" },
     { id: "students", label: "Ученики", icon: "👥" },
     { id: "results", label: "Результаты", icon: "📈" },
+    { id: "leads", label: "Заявки", icon: "📨" },
+    { id: "reviews", label: "Отзывы", icon: "💬" },
     { id: "videos", label: "Видео", icon: "🎬" },
   ];
   return (
@@ -3660,6 +3663,8 @@ export const AdminPanel = ({ initialTab = "tests" }) => {
       {tab === "students" && <AdminStudents />}
       {tab === "results" && <AdminResults />}
       {tab === "videos" && <AdminVideos />}
+      {tab === "leads" && <AdminLeads />}
+      {tab === "reviews" && <AdminReviews />}
     </div>
   );
 };

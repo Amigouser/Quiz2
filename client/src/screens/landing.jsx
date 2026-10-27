@@ -4,9 +4,11 @@ import Lenis from "lenis";
 import { Leaf, Fern, Sprig, Cell, Helix } from "../botanical";
 import { DNAHero, DNA_HERO_STYLES } from "../components/DNAHero";
 import { VideoShowcase, VIDEO_STYLES } from "../components/VideoShowcase";
+import { LeadForm, LEAD_STYLES } from "../components/LeadForm";
+import { Reviews, REVIEWS_STYLES } from "../components/Reviews";
 
 // ─── Настройки — отредактируй под своё ─────────────────────────────────────
-const TUTOR_PHOTO = "/tutor.JPG";
+const TUTOR_PHOTO = "/tutor.webp";
 
 const TUTOR = {
   name:    "Никитенко Виктория Юрьевна",
@@ -27,7 +29,7 @@ const DIPLOMAS = [
     title: "Бакалавр биологии",
     institution: "Томский государственный университет",
     faculty: "Направление 06.03.01 «Биология»",
-    photo: "/diploma-bachelor.jpg",
+    photo: "/diploma-bachelor.webp",
   },
   {
     year: "2023–2025",
@@ -35,7 +37,7 @@ const DIPLOMAS = [
     title: "Магистр фундаментальной и прикладной биологии",
     institution: "Томский государственный университет",
     faculty: "Кафедра зоологии беспозвоночных · 06.04.01",
-    photo: "/diploma-master.jpg",
+    photo: "/diploma-master.webp",
   },
 ];
 
@@ -84,7 +86,7 @@ const VK_EVENTS = [
     desc: "«Морская биология» · БФУ, г. Калининград, 3–5 февраля 2025",
     url: null,
     icon: "🌊",
-    cert: "/tutor3.jpg",
+    cert: "/tutor3.webp",
   },
   {
     date: "Сент. 2023",
@@ -92,7 +94,7 @@ const VK_EVENTS = [
     desc: "Студенческая школа по естественным наукам · СПбГУ и КарНЦ РАН, Санкт-Петербург",
     url: "https://vk.com/wall-219644318_39",
     icon: "🏕️",
-    cert: "/tutor4.jpg",
+    cert: "/tutor4.webp",
   },
   {
     date: "Май 2023",
@@ -1905,7 +1907,7 @@ export function LandingPage() {
 
   return (
     <div style={{ background: "var(--bg)", minHeight: "100vh", fontFamily: "var(--f-sans)", overflowX: "clip" }}>
-      <style>{STYLES + DNA_HERO_STYLES + VIDEO_STYLES}</style>
+      <style>{STYLES + DNA_HERO_STYLES + VIDEO_STYLES + LEAD_STYLES + REVIEWS_STYLES}</style>
 
       {/* ══ SCROLL PROGRESS BAR ═══════════════════════════════════════════════ */}
       <div style={{
@@ -2337,6 +2339,9 @@ export function LandingPage() {
               <VideoShowcase />
             </div>
           </div>
+
+          {/* Отзывы учеников — добавляются в админке */}
+          <Reviews />
 
           {/* Путь в биологии — timeline */}
           <div className="lf-timeline-wrap">
@@ -2938,9 +2943,10 @@ export function LandingPage() {
             style={{
               background: "#fff",
               borderRadius: 24,
-              padding: "40px 36px 32px",
-              maxWidth: 400,
+              padding: "36px 32px 28px",
+              maxWidth: 460,
               width: "100%",
+              maxHeight: "calc(100vh - 40px)", overflowY: "auto",
               boxShadow: "0 24px 80px rgba(15,30,20,0.2)",
               position: "relative",
               animation: "lf-in 0.28s cubic-bezier(0.22,0.8,0.32,1) forwards",
@@ -2962,11 +2968,17 @@ export function LandingPage() {
               </svg>
             </button>
 
-            <div style={{ fontFamily: "var(--f-serif)", fontSize: 22, fontWeight: 700, color: "#1a2e1f", marginBottom: 6 }}>
-              Записаться на занятие
+            <div style={{ fontFamily: "var(--f-serif)", fontSize: 22, fontWeight: 700, color: "#1a2e1f", marginBottom: 6, paddingRight: 36 }}>
+              Записаться на пробное занятие
             </div>
-            <div style={{ fontSize: 13, color: "rgba(26,46,31,0.55)", marginBottom: 28, lineHeight: 1.5 }}>
-              Выберите удобный способ связи — отвечу в течение дня
+            <div style={{ fontSize: 13, color: "rgba(26,46,31,0.55)", marginBottom: 20, lineHeight: 1.5 }}>
+              Оставь заявку — Виктория свяжется с тобой в течение дня
+            </div>
+
+            <LeadForm onPrivacy={() => { setContactPanel(false); setLegalModal("privacy"); }} />
+
+            <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "22px 0 14px", fontSize: 12, color: "rgba(26,46,31,0.45)" }}>
+              <span style={{ flex: 1, height: 1, background: "#efeadd" }} />или напиши напрямую<span style={{ flex: 1, height: 1, background: "#efeadd" }} />
             </div>
 
             {/* Contacts */}

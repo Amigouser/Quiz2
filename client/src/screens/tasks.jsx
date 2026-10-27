@@ -425,6 +425,12 @@ export default function TasksPage() {
   const [kind, setKind] = useState("all");   // all | tests | cards
 
   useEffect(() => {
+    const prev = document.title;
+    document.title = "Тесты и карточки по биологии бесплатно — ЕГЭ, ОГЭ, ВПР | Vikokon";
+    return () => { document.title = prev; };
+  }, []);
+
+  useEffect(() => {
     Promise.all([
       API.getPublicTests().catch(() => []),
       API.getPublicCardSets().catch(() => []),

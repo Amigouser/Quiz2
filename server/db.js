@@ -184,6 +184,30 @@ try { db.exec("ALTER TABLE videos ADD COLUMN poster TEXT"); } catch (_) {}
 try { db.exec("ALTER TABLE videos ADD COLUMN error TEXT"); } catch (_) {}
 try { db.exec("ALTER TABLE videos ADD COLUMN size_original INTEGER"); } catch (_) {}
 try { db.exec("ALTER TABLE videos ADD COLUMN size_final INTEGER"); } catch (_) {}
+// Заявки на пробное занятие и отзывы учеников
+db.exec(`
+  CREATE TABLE IF NOT EXISTS leads (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    grade TEXT,
+    goal TEXT,
+    contact TEXT NOT NULL,
+    comment TEXT,
+    status TEXT DEFAULT 'new',
+    created_at TEXT DEFAULT (datetime('now'))
+  );
+  CREATE TABLE IF NOT EXISTS reviews (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    author TEXT NOT NULL,
+    role TEXT,
+    text TEXT NOT NULL,
+    rating INTEGER,
+    source TEXT,
+    source_url TEXT,
+    order_index INTEGER DEFAULT 0,
+    created_at TEXT DEFAULT (datetime('now'))
+  );
+`);
 // Баллы за задание в попытке (для 2-3-балльных и развёрнутых ответов)
 try { db.exec("ALTER TABLE attempt_answers ADD COLUMN points INTEGER"); } catch (_) {}
 

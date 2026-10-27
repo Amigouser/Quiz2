@@ -36,6 +36,8 @@ const API = {
 
   getCardSets: () => req("/api/flashcard-sets"),
   getVideos: () => req("/api/videos"),
+  getReviews: () => req("/api/reviews"),
+  sendLead: (data) => req("/api/leads", { method: "POST", body: data }),
   getCardSet: (id) => req(`/api/flashcard-sets/${id}`),
 
   admin: {
@@ -75,6 +77,14 @@ const API = {
     unassignCardSet: (studentId, setId) =>
       req(`/api/admin/students/${studentId}/card-sets/${setId}`, { method: "DELETE" }),
     restore: (data) => req("/api/admin/restore", { method: "POST", body: { data } }),
+    getLeads: () => req("/api/admin/leads"),
+    setLeadStatus: (id, status) => req(`/api/admin/leads/${id}`, { method: "PATCH", body: { status } }),
+    deleteLead: (id) => req(`/api/admin/leads/${id}`, { method: "DELETE" }),
+    getReviews: () => req("/api/admin/reviews"),
+    addReview: (data) => req("/api/admin/reviews", { method: "POST", body: data }),
+    updateReview: (id, data) => req(`/api/admin/reviews/${id}`, { method: "PUT", body: data }),
+    reorderReviews: (ids) => req("/api/admin/reviews-order", { method: "PUT", body: { ids } }),
+    deleteReview: (id) => req(`/api/admin/reviews/${id}`, { method: "DELETE" }),
     getVideos: () => req("/api/admin/videos"),
     addVideo: (url, title) => req("/api/admin/videos", { method: "POST", body: { url, title } }),
     updateVideo: (id, data) => req(`/api/admin/videos/${id}`, { method: "PUT", body: data }),

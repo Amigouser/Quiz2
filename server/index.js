@@ -106,6 +106,9 @@ app.use("/api/admin", flashcards.admin);
 const videos = require("./routes/videos");
 app.use("/api", videos.publicRouter);
 app.use("/api/admin", videos.adminRouter);
+const leads = require("./routes/leads");
+app.use("/api", leads.publicRouter);
+app.use("/api/admin", leads.adminRouter);
 app.use("/api", require("./routes/plant"));
 
 const uploadsDir = path.join(__dirname, "..", "data", "uploads");
