@@ -89,6 +89,8 @@ app.use(
   })
 );
 
+// проверка «жив ли сервер» для deploy.sh — до роутеров, которые требуют входа
+app.get("/api/health", (_req, res) => res.json({ ok: true }));
 app.use("/api/auth/login", loginLimiter);
 app.use("/api/auth", require("./routes/auth"));
 app.use("/api", require("./routes/tests"));
@@ -112,7 +114,6 @@ app.use("/uploads", express.static(uploadsDir));
 // Сжатые видео с главной (отдельно от uploads — не раздувают бэкап)
 app.use("/media/videos", express.static(path.join(__dirname, "..", "data", "videos"), { maxAge: "7d" }));
 
-app.get("/api/health", (_req, res) => res.json({ ok: true }));
 
 const clientDist = path.join(__dirname, "..", "client", "dist");
 app.use(express.static(clientDist));
