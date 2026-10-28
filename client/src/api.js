@@ -38,6 +38,8 @@ const API = {
   getCardSets: () => req("/api/flashcard-sets"),
   getVideos: () => req("/api/videos"),
   getReviews: () => req("/api/reviews"),
+  getMyProgress: () => req("/api/me/progress"),
+  getReport: (token) => req(`/api/report/${encodeURIComponent(token)}`),
   sendLead: (data) => req("/api/leads", { method: "POST", body: data }),
   getCardSet: (id) => req(`/api/flashcard-sets/${id}`),
 
@@ -78,6 +80,10 @@ const API = {
     unassignCardSet: (studentId, setId) =>
       req(`/api/admin/students/${studentId}/card-sets/${setId}`, { method: "DELETE" }),
     restore: (data) => req("/api/admin/restore", { method: "POST", body: { data } }),
+    getOverview: () => req("/api/admin/overview"),
+    getReportLink: (id) => req(`/api/admin/students/${id}/report-link`),
+    createReportLink: (id) => req(`/api/admin/students/${id}/report-link`, { method: "POST" }),
+    deleteReportLink: (id) => req(`/api/admin/students/${id}/report-link`, { method: "DELETE" }),
     getLeads: () => req("/api/admin/leads"),
     setLeadStatus: (id, status) => req(`/api/admin/leads/${id}`, { method: "PATCH", body: { status } }),
     deleteLead: (id) => req(`/api/admin/leads/${id}`, { method: "DELETE" }),

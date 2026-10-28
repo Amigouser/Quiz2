@@ -4,6 +4,7 @@ import { BotanicalBg } from "../botanical";
 import { TestCover } from "../components/TestCover";
 import { GardenCard, GARDEN_STYLES } from "../components/Garden";
 import { LibraryThumb, plural, shortSection, LIBRARY_STYLES } from "../components/library";
+import { MockChart, WeakSections, PROGRESS_STYLES } from "../components/ProgressCards";
 import PlantSVG from "../components/PlantSVG";
 import API from "../api";
 
@@ -289,7 +290,9 @@ export const StudentDashboard = ({ name = "Аня", quizzes = [], cardSets = [],
   const [sourceFilter, setSourceFilter] = useState("");
   const [search, setSearch] = useState("");
 
+  const [progress, setProgress] = useState(null);
   useEffect(() => { API.getPlant().then(setPlant).catch(() => {}); }, []);
+  useEffect(() => { API.getMyProgress().then(setProgress).catch(() => {}); }, []);
 
   const { uniqueParts, uniqueSources, sideSections } = useMemo(() => {
     const all = [...quizzes, ...cardSets];
@@ -368,7 +371,7 @@ export const StudentDashboard = ({ name = "Аня", quizzes = [], cardSets = [],
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg)", fontFamily: "var(--f-sans)" }}>
-      <style>{LIBRARY_STYLES + GARDEN_STYLES + DASH_STYLES}</style>
+      <style>{LIBRARY_STYLES + GARDEN_STYLES + DASH_STYLES + PROGRESS_STYLES}</style>
 
       {/* Шапка */}
       <header className="tasks-header dash-header">
@@ -452,6 +455,15 @@ export const StudentDashboard = ({ name = "Аня", quizzes = [], cardSets = [],
                   <div className="dash-stat"><b>{avg === null ? "—" : `${avg}%`}</b><span>средний результат</span></div>
                   <div className="dash-stat"><b>{bestMock ? `${bestMock.score}/${bestMock.max_score}` : "—"}</b><span>лучший пробник</span></div>
                   <div className="dash-stat"><b>🔥 {plant?.streak || 0}</b><span>{plural(plant?.streak || 0, "день", "дня", "дней")} подряд с поливом</span></div>
+                </div>
+              )}
+
+              {/* График пробников и слабые разделы */}
+              {view === "all" && progress && (progress.mocks.length > 0 || progress.sections.some(s => s.pct < 75)) && (
+                <div className="pc-row">
+                  <MockChart mocks={progress.mocks} exam="ОГЭ" />
+                  <MockChart mocks={progress.mocks} exam="ЕГЭ" />
+                  <WeakSections sections={progress.sections} />
                 </div>
               )}
 

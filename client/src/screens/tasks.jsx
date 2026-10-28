@@ -4,7 +4,7 @@ import API from "../api";
 import { Leaf } from "../botanical";
 import { LibraryThumb, plural, shortSection, LIBRARY_STYLES } from "../components/library";
 import { QuizClassic, QuizResults } from "./quiz";
-import { scoreQuiz, EXAM_MINUTES } from "../exams";
+import { scoreQuiz, scoreAnswer, EXAM_MINUTES } from "../exams";
 
 const VK_LINK  = "https://vk.com/public219644318";
 const LIMIT    = 3; // порог для тестов И для карточек
@@ -423,8 +423,10 @@ export default function TasksPage() {
   }, [activeQuiz]);
 
   function handleQuizFinish(answers) {
-    const r = scoreQuiz(transformGuestQuiz(activeQuiz), answers);
-    setGuestResult({ ...r, title: activeQuiz.title, mock_exam: activeQuiz.mock_exam || null });
+    const tq = transformGuestQuiz(activeQuiz);
+    const r = scoreQuiz(tq, answers);
+    const breakdown = tq.questions.map((q, i) => ({ n: i + 1, ...scoreAnswer(q, answers[i]) }));
+    setGuestResult({ ...r, breakdown, title: activeQuiz.title, mock_exam: activeQuiz.mock_exam || null });
   }
 
   function handleGuestClose() {
@@ -602,6 +604,8 @@ export default function TasksPage() {
           <QuizClassic
             key={quizKey}
             quiz={transformGuestQuiz(activeQuiz)}
+            persistKey={`quiz:guest:${activeQuiz.id}`}
+            timeLimitMin={EXAM_MINUTES[activeQuiz.mock_exam] || null}
             onFinish={handleQuizFinish}
             onExit={handleGuestClose}
           />
@@ -616,6 +620,7 @@ export default function TasksPage() {
             quizTitle={guestResult.title}
             mockExam={guestResult.mock_exam}
             pendingReview={guestResult.status === "pending_review"}
+            breakdown={guestResult.breakdown}
             guest
             onRetry={() => { setGuestResult(null); setQuizKey(k => k + 1); }}
             onHome={handleGuestClose}

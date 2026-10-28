@@ -273,7 +273,7 @@ router.post("/attempts/:id/submit", requireAuth, (req, res) => {
       }
     }
     const status = hasOpenResponse ? "pending_review" : "graded";
-    run("UPDATE attempts SET score = ?, status = ?, completed_at = datetime('now') WHERE id = ?", score, status, attemptId);
+    run("UPDATE attempts SET score = ?, status = ?, submitted = 1, completed_at = datetime('now') WHERE id = ?", score, status, attemptId);
     db.exec("COMMIT");
   } catch (e) {
     db.exec("ROLLBACK");

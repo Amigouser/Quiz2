@@ -5,13 +5,14 @@ import { LandingPage } from "./screens/landing";
 import { LoginCompact } from "./screens/login";
 import { StudentDashboard } from "./screens/dashboard";
 import { QuizClassic, QuizResults } from "./screens/quiz";
-import { scoreQuiz } from "./exams";
+import { scoreQuiz, scoreAnswer, EXAM_MINUTES } from "./exams";
 // Админка грузится отдельным файлом — ученикам и гостям её код не нужен
 const AdminPanel = React.lazy(() => import("./screens/admin").then(m => ({ default: m.AdminPanel })));
 import FlashcardsRoute from "./screens/flashcards";
 import TasksPage from "./screens/tasks";
 import PrivacyPage from "./screens/privacy";
 import CookiePage from "./screens/cookie";
+import ReportPage from "./screens/report";
 
 const AuthCtx = createContext(null);
 export const useAuth = () => useContext(AuthCtx);
@@ -285,6 +286,9 @@ function QuizPage() {
 
     // баллы с учётом стоимости заданий (у обычных тестов — по 1 за вопрос)
     const local = scoreQuiz(quiz, answers);
+    // разбор по заданиям (для пробников): сколько баллов за каждое
+    const breakdown = quiz.questions.map((q, i) => ({ n: i + 1, ...scoreAnswer(q, answers[i]) }));
+    local.breakdown = breakdown;
 
     if (isAdmin || !attemptId) {
       setResult(local);
@@ -304,7 +308,7 @@ function QuizPage() {
 
     try {
       const r = await API.submitAttempt(attemptId, payload);
-      setResult(r);
+      setResult({ ...r, breakdown });
     } catch (err) {
       console.error("submitAttempt failed:", err);
       setResult(local);
@@ -322,6 +326,7 @@ function QuizPage() {
         mockExam={quiz.mock_exam}
         pendingReview={result.status === "pending_review"}
         waterEarned={result.water_earned || 0}
+        breakdown={result.breakdown}
         isPreview={isAdmin}
         onRetry={() => { setResult(null); setAttemptId(null); handleStart(); }}
         onHome={() => navigate(isAdmin ? "/admin" : "/dashboard")}
@@ -331,7 +336,10 @@ function QuizPage() {
 
   return (
     <QuizClassic
+      key={result === null ? "run" : "done"}
       quiz={quiz}
+      persistKey={isAdmin ? null : `quiz:${user?.id}:${id}`}
+      timeLimitMin={EXAM_MINUTES[quiz.mock_exam] || null}
       onFinish={handleFinish}
       onExit={() => navigate(isAdmin ? "/admin" : "/dashboard")}
     />
@@ -353,6 +361,7 @@ export default function App() {
           <Route path="/cookie" element={<CookiePage />} />
           <Route path="/cookie/" element={<CookiePage />} />
           <Route path="/tasks" element={<TasksPage />} />
+          <Route path="/report/:token" element={<ReportPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/dashboard" element={<RequireAuth><DashboardPage /></RequireAuth>} />
           <Route path="/quiz/:id" element={<RequireAuth><QuizPage /></RequireAuth>} />

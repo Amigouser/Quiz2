@@ -4,13 +4,108 @@ import { ogeGrade, egeTestScore } from "../exams";
 
 const pointsLabel = (n) => (n === 1 ? "балл" : n >= 2 && n <= 4 ? "балла" : "баллов");
 
+// Соответствие и пропуски: строка — текст сверху, варианты кнопками ниже (переносятся)
+const MATCH_STYLES = `
+  .quiz-timer { font-weight: 800; color: var(--green-800); background: var(--green-100); border-radius: 999px; padding: 3px 10px; font-variant-numeric: tabular-nums; }
+  .quiz-timer.low { color: #fff; background: var(--wrong); animation: quizPulse 1s ease infinite; }
+  @keyframes quizPulse { 50% { opacity: .7; } }
+  .quiz-resume { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: space-between; margin-bottom: 18px; padding: 10px 14px; border-radius: 12px; background: var(--green-50); border: 1px solid var(--green-200); font-size: 13px; color: var(--green-900); font-weight: 600; }
+  .quiz-resume button { border: none; background: none; color: var(--text-muted); font: 600 12px var(--f-sans); text-decoration: underline; cursor: pointer; }
+  .match-list { display: flex; flex-direction: column; gap: 10px; }
+  .match-row { background: var(--surface); border: 1.5px solid var(--border-soft); border-radius: 14px; padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; }
+  .match-row.ok { border-color: var(--correct); background: var(--correct-bg); }
+  .match-row.bad { border-color: var(--wrong); }
+  .match-text { display: flex; align-items: flex-start; gap: 10px; font-size: 15px; line-height: 1.45; color: var(--text); overflow-wrap: anywhere; }
+  .match-letter { flex-shrink: 0; width: 26px; height: 26px; border-radius: 8px; background: var(--green-100); color: var(--green-800); display: grid; place-items: center; font-weight: 800; font-size: 13px; }
+  .match-mark { margin-left: auto; flex-shrink: 0; font-size: 18px; }
+  .match-mark.ok { color: var(--correct); }
+  .match-options { display: flex; flex-wrap: wrap; gap: 6px; padding-left: 36px; }
+  .match-opt {
+    min-width: 44px; min-height: 40px; padding: 6px 12px; border-radius: 10px; border: 2px solid var(--border);
+    background: var(--surface); color: var(--text-soft); font: 700 14px var(--f-sans); cursor: pointer;
+    text-align: center; line-height: 1.25; max-width: 100%; overflow-wrap: anywhere; transition: border-color .15s, background .15s;
+  }
+  .match-opt:hover:not(:disabled) { border-color: var(--green-600); }
+  .match-opt.on { border-color: var(--green-700); background: var(--green-100); color: var(--green-900); }
+  .match-opt.right { border-color: var(--correct); background: var(--correct-bg); color: var(--correct); }
+  .match-opt.bad { border-color: var(--wrong); background: var(--wrong-bg); color: var(--wrong); }
+  .match-opt:disabled { cursor: default; }
+  .match-fix { padding-left: 36px; font-size: 13px; color: var(--wrong); }
+  .match-list.short .match-row { flex-direction: row; align-items: center; flex-wrap: wrap; }
+  .match-list.short .match-text { flex: 1 1 140px; }
+  .match-list.fill .match-text { font-weight: 700; color: var(--green-800); }
+  .match-list.short .match-options { padding-left: 0; }
+  .match-list.short .match-fix { padding-left: 0; flex-basis: 100%; }
+  @media (max-width: 600px) {
+    .match-options, .match-fix { padding-left: 0; }
+    .match-list:not(.short) .match-opt { flex: 1 1 calc(50% - 6px); }
+  }
+`;
+
 // ── Variant A: textbook-style stepper ──
-export const QuizClassic = ({ quiz, onFinish, onExit }) => {
-  const [idx, setIdx] = React.useState(0);
+// Сохранённый прогресс теста (в браузере): закрытая вкладка не сбрасывает решение
+function loadProgress(key, n) {
+  if (!key) return null;
+  try {
+    const s = JSON.parse(localStorage.getItem(key) || "null");
+    if (s && s.n === n && Array.isArray(s.answers) && s.answers.length > 0 && s.answers.length < n) return s;
+  } catch (_) {}
+  return null;
+}
+const clearProgress = (key) => { try { if (key) localStorage.removeItem(key); } catch (_) {} };
+
+function formatTime(ms) {
+  const t = Math.max(0, Math.ceil(ms / 1000));
+  const h = Math.floor(t / 3600), m = Math.floor((t % 3600) / 60), sec = t % 60;
+  return `${h ? `${h}:` : ""}${String(m).padStart(h ? 2 : 1, "0")}:${String(sec).padStart(2, "0")}`;
+}
+
+// persistKey — где хранить прогресс; timeLimitMin — таймер (для пробников)
+export const QuizClassic = ({ quiz, onFinish, onExit, persistKey = null, timeLimitMin = null }) => {
+  const saved = React.useMemo(() => loadProgress(persistKey, quiz.questions.length), []);
+  const [idx, setIdx] = React.useState(saved ? saved.answers.length : 0);
   const [selected, setSelected] = React.useState(null);
   const [locked, setLocked] = React.useState(false);
   const [burst, setBurst] = React.useState(false);
-  const [answers, setAnswers] = React.useState([]);
+  const [answers, setAnswers] = React.useState(saved ? saved.answers : []);
+  const [startedAt, setStartedAt] = React.useState(saved?.startedAt || Date.now());
+  const [resumed, setResumed] = React.useState(!!saved);
+  const [now, setNow] = React.useState(Date.now());
+  const answersRef = React.useRef(answers);
+  answersRef.current = answers;
+  const finishedRef = React.useRef(false);
+
+  const finish = (list) => {
+    if (finishedRef.current) return;
+    finishedRef.current = true;
+    clearProgress(persistKey);
+    onFinish?.(list);
+  };
+
+  // сохраняем после каждого ответа
+  React.useEffect(() => {
+    if (!persistKey || finishedRef.current) return;
+    try {
+      localStorage.setItem(persistKey, JSON.stringify({ n: quiz.questions.length, answers, startedAt }));
+    } catch (_) {}
+  }, [answers, startedAt]);
+
+  // таймер: время вышло — тест завершается с тем, что успел ответить
+  const deadline = timeLimitMin ? startedAt + timeLimitMin * 60000 : null;
+  React.useEffect(() => {
+    if (!deadline) return;
+    const t = setInterval(() => {
+      setNow(Date.now());
+      if (Date.now() >= deadline) finish(answersRef.current);
+    }, 1000);
+    return () => clearInterval(t);
+  }, [deadline]);
+  const remaining = deadline ? deadline - now : null;
+
+  const restart = () => {
+    clearProgress(persistKey);
+    setAnswers([]); setIdx(0); setLocked(false); setStartedAt(Date.now()); setResumed(false);
+  };
   const [typedText, setTypedText] = React.useState("");
   const [matchState, setMatchState] = React.useState({});
   const [multiSelected, setMultiSelected] = React.useState(new Set());
@@ -109,8 +204,8 @@ export const QuizClassic = ({ quiz, onFinish, onExit }) => {
   const allMatchesFilled = (q._matchAnswers || []).every(ma => matchState[ma.id]);
 
   const next = () => {
-    if (isLast) { onFinish?.(answers); return; }
-    setIdx(i => i + 1); setLocked(false);
+    if (isLast) { finish(answers); return; }
+    setIdx(i => i + 1); setLocked(false); setResumed(false);
   };
 
   const pct = ((idx + (locked ? 1 : 0)) / quiz.questions.length) * 100;
@@ -125,6 +220,7 @@ export const QuizClassic = ({ quiz, onFinish, onExit }) => {
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg)", position: "relative", overflowX: "hidden", overflowY: "auto" }}>
+      <style>{MATCH_STYLES}</style>
       <LeafBurst go={burst} />
       <BotanicalBg intensity={0.4} pattern="mix" />
 
@@ -136,7 +232,12 @@ export const QuizClassic = ({ quiz, onFinish, onExit }) => {
             <span style={{ fontWeight: 600, color: "var(--text-soft)", letterSpacing: "0.06em", textTransform: "uppercase" }}>
               {quiz.topic} · {quiz.title}
             </span>
-            <span>Вопрос {idx + 1} из {quiz.questions.length}</span>
+            <span style={{ display: "flex", gap: 12, alignItems: "center", flexShrink: 0 }}>
+              {remaining !== null && (
+                <span className={`quiz-timer${remaining < 5 * 60000 ? " low" : ""}`} title="Осталось времени">⏱ {formatTime(remaining)}</span>
+              )}
+              <span>Вопрос {idx + 1} из {quiz.questions.length}</span>
+            </span>
           </div>
           <div className="progress"><div className="progress-fill" style={{ width: `${pct}%` }}/></div>
         </div>
@@ -144,6 +245,12 @@ export const QuizClassic = ({ quiz, onFinish, onExit }) => {
 
       {/* Question body */}
       <div className="quiz-body" style={{ position: "relative", maxWidth: 760, margin: "0 auto", padding: "56px 40px 80px" }}>
+        {resumed && (
+          <div className="quiz-resume">
+            <span>💾 Прогресс сохранён — продолжаем с {quiz.mock_exam ? "задания" : "вопроса"} {idx + 1}</span>
+            <button type="button" onClick={restart}>Начать заново</button>
+          </div>
+        )}
         <div className="eyebrow" style={{ marginBottom: 14 }}>
           {quiz.mock_exam ? `Задание ${idx + 1}` : `Вопрос ${String(idx + 1).padStart(2, "0")}`}
           {q.max_points > 1 && ` · ${q.max_points} ${pointsLabel(q.max_points)}`}
@@ -160,7 +267,7 @@ export const QuizClassic = ({ quiz, onFinish, onExit }) => {
           </div>
         )}
 
-        <h2 className="quiz-h2 pre-line" style={{ fontFamily: "var(--f-serif)", fontSize: 34, lineHeight: 1.2, marginBottom: 10, letterSpacing: "-0.01em" }}>
+        <h2 className="quiz-h2 pre-line" style={{ fontFamily: "var(--f-serif)", fontSize: (q.q || "").length > 160 ? 22 : (q.q || "").length > 80 ? 27 : 34, lineHeight: 1.25, marginBottom: 10, letterSpacing: "-0.01em" }}>
           {q.q}
         </h2>
         {q.note && <p className="pre-line" style={{ color: "var(--text-muted)", fontSize: 14, fontStyle: "italic", marginBottom: 28 }}>{q.note}</p>}
@@ -195,7 +302,7 @@ export const QuizClassic = ({ quiz, onFinish, onExit }) => {
               <span style={{ fontSize: 15, color: "var(--text-soft)" }}>Ответ:</span>
               <input
                 className="input"
-                style={{ width: 100, textAlign: "center", fontSize: 22, fontFamily: "var(--f-serif)", fontWeight: 700,
+                style={{ width: 220, maxWidth: "100%", textAlign: "center", fontSize: 22, fontFamily: "var(--f-serif)", fontWeight: 700,
                   border: locked ? `2px solid ${isCurrentCorrect ? "var(--correct)" : "var(--wrong)"}` : undefined }}
                 value={typedText}
                 onChange={e => !locked && setTypedText(e.target.value)}
@@ -242,7 +349,7 @@ export const QuizClassic = ({ quiz, onFinish, onExit }) => {
                   <div key={i}
                     onClick={() => !locked && setMultiSelected(s => { const n = new Set(s); n.has(i) ? n.delete(i) : n.add(i); return n; })}
                     style={{
-                      display: "flex", alignItems: "center", gap: 14, padding: "13px 18px",
+                      display: "flex", alignItems: "center", gap: 14, padding: "13px 18px", flexWrap: "wrap",
                       background: isSel ? "var(--green-100)" : isMissed ? "var(--correct-bg)" : "var(--surface)",
                       borderRadius: 12, border: `2px solid ${border}`,
                       cursor: locked ? "default" : "pointer", transition: "all 150ms",
@@ -255,7 +362,7 @@ export const QuizClassic = ({ quiz, onFinish, onExit }) => {
                     }}>
                       {isSel && <span style={{ color: "#fff", fontSize: 13, fontWeight: 700, lineHeight: 1 }}>✓</span>}
                     </div>
-                    <div style={{ flex: 1, fontSize: 15 }}>{opt}</div>
+                    <div className="pre-line" style={{ flex: "1 1 180px", minWidth: 0, fontSize: 15, overflowWrap: "anywhere" }}>{opt}</div>
                     {locked && isCorrect && <span style={{ fontSize: 20 }}>🌱</span>}
                     {locked && isWrong && <span style={{ fontSize: 18, color: "var(--wrong)" }}>✕</span>}
                     {locked && isMissed && <span style={{ fontSize: 12, color: "var(--correct)", fontWeight: 600 }}>← нужно было выбрать</span>}
@@ -295,7 +402,7 @@ export const QuizClassic = ({ quiz, onFinish, onExit }) => {
                       display: "flex", alignItems: "center", justifyContent: "center",
                       fontWeight: 700, fontSize: 14,
                     }}>{pos + 1}</div>
-                    <div style={{ flex: 1, fontSize: 15 }}>{q.options[optIdx]}</div>
+                    <div className="pre-line" style={{ flex: 1, minWidth: 0, fontSize: 15, overflowWrap: "anywhere" }}>{q.options[optIdx]}</div>
                     {!locked && (
                       <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
                         <button onClick={() => moveSeq(pos, pos - 1)} disabled={pos === 0}
@@ -315,7 +422,7 @@ export const QuizClassic = ({ quiz, onFinish, onExit }) => {
                       </div>
                     )}
                     {locked && isCorrect && <span style={{ fontSize: 18, color: "var(--correct)" }}>✓</span>}
-                    {locked && isWrong && <span style={{ fontSize: 12, color: "var(--wrong)", minWidth: 80, textAlign: "right" }}>→ позиция {optIdx + 1}</span>}
+                    {locked && isWrong && <span style={{ fontSize: 12, color: "var(--wrong)", flexShrink: 0, textAlign: "right" }}>место {optIdx + 1}</span>}
                   </div>
                 );
               })}
@@ -328,95 +435,40 @@ export const QuizClassic = ({ quiz, onFinish, onExit }) => {
           </div>
         )}
 
-        {/* ── Fill blanks (same data model as matching) ── */}
-        {qType === "fill_blanks" && (
+        {/* ── Fill blanks / Matching: текст строки сверху, варианты — кнопками под ним ── */}
+        {(qType === "fill_blanks" || qType === "matching") && (
           <div style={{ marginTop: 28 }}>
-            <div style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 4, fontStyle: "italic" }}>
-              Выбери цифру из списка для каждого пропуска
+            <div style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 12, fontStyle: "italic" }}>
+              {qType === "fill_blanks" ? "Выбери вариант для каждого пропуска" : "Выбери вариант для каждой строки"}
             </div>
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 16, padding: "12px 16px", background: "var(--surface)", borderRadius: 10, border: "1px solid var(--border-soft)" }}>
-              {(q.match_options || []).map((opt, oi) => (
-                <span key={oi} style={{ padding: "4px 12px", background: "var(--green-100)", borderRadius: 8, fontWeight: 700, fontSize: 15, color: "var(--green-800)" }}>
-                  {opt}
-                </span>
-              ))}
-              <span style={{ fontSize: 13, color: "var(--text-muted)", alignSelf: "center", marginLeft: 4 }}>— доступные варианты</span>
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {(q._matchAnswers || []).map((ma) => {
+            <div className={`match-list${(q.match_options || []).every(o => String(o).length <= 3) ? " short" : ""}${qType === "fill_blanks" ? " fill" : ""}`}>
+              {(q._matchAnswers || []).map((ma, mi) => {
                 const chosen = matchState[ma.id];
-                const itemLocked = locked;
-                const itemCorrect = itemLocked && chosen === ma.match_value;
-                const itemWrong = itemLocked && chosen !== ma.match_value;
+                const itemCorrect = locked && chosen === ma.match_value;
+                const itemWrong = locked && chosen !== ma.match_value;
                 return (
-                  <div key={ma.id} style={{
-                    display: "flex", alignItems: "center", gap: 12, padding: "12px 16px",
-                    background: "var(--surface)", borderRadius: 12,
-                    border: `1.5px solid ${itemCorrect ? "var(--correct)" : itemWrong ? "var(--wrong)" : "var(--border-soft)"}`,
-                  }}>
-                    <div className="pre-line" style={{ minWidth: 32, fontWeight: 700, fontSize: 17, color: "var(--green-800)" }}>{ma.text}</div>
-                    <div style={{ flex: 1, fontSize: 14, color: "var(--text-muted)" }}>→</div>
-                    <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
-                      {(q.match_options || []).map((opt, oi) => (
-                        <button key={opt} onClick={() => !locked && setMatchState(s => ({ ...s, [ma.id]: opt }))}
-                          style={{
-                            width: 38, height: 38, borderRadius: 8, fontWeight: 700, fontSize: 15,
-                            cursor: locked ? "default" : "pointer",
-                            border: `2px solid ${chosen === opt ? (itemCorrect ? "var(--correct)" : itemWrong ? "var(--wrong)" : "var(--green-700)") : "var(--border)"}`,
-                            background: chosen === opt ? (itemCorrect ? "var(--correct-bg)" : itemWrong ? "var(--wrong-bg)" : "var(--green-100)") : "transparent",
-                            color: chosen === opt ? (itemCorrect ? "var(--correct)" : itemWrong ? "var(--wrong)" : "var(--green-800)") : "var(--text-muted)",
-                          }}>{opt}</button>
-                      ))}
+                  <div key={ma.id} className={`match-row${itemCorrect ? " ok" : itemWrong ? " bad" : ""}`}>
+                    <div className="match-text">
+                      {/* в пропусках строка сама называется «А», «Б»… — свою букву не дублируем */}
+                      {qType === "matching" && <span className="match-letter">{String.fromCharCode(1040 + mi)}</span>}
+                      <span className="pre-line">{ma.text}</span>
+                      {itemCorrect && <span className="match-mark ok">✓</span>}
                     </div>
-                    {itemLocked && (itemCorrect
-                      ? <span style={{ fontSize: 18, color: "var(--correct)" }}>✓</span>
-                      : <span style={{ fontSize: 13, color: "var(--wrong)", minWidth: 36, textAlign: "center" }}>→{ma.match_value}</span>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-            {!locked && (
-              <button className="btn btn-primary" style={{ marginTop: 14 }}
-                disabled={!(q._matchAnswers || []).every(ma => matchState[ma.id])} onClick={lockMatching}>
-                Проверить ответы
-              </button>
-            )}
-          </div>
-        )}
-
-        {/* ── Matching ── */}
-        {qType === "matching" && (
-          <div style={{ marginTop: 28 }}>
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {(q._matchAnswers || []).map((ma) => {
-                const chosen = matchState[ma.id];
-                const itemLocked = locked;
-                const itemCorrect = itemLocked && chosen === ma.match_value;
-                const itemWrong = itemLocked && chosen !== ma.match_value;
-                return (
-                  <div key={ma.id} style={{
-                    display: "flex", alignItems: "center", gap: 12, padding: "12px 16px",
-                    background: "var(--surface)", borderRadius: 12,
-                    border: `1.5px solid ${itemCorrect ? "var(--correct)" : itemWrong ? "var(--wrong)" : "var(--border-soft)"}`,
-                  }}>
-                    <div className="pre-line" style={{ flex: 1, fontSize: 15 }}>{ma.text}</div>
-                    <div style={{ display: "flex", gap: 6 }}>
-                      {(q.match_options || ["1", "2"]).map(opt => (
-                        <button key={opt} onClick={() => !locked && setMatchState(s => ({ ...s, [ma.id]: opt }))}
-                          style={{
-                            width: 44, height: 44, borderRadius: 10, fontWeight: 700, fontSize: 17,
-                            cursor: locked ? "default" : "pointer",
-                            border: `2px solid ${chosen === opt ? (itemCorrect ? "var(--correct)" : itemWrong ? "var(--wrong)" : "var(--green-700)") : "var(--border)"}`,
-                            background: chosen === opt ? (itemCorrect ? "var(--correct-bg)" : itemWrong ? "var(--wrong-bg)" : "var(--green-100)") : "transparent",
-                            color: chosen === opt ? (itemCorrect ? "var(--correct)" : itemWrong ? "var(--wrong)" : "var(--green-800)") : "var(--text-muted)",
-                          }}>{opt}</button>
-                      ))}
+                    <div className="match-options">
+                      {(q.match_options || ["1", "2"]).map(opt => {
+                        const isChosen = chosen === opt;
+                        const isRight = locked && opt === ma.match_value;
+                        return (
+                          <button key={opt} type="button"
+                            className={`match-opt${isChosen ? " on" : ""}${locked && isChosen && !isRight ? " bad" : ""}${isRight ? " right" : ""}`}
+                            onClick={() => !locked && setMatchState(s => ({ ...s, [ma.id]: opt }))}
+                            disabled={locked}>
+                            {opt}
+                          </button>
+                        );
+                      })}
                     </div>
-                    {itemLocked && (itemCorrect
-                      ? <span style={{ fontSize: 18, color: "var(--correct)" }}>✓</span>
-                      : <span style={{ fontSize: 13, color: "var(--wrong)", minWidth: 36, textAlign: "center" }}>→{ma.match_value}</span>
-                    )}
+                    {itemWrong && <div className="match-fix">Правильно: <b>{ma.match_value}</b></div>}
                   </div>
                 );
               })}
@@ -424,7 +476,7 @@ export const QuizClassic = ({ quiz, onFinish, onExit }) => {
             {!locked && (
               <button className="btn btn-primary" style={{ marginTop: 14 }}
                 disabled={!allMatchesFilled} onClick={lockMatching}>
-                Проверить соответствие
+                {qType === "fill_blanks" ? "Проверить ответы" : "Проверить соответствие"}
               </button>
             )}
           </div>
@@ -622,7 +674,7 @@ export const QuizFocused = ({ quiz, onFinish }) => {
 };
 
 // ── Results screen ──
-export const QuizResults = ({ total = 0, correct = 0, quizTitle, onRetry, onHome, isPreview = false, mockExam = null, pendingReview = false, guest = false, waterEarned = 0 }) => {
+export const QuizResults = ({ total = 0, correct = 0, quizTitle, onRetry, onHome, isPreview = false, mockExam = null, pendingReview = false, guest = false, waterEarned = 0, breakdown = null }) => {
   const [burst, setBurst] = React.useState(false);
   React.useEffect(() => { const t = setTimeout(() => setBurst(true), 300); return () => clearTimeout(t); }, []);
 
@@ -731,6 +783,48 @@ export const QuizResults = ({ total = 0, correct = 0, quizTitle, onRetry, onHome
             </div>
           </div>
         </div>
+
+        {/* Разбор пробника по заданиям */}
+        {mockExam && breakdown?.length > 0 && (() => {
+          const toRepeat = breakdown.filter(b => !b.pending && b.points < b.max);
+          return (
+            <div className="card" style={{ padding: 24, marginTop: 24, position: "relative" }}>
+              <div style={{ fontFamily: "var(--f-serif)", fontSize: 22, marginBottom: 6 }}>Разбор по заданиям</div>
+              <p style={{ fontSize: 14, color: "var(--text-soft)", marginBottom: 16 }}>
+                {toRepeat.length === 0
+                  ? "Все задания с автопроверкой решены на полный балл — отлично!"
+                  : <>Стоит повторить: <b>{toRepeat.length > 1 ? "задания" : "задание"} {toRepeat.map(b => b.n).join(", ")}</b></>}
+              </p>
+              <div className="mock-grid">
+                {breakdown.map(b => (
+                  <div key={b.n} className={`mock-cell ${b.pending ? "pending" : b.points === b.max ? "full" : b.points > 0 ? "part" : "zero"}`}
+                    title={b.pending ? "Проверит репетитор" : `${b.points} из ${b.max}`}>
+                    <span>{b.n}</span>
+                    <b>{b.pending ? "✍" : `${b.points}/${b.max}`}</b>
+                  </div>
+                ))}
+              </div>
+              <div className="mock-legend">
+                <span><i className="full" />полный балл</span><span><i className="part" />частично</span>
+                <span><i className="zero" />0 баллов</span><span><i className="pending" />проверит репетитор</span>
+              </div>
+              <style>{`
+                .mock-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(58px, 1fr)); gap: 8px; }
+                .mock-cell { border-radius: 10px; padding: 7px 4px; text-align: center; border: 1.5px solid; }
+                .mock-cell span { display: block; font-size: 11px; font-weight: 700; opacity: .7; }
+                .mock-cell b { font-size: 14px; }
+                .mock-cell.full { background: var(--correct-bg); border-color: var(--correct); color: var(--correct); }
+                .mock-cell.part { background: #fdf0dc; border-color: #e0a14a; color: #9a5a0c; }
+                .mock-cell.zero { background: var(--wrong-bg); border-color: var(--wrong); color: var(--wrong); }
+                .mock-cell.pending { background: var(--bg-muted); border-color: var(--border); color: var(--text-muted); }
+                .mock-legend { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 14px; font-size: 12px; color: var(--text-muted); }
+                .mock-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
+                .mock-legend i.full { background: var(--correct); } .mock-legend i.part { background: #e0a14a; }
+                .mock-legend i.zero { background: var(--wrong); } .mock-legend i.pending { background: var(--border); }
+              `}</style>
+            </div>
+          );
+        })()}
       </div>
     </div>
   );

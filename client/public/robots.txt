@@ -6,5 +6,6 @@ Disallow: /quiz/
 Disallow: /cards/
 Disallow: /login
 Disallow: /api/
+Disallow: /report/
 
 Sitemap: https://vikokon.ru/sitemap.xml

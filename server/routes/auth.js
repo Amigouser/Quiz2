@@ -25,6 +25,7 @@ router.post("/login", (req, res) => {
   if (!user) return res.status(404).json({ error: "Код не найден. Попроси код у репетитора." });
 
   req.session.user = { id: user.id, name: user.name, is_admin: user.is_admin };
+  run("UPDATE users SET last_seen = datetime('now') WHERE id = ?", user.id);
   res.json({ user: req.session.user });
 });
 
@@ -39,6 +40,8 @@ router.get("/me", (req, res) => {
     req.session.destroy(() => {});
     return res.status(410).json({ error: "account_deleted" });
   }
+  // когда ученик последний раз заходил — для сводки репетитора
+  if (!req.session.user.is_admin) run("UPDATE users SET last_seen = datetime('now') WHERE id = ?", req.session.user.id);
   res.json({ user: req.session.user });
 });
 

@@ -223,6 +223,14 @@ db.exec(`
     UNIQUE(user_id, source, ref_id, day)
   );
 `);
+// Отправленная попытка (попытка создаётся при открытии теста, отправка — отдельно)
+try {
+  db.exec("ALTER TABLE attempts ADD COLUMN submitted INTEGER DEFAULT 0");
+  db.exec("UPDATE attempts SET submitted = 1 WHERE id IN (SELECT DISTINCT attempt_id FROM attempt_answers)");
+} catch (_) {}
+// Последний заход ученика и токен ссылки-отчёта для родителей
+try { db.exec("ALTER TABLE users ADD COLUMN last_seen TEXT"); } catch (_) {}
+try { db.exec("ALTER TABLE users ADD COLUMN report_token TEXT"); } catch (_) {}
 // Баллы за задание в попытке (для 2-3-балльных и развёрнутых ответов)
 try { db.exec("ALTER TABLE attempt_answers ADD COLUMN points INTEGER"); } catch (_) {}
 
