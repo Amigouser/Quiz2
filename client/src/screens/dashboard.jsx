@@ -2,7 +2,8 @@ import React, { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { BotanicalBg } from "../botanical";
 import { TestCover } from "../components/TestCover";
-import PlantWidget from "../components/PlantWidget";
+import { GardenCard, GARDEN_STYLES } from "../components/Garden";
+import { LibraryThumb, plural, shortSection, LIBRARY_STYLES } from "../components/library";
 import PlantSVG from "../components/PlantSVG";
 import API from "../api";
 
@@ -208,51 +209,7 @@ function CollectionView() {
 
   return (
     <div>
-      {/* Current plant */}
-      <h2 style={{ fontFamily: "var(--f-serif)", fontSize: 24, marginBottom: 20, letterSpacing: "-0.01em" }}>
-        Сейчас растёт
-      </h2>
-      <div style={{
-        display: "inline-flex", alignItems: "center", gap: 28,
-        background: "var(--surface)", border: "1.5px solid var(--border-soft)",
-        borderRadius: 24, padding: "20px 32px 20px 20px",
-        boxShadow: "var(--sh-sm)", marginBottom: 48,
-      }}>
-        <PlantSVG plantType={plantData.plant_type} stage={plantData.stage} />
-        <div>
-          <div style={{ fontFamily: "var(--f-serif)", fontSize: 20, fontWeight: 500, marginBottom: 6 }}>
-            {PLANT_NAMES_MAP[plantData.plant_type] || plantData.plant_type}
-          </div>
-          <div style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 10 }}>
-            Стадия {plantData.stage} из 5
-          </div>
-          <div style={{ display: "flex", gap: 5, alignItems: "center", marginBottom: 10 }}>
-            {[1, 2, 3, 4, 5].map(s => (
-              <div key={s} style={{
-                width: s <= plantData.stage ? 10 : 8, height: s <= plantData.stage ? 10 : 8,
-                borderRadius: "50%",
-                background: s <= plantData.stage ? "var(--green-800)" : "var(--border-soft)",
-              }} />
-            ))}
-          </div>
-          {plantData.stage < 5 && (
-            <div style={{ width: 160 }}>
-              <div style={{ height: 5, background: "var(--border-soft)", borderRadius: 999, overflow: "hidden" }}>
-                <div style={{ height: "100%", width: `${progressPct}%`, background: "var(--green-800)", borderRadius: 999 }} />
-              </div>
-              <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 4 }}>
-                {plantData.can_water ? "Можно полить сегодня 💧" : "Полито сегодня ✓"}
-              </div>
-            </div>
-          )}
-          {plantData.stage === 5 && (
-            <div style={{ fontSize: 13, color: "var(--green-800)", fontWeight: 700 }}>
-              🌸 Готово к сбору! Открой виджет справа внизу
-            </div>
-          )}
-        </div>
-      </div>
-
+      {/* Текущий цветок показывается карточкой выше — здесь только коллекция */}
       {/* Collection grid */}
       <h2 style={{ fontFamily: "var(--f-serif)", fontSize: 24, marginBottom: 8, letterSpacing: "-0.01em" }}>
         Собранные растения
@@ -269,7 +226,7 @@ function CollectionView() {
             Коллекция пока пуста
           </div>
           <div style={{ fontSize: 14, color: "var(--text-muted)", maxWidth: 320, margin: "0 auto" }}>
-            Поливай растение каждый день — через 7 дней оно попадёт в коллекцию, и начнётся новое
+            Решай задания, получай капли 💧 и поливай цветок раз в день — после 7 поливов он расцветёт и попадёт в коллекцию
           </div>
         </div>
       ) : (
@@ -320,28 +277,34 @@ function CollectionView() {
 export const StudentDashboard = ({ name = "Аня", quizzes = [], cardSets = [], onOpenQuiz, onOpenCards, onAdmin, onLogout }) => {
   const navigate = useNavigate();
 
-  const [tab, setTab] = useState("tasks");
+  // all | assigned | mocks | done | garden | section
+  const [view, setView] = useState("all");
+  const [kind, setKind] = useState("all"); // all | tests | cards
+  const [plant, setPlant] = useState(null);
 
   const [gradeFilter, setGradeFilter] = useState("");
   const [examFilter, setExamFilter] = useState("");
   const [partFilter, setPartFilter] = useState("");
   const [sectionFilter, setSectionFilter] = useState("");
-  const [topicFilter, setTopicFilter] = useState("");
   const [sourceFilter, setSourceFilter] = useState("");
   const [search, setSearch] = useState("");
 
-  const { uniqueSections, uniqueParts, uniqueTopics, uniqueSources } = useMemo(() => {
-    const dataSections = [...new Set([...quizzes.map(t => t.section), ...cardSets.map(c => c.section)].filter(Boolean).flatMap(v => v.split(", ")))];
-    const dataParts    = [...new Set([...quizzes.map(t => t.part),    ...cardSets.map(c => c.part)].filter(Boolean).flatMap(v => v.split(", ")))];
+  useEffect(() => { API.getPlant().then(setPlant).catch(() => {}); }, []);
+
+  const { uniqueParts, uniqueSources, sideSections } = useMemo(() => {
+    const all = [...quizzes, ...cardSets];
+    const dataSections = [...new Set(all.map(i => i.section).filter(Boolean).flatMap(v => v.split(", ")))];
+    const dataParts = [...new Set(all.map(i => i.part).filter(Boolean).flatMap(v => v.split(", ")))];
     return {
-      uniqueSections: [...SECTION_OPTIONS, ...dataSections.filter(s => !SECTION_OPTIONS.includes(s)).sort()],
-      uniqueParts:    [...PART_OPTIONS,    ...dataParts.filter(p => !PART_OPTIONS.includes(p)).sort()],
-      uniqueTopics:   [...new Set([...quizzes.map(t => t.topic),  ...cardSets.map(c => c.topic)].filter(Boolean))].sort(),
-      uniqueSources:  [...new Set([...quizzes.map(t => t.source), ...cardSets.map(c => c.source)].filter(Boolean).flatMap(v => v.split(", ")))].sort(),
+      uniqueParts: [...PART_OPTIONS, ...dataParts.filter(p => !PART_OPTIONS.includes(p)).sort()],
+      uniqueSources: [...new Set(all.map(i => i.source).filter(Boolean).flatMap(v => v.split(", ")))].sort(),
+      sideSections: [...SECTION_OPTIONS, ...dataSections.filter(s => !SECTION_OPTIONS.includes(s)).sort()]
+        .map(n => ({ name: n, count: all.filter(i => (i.section || "").split(", ").includes(n)).length }))
+        .filter(s => s.count > 0),
     };
   }, [quizzes, cardSets]);
 
-  const hasFilters = gradeFilter || examFilter || partFilter || sectionFilter || topicFilter || sourceFilter || search;
+  const hasFilters = gradeFilter || examFilter || partFilter || sourceFilter || search;
 
   function itemHasValue(itemVal, filterVal) {
     if (!filterVal) return true;
@@ -355,7 +318,6 @@ export const StudentDashboard = ({ name = "Аня", quizzes = [], cardSets = [],
       if (examFilter && !itemHasValue(item.category, examFilter)) return false;
       if (partFilter && !itemHasValue(item.part, partFilter)) return false;
       if (sectionFilter && !itemHasValue(item.section, sectionFilter)) return false;
-      if (topicFilter && item.topic !== topicFilter) return false;
       if (sourceFilter && !itemHasValue(item.source, sourceFilter)) return false;
       if (search && !item.title.toLowerCase().includes(search.toLowerCase())) return false;
       return true;
@@ -363,217 +325,277 @@ export const StudentDashboard = ({ name = "Аня", quizzes = [], cardSets = [],
   }
 
   function resetFilters() {
-    setGradeFilter(""); setExamFilter(""); setPartFilter(""); setSectionFilter("");
-    setTopicFilter(""); setSourceFilter(""); setSearch("");
+    setGradeFilter(""); setExamFilter(""); setPartFilter(""); setSourceFilter(""); setSearch("");
   }
 
-  const filteredQuizzes = applyFilters(quizzes);
-  const filteredCards = applyFilters(cardSets);
+  function pickNav(next, section = "", e) {
+    e?.currentTarget?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+    setView(next);
+    setSectionFilter(section);
+    if (next === "mocks") setKind("tests");
+    else if (view === "mocks") setKind("all");
+  }
 
-  const doneSets = quizzes.filter(q => q.status === "done");
-  const stats = {
-    done: doneSets.length,
-    total: quizzes.length,
-    avg: doneSets.length === 0 ? 0 : Math.round(
-      doneSets.reduce((acc, q) => acc + (q.max_score ? (q.score / q.max_score) : 0), 0) / doneSets.length * 100
-    ),
-    assigned: quizzes.filter(q => q.is_assigned).length,
-  };
+  const doneTests = quizzes.filter(q => q.status === "done");
+  const assignedTodo = quizzes.filter(q => q.is_assigned && q.status !== "done");
+  const mocks = quizzes.filter(q => q.mock_exam);
+  const bestMock = mocks.filter(q => q.status === "done").sort((a, b) => b.score - a.score)[0];
+  const avg = doneTests.length === 0 ? null : Math.round(
+    doneTests.reduce((acc, q) => acc + (q.max_score ? q.score / q.max_score : 0), 0) / doneTests.length * 100
+  );
+
+  // что показать в списке для текущего пункта меню
+  let testsShown = applyFilters(quizzes);
+  if (view === "assigned") testsShown = testsShown.filter(q => q.is_assigned);
+  if (view === "done") testsShown = testsShown.filter(q => q.status === "done");
+  if (view === "mocks") testsShown = testsShown.filter(q => q.mock_exam);
+  const cardsShown = ["all", "section"].includes(view) ? applyFilters(cardSets) : [];
+  const mockPlaques = view === "all" || view === "mocks" ? (kind === "cards" ? [] : testsShown.filter(q => q.mock_exam)) : [];
+  const rows = [
+    ...(kind === "cards" ? [] : testsShown.filter(q => !mockPlaques.includes(q)).map(item => ({ type: "test", item }))),
+    ...(kind === "tests" ? [] : cardsShown.map(item => ({ type: "cards", item }))),
+  ];
+
+  const titles = { all: `Привет, ${name} 👋`, assigned: "Назначено мне", mocks: "Пробники", done: "Пройденные", garden: "Мой сад" };
+  const title = view === "section" ? shortSection(sectionFilter) : titles[view];
+  const subtitle = assignedTodo.length > 0
+    ? `У тебя ${assignedTodo.length} ${plural(assignedTodo.length, "задание", "задания", "заданий")} от Виктории`
+    : "Решай задания — получай капли воды для своего цветка 💧";
+
+  const statusOf = (q) => q.status === "done"
+    ? <span className="dash-st ok">✓ {q.score}/{q.max_score}</span>
+    : <span className="dash-st">{q.is_assigned ? "Назначено" : "Новый"}</span>;
 
   return (
-    <div style={{ minHeight: "100vh", background: "var(--bg)", paddingBottom: 80 }}>
-      {/* Top bar */}
-      <div className="dash-topbar" style={{
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-        padding: "20px 48px",
-        borderBottom: "1px solid var(--border-soft)",
-        background: "var(--surface)",
-      }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12, cursor: "pointer" }} onClick={() => navigate("/")}>
-          <img src="/tutor2.jpg" alt="Vikokon" style={{ width: 36, height: 36, borderRadius: 10, objectFit: "cover", border: "1.5px solid var(--border-soft)", flexShrink: 0 }} />
-          <div style={{ fontFamily: "var(--f-serif)", fontWeight: 600, fontSize: 17 }}>Vikokon</div>
+    <div style={{ minHeight: "100vh", background: "var(--bg)", fontFamily: "var(--f-sans)" }}>
+      <style>{LIBRARY_STYLES + GARDEN_STYLES + DASH_STYLES}</style>
+
+      {/* Шапка */}
+      <header className="tasks-header dash-header">
+        <button className="dash-logo" onClick={() => navigate("/")}>
+          <img src="/tutor2.jpg" alt="Vikokon" />
+          <span className="dash-logo-label">Vikokon</span>
+        </button>
+        <div className="dash-header-right">
+          {onAdmin && <button className="dash-head-btn rsp-hide-mobile" onClick={onAdmin}>Панель репетитора</button>}
+          {plant && <span className="dash-head-drops" title="Капли воды для цветка">💧 {plant.drops}</span>}
+          <div className="dash-user"><span className="dash-ava">{name[0]?.toUpperCase()}</span><span className="dash-name rsp-hide-mobile">{name}</span></div>
+          {onLogout && <button className="dash-head-btn" onClick={onLogout}>Выйти</button>}
         </div>
-        <div className="dash-topbar-right" style={{ display: "flex", alignItems: "center", gap: 20 }}>
-          {onAdmin && <button className="btn btn-ghost btn-sm rsp-hide-mobile" onClick={onAdmin}>Панель репетитора</button>}
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={{
-              width: 34, height: 34, borderRadius: "50%", background: "var(--green-200)",
-              display: "grid", placeItems: "center", color: "var(--green-900)",
-              fontFamily: "var(--f-serif)", fontWeight: 600,
-            }}>{name[0]?.toUpperCase()}</div>
-            <span style={{ fontSize: 14, fontWeight: 500 }}>{name}</span>
-          </div>
-          {onLogout && (
-            <button className="btn btn-ghost btn-sm" onClick={onLogout}>Выйти</button>
+      </header>
+
+      <div className="lib-layout">
+        {/* Меню слева (на телефоне — строка кнопок) */}
+        <aside className="lib-side">
+          <button className={`lib-nav${view === "all" ? " on" : ""}`} onClick={e => pickNav("all", "", e)}>
+            <span className="lib-dot">★</span>Все задания<i>{quizzes.length + cardSets.length}</i>
+          </button>
+          {quizzes.some(q => q.is_assigned) && (
+            <button className={`lib-nav${view === "assigned" ? " on" : ""}`} onClick={e => pickNav("assigned", "", e)}>
+              <span className="lib-dot dash-dot-amber">!</span>Назначено мне<i>{quizzes.filter(q => q.is_assigned).length}</i>
+            </button>
           )}
-        </div>
-      </div>
-
-      {/* Hero */}
-      <div className="dash-hero" style={{ padding: "40px 48px 28px", position: "relative", overflow: "hidden" }}>
-        <BotanicalBg intensity={0.6} pattern="ferns" />
-        <div style={{ position: "relative" }}>
-          <div className="eyebrow" style={{ marginBottom: 14 }}>Задания</div>
-          <h1 className="dash-h1" style={{
-            fontFamily: "var(--f-serif)",
-            fontSize: "clamp(30px, 3vw, 48px)",
-            lineHeight: 1.05, letterSpacing: "-0.02em", marginBottom: 8,
-          }}>
-            Привет, {name}.<br/>
-            <em style={{ color: "var(--green-800)" }}>Тесты и карточки по биологии</em>
-          </h1>
-          <p style={{ color: "var(--text-soft)", fontSize: 16, maxWidth: 640, lineHeight: 1.7 }}>
-            {quizzes.length === 0 && cardSets.length === 0
-              ? "Пока ничего не добавлено. Загляни позже — задания появятся здесь."
-              : `Доступно ${quizzes.length} тест${quizzes.length === 1 ? "" : "ов"} и ${cardSets.length} набор${cardSets.length === 1 ? "" : cardSets.length > 4 ? "ов" : "а"} карточек.`}
-          </p>
-        </div>
-
-        {quizzes.length > 0 && (
-          <div className="dash-stats" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 16, marginTop: 32, maxWidth: 820, position: "relative" }}>
-            {[
-              { v: `${stats.done}/${stats.total}`, l: "пройдено тестов" },
-              { v: stats.avg ? `${stats.avg}%` : "—",    l: "средний результат" },
-              { v: `${quizzes.filter(q => q.status === "new").length}`, l: "новых тестов" },
-              { v: `${stats.assigned}`, l: "назначено вам" },
-            ].map((s, i) => (
-              <div key={i} className="card" style={{ padding: "18px 20px" }}>
-                <div className="dash-stat-val" style={{
-                  fontFamily: "var(--f-serif)", fontSize: 28, fontWeight: 500, letterSpacing: "-0.01em",
-                  color: "var(--text)",
-                }}>{s.v}</div>
-                <div style={{ fontSize: 12, color: "var(--text-muted)", letterSpacing: "0.04em", textTransform: "uppercase", marginTop: 4 }}>
-                  {s.l}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      <div style={{ padding: "0 48px" }}>
-        {/* Таб-навигация */}
-        <div style={{ display: "flex", gap: 8, marginBottom: 32 }}>
-          {[["tasks", "Задания"], ["collection", "Коллекция 🌿"]].map(([key, label]) => (
-            <button
-              key={key}
-              onClick={() => setTab(key)}
-              style={{
-                padding: "10px 22px", borderRadius: 999, fontSize: 14, fontFamily: "var(--f-sans)",
-                border: tab === key ? "none" : "1.5px solid var(--border-soft)",
-                background: tab === key ? "var(--green-800)" : "var(--surface)",
-                color: tab === key ? "#fff" : "var(--text-soft)",
-                fontWeight: tab === key ? 700 : 400,
-                cursor: "pointer", transition: "all 0.18s",
-              }}
-            >{label}</button>
+          {mocks.length > 0 && (
+            <button className={`lib-nav${view === "mocks" ? " on" : ""}`} onClick={e => pickNav("mocks", "", e)}>
+              <span className="lib-dot">П</span>Пробники<i>{mocks.length}</i>
+            </button>
+          )}
+          <button className={`lib-nav${view === "done" ? " on" : ""}`} onClick={e => pickNav("done", "", e)}>
+            <span className="lib-dot">✓</span>Пройденные<i>{doneTests.length}</i>
+          </button>
+          <button className={`lib-nav${view === "garden" ? " on" : ""}`} onClick={e => pickNav("garden", "", e)}>
+            <span className="lib-dot">🌻</span>Мой сад<i>{plant?.collection_count || 0}</i>
+          </button>
+          {sideSections.length > 0 && <div className="lib-side-title">Разделы</div>}
+          {sideSections.map(({ name: s, count }) => (
+            <button key={s} className={`lib-nav${view === "section" && sectionFilter === s ? " on" : ""}`} onClick={e => pickNav("section", s, e)}>
+              <LibraryThumb item={{ section: s }} size={34} fallback={s[0]} />
+              <span className="lib-nav-name">{shortSection(s)}</span><i>{count}</i>
+            </button>
           ))}
-        </div>
-
-        {tab === "collection" && <CollectionView />}
-
-        {tab === "tasks" && <>
-        {/* Filters */}
-        {(quizzes.length > 0 || cardSets.length > 0) && (
-          <div style={{ marginBottom: 32, display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center" }}>
-            <FilterSelect label="Класс" value={gradeFilter} onChange={setGradeFilter} options={GRADE_OPTIONS} />
-            <FilterSelect label="Экзамен" value={examFilter} onChange={setExamFilter} options={EXAM_OPTIONS} />
-            {uniqueParts.length > 0 && (
-              <FilterSelect label="Часть" value={partFilter} onChange={setPartFilter} options={uniqueParts} />
-            )}
-            <FilterSelect label="Раздел" value={sectionFilter} onChange={setSectionFilter} options={uniqueSections} />
-            {uniqueTopics.length > 0 && (
-              <FilterSelect label="Тема" value={topicFilter} onChange={setTopicFilter} options={uniqueTopics} />
-            )}
-            {uniqueSources.length > 0 && (
-              <FilterSelect label="Источник" value={sourceFilter} onChange={setSourceFilter} options={uniqueSources} />
-            )}
-            <div style={{ position: "relative" }}>
-              <input
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                placeholder="Поиск..."
-                style={{
-                  padding: "9px 16px 9px 38px", borderRadius: 999,
-                  border: "1.5px solid var(--border-soft)",
-                  background: "var(--surface)", fontSize: 14, outline: "none",
-                  fontFamily: "var(--f-sans)", minWidth: 180,
-                }}
-              />
-              <svg style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)", pointerEvents: "none" }} width="14" height="14" viewBox="0 0 14 14" fill="none">
-                <circle cx="6" cy="6" r="4.5" stroke="currentColor" strokeWidth="1.5"/>
-                <path d="M10 10l2.5 2.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-              </svg>
+          {plant && (
+            <div className="dash-side-garden">
+              <GardenCard data={plant} onChange={setPlant} compact />
+              <button className="dash-garden-link" onClick={e => pickNav("garden", "", e)}>Как получить капли? →</button>
             </div>
-            {hasFilters && (
-              <button onClick={resetFilters} style={{
-                padding: "9px 16px", borderRadius: 999, fontSize: 13,
-                border: "1.5px solid var(--border-soft)", background: "transparent",
-                color: "var(--text-muted)", cursor: "pointer",
-              }}>
-                Сбросить
-              </button>
-            )}
-          </div>
-        )}
+          )}
+        </aside>
 
-        {/* Two-column layout: Cards left, Tests right */}
-        <div className="dash-two-col" style={{ display: "grid", gridTemplateColumns: "1fr 1.6fr", gap: 32, alignItems: "start" }}>
-          {/* Left: Cards */}
-          <div>
-            <h2 style={{ fontFamily: "var(--f-serif)", fontSize: 22, marginBottom: 20, letterSpacing: "-0.01em" }}>Карточки</h2>
-            {filteredCards.length > 0 ? (
-              <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-                {filteredCards.map(s => (
-                  <CardSetTile key={s.id} s={s} onStart={() => onOpenCards?.(s)} />
+        <main className="lib-main">
+          {/* Цветок на телефоне — сверху, компактно */}
+          {plant && view !== "garden" && <div className="dash-mobile-garden"><GardenCard data={plant} onChange={setPlant} compact /></div>}
+
+          <div className="lib-top">
+            <div>
+              <h1 className="lib-title">{title}</h1>
+              {view === "all" && <p className="lib-sub">{subtitle}</p>}
+            </div>
+            {view !== "garden" && view !== "mocks" && (
+              <div className="lib-seg">
+                {[["all", "Всё"], ["tests", "Тесты"], ["cards", "Карточки"]].map(([k, l]) => (
+                  <button key={k} className={kind === k ? "on" : ""} onClick={() => setKind(k)}>{l}</button>
                 ))}
               </div>
-            ) : (
-              <div style={{ textAlign: "center", padding: "40px 0", color: "var(--text-muted)", fontSize: 14 }}>
-                {cardSets.length === 0 ? "Карточек пока нет" : "Ничего не найдено"}
-              </div>
             )}
           </div>
 
-          {/* Right: Tests */}
-          <div>
-            <h2 style={{ fontFamily: "var(--f-serif)", fontSize: 22, marginBottom: 20, letterSpacing: "-0.01em" }}>Тесты</h2>
-            {filteredQuizzes.length > 0 ? (
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(260px, 100%), 1fr))", gap: 16 }}>
-                {filteredQuizzes.map(q => (
-                  <QuizTile key={q.id} q={q} onStart={() => onOpenQuiz?.(q)} />
-                ))}
-              </div>
-            ) : (
-              <div style={{ textAlign: "center", padding: "40px 0", color: "var(--text-muted)", fontSize: 14 }}>
-                {quizzes.length === 0 ? "Тестов пока нет" : "Ничего не найдено"}
-              </div>
-            )}
-          </div>
-        </div>
+          {view === "garden" ? (
+            <>
+              {plant && <div className="dash-garden-big"><GardenCard data={plant} onChange={setPlant} /></div>}
+              <CollectionView />
+            </>
+          ) : (
+            <>
+              {view === "all" && quizzes.length > 0 && (
+                <div className="dash-stats-row">
+                  <div className="dash-stat"><b>{doneTests.length}/{quizzes.length}</b><span>пройдено тестов</span></div>
+                  <div className="dash-stat"><b>{avg === null ? "—" : `${avg}%`}</b><span>средний результат</span></div>
+                  <div className="dash-stat"><b>{bestMock ? `${bestMock.score}/${bestMock.max_score}` : "—"}</b><span>лучший пробник</span></div>
+                  <div className="dash-stat"><b>🔥 {plant?.streak || 0}</b><span>{plural(plant?.streak || 0, "день", "дня", "дней")} подряд с поливом</span></div>
+                </div>
+              )}
 
-        {quizzes.length === 0 && cardSets.length === 0 && (
-          <div style={{ textAlign: "center", padding: "60px 0", color: "var(--text-muted)", fontSize: 16 }}>
-            Пока нет доступных заданий.
-          </div>
-        )}
+              {/* Назначенное репетитором */}
+              {view === "all" && assignedTodo.length > 0 && (
+                <div className="dash-assigned">
+                  <small>Назначено репетитором</small>
+                  {assignedTodo.slice(0, 4).map(q => (
+                    <button key={q.id} className="dash-assigned-row" onClick={() => onOpenQuiz?.(q)}>
+                      <LibraryThumb item={q} size={44} fallback={q.mock_exam || "📝"} />
+                      <div className="lib-row-body">
+                        <div className="lib-row-title">{q.title}</div>
+                        <div className="dash-assigned-meta">{q.questions_count} {plural(q.questions_count, "вопрос", "вопроса", "вопросов")} · ~{q.est_minutes} мин · +{q.mock_exam ? 3 : 1} 💧</div>
+                      </div>
+                      <span className="dash-assigned-cta">Начать →</span>
+                    </button>
+                  ))}
+                </div>
+              )}
 
-        {(quizzes.length > 0 || cardSets.length > 0) && filteredQuizzes.length === 0 && filteredCards.length === 0 && (
-          <div style={{ textAlign: "center", padding: "40px 0", color: "var(--text-muted)", fontSize: 16 }}>
-            По вашим фильтрам ничего не найдено.{" "}
-            <button onClick={resetFilters} style={{
-              background: "none", border: "none", color: "var(--green-800)",
-              fontWeight: 600, cursor: "pointer", textDecoration: "underline",
-            }}>Сбросить фильтры</button>
-          </div>
-        )}
-        </>}
+              {/* Поиск и фильтры */}
+              <div className="lib-filters">
+                <div className="lib-search">
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                    <circle cx="6" cy="6" r="4.5" stroke="currentColor" strokeWidth="1.5"/>
+                    <path d="M10 10l2.5 2.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                  </svg>
+                  <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Поиск: фотосинтез, митоз…" />
+                </div>
+                <FilterSelect label="Класс" value={gradeFilter} onChange={setGradeFilter} options={GRADE_OPTIONS} />
+                <FilterSelect label="Экзамен" value={examFilter} onChange={setExamFilter} options={EXAM_OPTIONS} />
+                {uniqueParts.length > 0 && <FilterSelect label="Часть" value={partFilter} onChange={setPartFilter} options={uniqueParts} />}
+                {uniqueSources.length > 0 && <FilterSelect label="Источник" value={sourceFilter} onChange={setSourceFilter} options={uniqueSources} />}
+                {hasFilters && <button className="lib-reset" onClick={resetFilters}>Сбросить</button>}
+              </div>
+
+              {mockPlaques.length > 0 && (
+                <div className="lib-mocks">
+                  {mockPlaques.map(q => (
+                    <button key={q.id} className={`lib-mock ${q.mock_exam === "ЕГЭ" ? "ege" : "oge"}`} onClick={() => onOpenQuiz?.(q)}>
+                      <small>Пробник {q.mock_exam}{q.is_assigned ? " · назначено" : ""}</small>
+                      <h3>{q.title}</h3>
+                      <div className="lib-mock-nums">
+                        <div><b>{q.questions_count}</b><span>{plural(q.questions_count, "задание", "задания", "заданий")}</span></div>
+                        <div><b>{q.points_total}</b><span>баллов</span></div>
+                        {q.status === "done" && <div><b>{q.score}</b><span>твой результат</span></div>}
+                      </div>
+                      <span className="lib-mock-cta">{q.status === "done" ? "Ещё раз →" : "Решать →"}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {rows.length > 0 ? (
+                <div className="lib-list">
+                  {rows.map(({ type, item }) => (
+                    <button key={type + item.id} className="lib-row" onClick={() => (type === "test" ? onOpenQuiz?.(item) : onOpenCards?.(item))}>
+                      <LibraryThumb item={item} size={52} fallback={type === "cards" ? "🃏" : TOPIC_ICONS[item.topic] || "🌱"} />
+                      <div className="lib-row-body">
+                        <div className="lib-row-title">{item.title}</div>
+                        <div className="lib-row-meta">
+                          {type === "cards"
+                            ? <span className="lib-tag cards">Карточки</span>
+                            : (item.category || "").split(", ").filter(Boolean).map(c => <span key={c} className="lib-tag">{c}</span>)}
+                          {type === "test" && item.is_assigned && <span className="lib-tag dash-tag-assigned">Назначено</span>}
+                          <span>
+                            {type === "cards"
+                              ? `${item.cards_count ?? 0} ${plural(item.cards_count ?? 0, "карточка", "карточки", "карточек")}`
+                              : `${item.questions_count} ${plural(item.questions_count, "вопрос", "вопроса", "вопросов")} · ~${item.est_minutes} мин`}
+                          </span>
+                        </div>
+                      </div>
+                      {type === "test" && statusOf(item)}
+                      <span className="lib-play" aria-hidden="true">
+                        <svg width="14" height="14" viewBox="0 0 14 14"><path d="M4 2.5v9l7.5-4.5z" fill="currentColor"/></svg>
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              ) : mockPlaques.length === 0 && (
+                <div className="lib-empty">
+                  {quizzes.length === 0 && cardSets.length === 0
+                    ? "Пока ничего не добавлено. Загляни позже — задания появятся здесь."
+                    : view === "done" ? "Ты пока не прошёл ни одного теста — самое время начать!"
+                    : "Ничего не найдено — попробуй сбросить фильтры."}
+                </div>
+              )}
+            </>
+          )}
+        </main>
       </div>
-
-      <PlantWidget />
     </div>
   );
 };
+
+const DASH_STYLES = `
+  .dash-header {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 200; height: 64px; padding: 0 28px;
+    background: rgba(15,42,30,0.95); backdrop-filter: blur(20px);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .dash-logo { display: flex; align-items: center; gap: 10px; background: none; border: none; cursor: pointer; padding: 0; }
+  .dash-logo img { width: 36px; height: 36px; border-radius: 10px; object-fit: cover; border: 1px solid rgba(255,255,255,.18); }
+  .dash-logo-label { font-family: var(--f-serif); font-weight: 600; font-size: 16px; color: #fff; }
+  .dash-header-right { display: flex; align-items: center; gap: 12px; }
+  .dash-head-btn { background: rgba(255,255,255,.08); color: rgba(255,255,255,.88); border: 1px solid rgba(255,255,255,.18); border-radius: 999px; padding: 8px 16px; font: 600 13px var(--f-sans); cursor: pointer; }
+  .dash-head-drops { background: rgba(96,200,245,.16); color: #bfe6fb; border-radius: 999px; padding: 7px 12px; font-weight: 800; font-size: 13px; }
+  .dash-user { display: flex; align-items: center; gap: 8px; color: #fff; font-size: 14px; font-weight: 600; }
+  .dash-ava { width: 32px; height: 32px; border-radius: 50%; background: var(--green-300); color: var(--green-950); display: grid; place-items: center; font-family: var(--f-serif); font-weight: 700; }
+  .dash-dot-amber { background: var(--amber-soft) !important; color: #7a3e10 !important; }
+  .lib-side { display: flex; flex-direction: column; }
+  .dash-side-garden { margin-top: auto; padding-top: 18px; }
+  .dash-garden-link { display: block; margin: 6px auto 0; border: none; background: none; color: var(--green-800); font: 700 12px var(--f-sans); cursor: pointer; }
+  .dash-mobile-garden { display: none; margin-bottom: 16px; }
+  .dash-garden-big { max-width: 360px; margin-bottom: 28px; }
+  .dash-stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 18px; }
+  .dash-stat { background: var(--surface); border: 1px solid var(--border-soft); border-radius: 16px; padding: 14px 16px; }
+  .dash-stat b { display: block; font: 600 26px/1.1 var(--f-serif); color: var(--green-800); }
+  .dash-stat span { font-size: 12px; color: var(--text-muted); font-weight: 600; }
+  .dash-assigned { background: var(--green-900); border-radius: 20px; padding: 16px 18px; margin-bottom: 20px; display: flex; flex-direction: column; gap: 8px; }
+  .dash-assigned small { font-size: 11px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--green-300); }
+  .dash-assigned-row { display: flex; align-items: center; gap: 14px; width: 100%; text-align: left; border: none; cursor: pointer; background: rgba(255,255,255,.07); border-radius: 14px; padding: 10px 12px; color: #fff; font-family: var(--f-sans); transition: background .15s; }
+  .dash-assigned-row:hover { background: rgba(255,255,255,.13); }
+  .dash-assigned-row .lib-row-title { color: #fff; }
+  .dash-assigned-meta { font-size: 12px; color: var(--green-300); }
+  .dash-assigned-cta { flex-shrink: 0; background: var(--amber); color: #3a1e0a; border-radius: 999px; padding: 8px 14px; font-weight: 800; font-size: 13px; }
+  .dash-tag-assigned { background: var(--amber-soft) !important; color: #7a3e10 !important; }
+  .dash-st { flex-shrink: 0; font-size: 12px; font-weight: 800; color: var(--text-muted); }
+  .dash-st.ok { color: var(--green-800); }
+
+  @media (max-width: 900px) {
+    .dash-header { height: 56px; padding: 0 14px; }
+    .lib-side { flex-direction: row; }
+    .dash-side-garden { display: none; }
+    .dash-mobile-garden { display: block; }
+    .dash-stats-row { grid-template-columns: 1fr 1fr; gap: 8px; }
+    .dash-stat { padding: 12px; } .dash-stat b { font-size: 21px; }
+    .dash-assigned { padding: 12px; }
+    .dash-assigned-row { gap: 10px; padding: 8px; }
+    .dash-assigned-cta { padding: 7px 10px; font-size: 12px; }
+    .dash-st { display: none; }
+    .dash-head-btn { padding: 6px 12px; font-size: 12px; }
+  }
+`;
 
 // Legacy exports kept so other files importing them don't break
 export const QuizCard = ({ q, onStart }) => <QuizTile q={q} onStart={onStart} />;

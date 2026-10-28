@@ -1,6 +1,7 @@
 const router = require("express").Router();
 const { db, run, get, all } = require("../db");
 const { NO_CREDIT, textErrors, setErrors, orderErrors, pointsFor } = require("../utils/scoring");
+const { awardForAttempt } = require("../utils/water");
 
 function requireAuth(req, res, next) {
   if (!req.session.user) return res.status(401).json({ error: "Не авторизован" });
@@ -83,7 +84,7 @@ router.get("/tests", requireAuth, (req, res) => {
   const tests = all(`
     SELECT t.id, t.title, t.topic, t.description,
            t.category, t.grade, t.section, t.part, t.line, t.source, t.mock_exam,
-           COUNT(q.id) AS questions_count,
+           COUNT(q.id) AS questions_count, COALESCE(SUM(COALESCE(q.max_points, 1)), 0) AS points_total,
            CASE WHEN ta.id IS NOT NULL THEN 1 ELSE 0 END AS is_assigned
     FROM tests t
     LEFT JOIN questions q ON q.test_id = t.id
@@ -120,10 +121,11 @@ router.get("/tests", requireAuth, (req, res) => {
       source: t.source || null,
       mock_exam: t.mock_exam || null,
       questions_count: t.questions_count,
+      points_total: t.points_total,
       est_minutes,
       status: attempt ? "done" : "new",
       score: attempt ? attempt.score : null,
-      max_score: attempt ? attempt.max_score : t.questions_count,
+      max_score: attempt ? attempt.max_score : t.points_total,
       is_assigned: t.is_assigned === 1,
     };
   });
@@ -279,8 +281,11 @@ router.post("/attempts/:id/submit", requireAuth, (req, res) => {
   }
 
   const test = get("SELECT mock_exam FROM tests WHERE id = ?", attempt.test_id);
+  // капли для цветка за пройденный тест
+  const water_earned = awardForAttempt(req.session.user.id, attempt.test_id, score, Number(attempt.max_score), !!test?.mock_exam);
   res.json({
     score,
+    water_earned,
     max_score: Number(attempt.max_score),
     status: hasOpenResponse ? "pending_review" : "graded",
     mock_exam: test?.mock_exam || null,

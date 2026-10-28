@@ -208,6 +208,21 @@ db.exec(`
     created_at TEXT DEFAULT (datetime('now'))
   );
 `);
+// Капли воды для цветка: запас капель, серия дней полива и журнал начислений
+try { db.exec("ALTER TABLE plant_progress ADD COLUMN water_drops INTEGER DEFAULT 1"); } catch (_) {}
+try { db.exec("ALTER TABLE plant_progress ADD COLUMN streak INTEGER DEFAULT 0"); } catch (_) {}
+db.exec(`
+  CREATE TABLE IF NOT EXISTS water_log (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    source TEXT NOT NULL,
+    ref_id TEXT,
+    day TEXT NOT NULL,
+    amount INTEGER NOT NULL,
+    created_at TEXT DEFAULT (datetime('now')),
+    UNIQUE(user_id, source, ref_id, day)
+  );
+`);
 // Баллы за задание в попытке (для 2-3-балльных и развёрнутых ответов)
 try { db.exec("ALTER TABLE attempt_answers ADD COLUMN points INTEGER"); } catch (_) {}
 

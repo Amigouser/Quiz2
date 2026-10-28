@@ -202,6 +202,9 @@ function DashboardPage() {
           max_score: q.max_score,
           progress: q.max_score ? Math.round((q.score / q.max_score) * 100) : 0,
           is_assigned: q.is_assigned,
+          mock_exam: q.mock_exam || null,
+          points_total: q.points_total,
+          grade: q.grade || null,
         }))
       );
     }).catch(() => setQuizzes([]));
@@ -318,6 +321,7 @@ function QuizPage() {
         quizTitle={quiz.title}
         mockExam={quiz.mock_exam}
         pendingReview={result.status === "pending_review"}
+        waterEarned={result.water_earned || 0}
         isPreview={isAdmin}
         onRetry={() => { setResult(null); setAttemptId(null); handleStart(); }}
         onHome={() => navigate(isAdmin ? "/admin" : "/dashboard")}

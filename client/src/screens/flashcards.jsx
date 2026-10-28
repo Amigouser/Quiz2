@@ -13,7 +13,7 @@ function Spinner() {
   );
 }
 
-function FlashcardResults({ set, known, onRetry, onHome }) {
+function FlashcardResults({ set, known, onRetry, onHome, waterEarned = 0 }) {
   const total = set.cards.length;
   const knownCount = known.size;
   const pct = total > 0 ? Math.round((knownCount / total) * 100) : 0;
@@ -46,6 +46,11 @@ function FlashcardResults({ set, known, onRetry, onHome }) {
         <div style={{ fontSize: 14, color: "var(--text-muted)", marginBottom: 36 }}>
           {knownCount} из {total} карточек запомнено
         </div>
+        {waterEarned > 0 && (
+          <div style={{ margin: "-20px 0 24px", padding: "10px 14px", borderRadius: 14, background: "#e3f2fc", color: "#1f6fa8", fontWeight: 700, fontSize: 14 }}>
+            💧 +{waterEarned} капля для твоего цветка — полей его в кабинете!
+          </div>
+        )}
         <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
           <button className="btn btn-ghost" onClick={onRetry}>Повторить</button>
           <button className="btn btn-primary" onClick={onHome}>На главную</button>
@@ -64,6 +69,12 @@ export default function FlashcardsRoute() {
   const [flipped, setFlipped] = useState(false);
   const [known, setKnown] = useState(new Set());
   const [done, setDone] = useState(false);
+
+  // капля для цветка за пройденный набор (сервер даёт её раз в день на набор)
+  const [waterEarned, setWaterEarned] = useState(0);
+  useEffect(() => {
+    if (done && set) API.rewardCards(set.id).then(r => setWaterEarned(r.earned || 0)).catch(() => {});
+  }, [done]);
 
   useEffect(() => {
     API.getCardSet(id).then(data => {
@@ -135,6 +146,7 @@ export default function FlashcardsRoute() {
         known={known}
         onRetry={handleRetry}
         onHome={() => navigate("/dashboard")}
+        waterEarned={waterEarned}
       />
     );
   }

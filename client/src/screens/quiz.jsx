@@ -622,7 +622,7 @@ export const QuizFocused = ({ quiz, onFinish }) => {
 };
 
 // ── Results screen ──
-export const QuizResults = ({ total = 0, correct = 0, quizTitle, onRetry, onHome, isPreview = false, mockExam = null, pendingReview = false, guest = false }) => {
+export const QuizResults = ({ total = 0, correct = 0, quizTitle, onRetry, onHome, isPreview = false, mockExam = null, pendingReview = false, guest = false, waterEarned = 0 }) => {
   const [burst, setBurst] = React.useState(false);
   React.useEffect(() => { const t = setTimeout(() => setBurst(true), 300); return () => clearTimeout(t); }, []);
 
@@ -697,6 +697,12 @@ export const QuizResults = ({ total = 0, correct = 0, quizTitle, onRetry, onHome
                 <div className="progress-fill" style={{ width: `${pct}%` }}/>
               </div>
             </div>
+
+            {waterEarned > 0 && (
+              <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", borderRadius: 14, background: "#e3f2fc", color: "#1f6fa8", fontWeight: 700, fontSize: 14, position: "relative" }}>
+                💧 +{waterEarned} {waterEarned === 1 ? "капля" : waterEarned < 5 ? "капли" : "капель"} для твоего цветка — полей его в кабинете!
+              </div>
+            )}
 
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
               <button className="btn btn-primary" onClick={onRetry}>Пройти ещё раз</button>
