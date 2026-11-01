@@ -13,7 +13,19 @@ function Spinner() {
   );
 }
 
-function FlashcardResults({ set, known, onRetry, onHome, waterEarned = 0 }) {
+// Порядок показа: сначала то, что пора повторить (самые трудные вперёд),
+// потом новые карточки, в конце — уже выученные, которым срок ещё не подошёл
+function smartOrder(cards) {
+  const due = cards.filter(c => c.is_due).sort((a, b) => (a.box - b.box) || (b.wrong - a.wrong));
+  const fresh = cards.filter(c => c.box == null);
+  const later = cards.filter(c => c.box != null && !c.is_due).sort((a, b) => a.box - b.box);
+  return [...due, ...fresh, ...later];
+}
+
+const REPEAT_GAP = 3;   // «Не знаю» — карточка вернётся через 3 карточки
+const MAX_REPEATS = 2;  // и не больше двух раз за заход, чтобы не зациклиться
+
+function FlashcardResults({ set, known, missed = [], onRetry, onRetryMissed, onHome, waterEarned = 0 }) {
   const total = set.cards.length;
   const knownCount = known.size;
   const pct = total > 0 ? Math.round((knownCount / total) * 100) : 0;
@@ -43,16 +55,24 @@ function FlashcardResults({ set, known, onRetry, onHome, waterEarned = 0 }) {
         }}>
           {pct}%
         </div>
-        <div style={{ fontSize: 14, color: "var(--text-muted)", marginBottom: 36 }}>
+        <div style={{ fontSize: 14, color: "var(--text-muted)", marginBottom: missed.length ? 20 : 36 }}>
           {knownCount} из {total} карточек запомнено
         </div>
+        {missed.length > 0 && (
+          <div style={{ marginBottom: 28, padding: "12px 16px", borderRadius: 14, background: "#fff6ec", color: "#8a4b12", fontSize: 14, textAlign: "left" }}>
+            <div style={{ fontWeight: 700, marginBottom: 4 }}>Трудные карточки ({missed.length}):</div>
+            <div style={{ lineHeight: 1.5 }}>{missed.slice(0, 6).map(c => c.term).join(", ")}{missed.length > 6 ? "…" : ""}</div>
+            <div style={{ marginTop: 6, color: "#a86a32", fontSize: 13 }}>Они попадутся тебе снова уже сегодня-завтра, а выученные — реже.</div>
+          </div>
+        )}
         {waterEarned > 0 && (
           <div style={{ margin: "-20px 0 24px", padding: "10px 14px", borderRadius: 14, background: "#e3f2fc", color: "#1f6fa8", fontWeight: 700, fontSize: 14 }}>
             💧 +{waterEarned} капля для твоего цветка — полей его в кабинете!
           </div>
         )}
-        <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
-          <button className="btn btn-ghost" onClick={onRetry}>Повторить</button>
+        <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
+          {missed.length > 0 && <button className="btn btn-ghost" onClick={onRetryMissed}>Повторить трудные</button>}
+          <button className="btn btn-ghost" onClick={onRetry}>Ещё раз всё</button>
           <button className="btn btn-primary" onClick={onHome}>На главную</button>
         </div>
       </div>
@@ -69,6 +89,10 @@ export default function FlashcardsRoute() {
   const [flipped, setFlipped] = useState(false);
   const [known, setKnown] = useState(new Set());
   const [done, setDone] = useState(false);
+  // карточки, на которые ответили «Не знаю» в этом заходе, и сколько раз их уже вернули
+  const [missed, setMissed] = useState(new Map());
+  const [repeats, setRepeats] = useState(new Map());
+  const [reported, setReported] = useState(new Set());
 
   // капля для цветка за пройденный набор (сервер даёт её раз в день на набор)
   const [waterEarned, setWaterEarned] = useState(0);
@@ -79,7 +103,7 @@ export default function FlashcardsRoute() {
   useEffect(() => {
     API.getCardSet(id).then(data => {
       setSet(data);
-      setCards(data.cards);
+      setCards(smartOrder(data.cards));
     });
   }, [id]);
 
@@ -89,10 +113,22 @@ export default function FlashcardsRoute() {
       const j = Math.floor(Math.random() * (i + 1));
       [arr[i], arr[j]] = [arr[j], arr[i]];
     }
-    setCards(arr);
+    startSession(arr);
+  };
+
+  const startSession = (list) => {
+    setCards(list);
     setIndex(0);
     setFlipped(false);
     setKnown(new Set());
+    setMissed(new Map());
+    setRepeats(new Map());
+    setReported(new Set());
+    setDone(false);
+  };
+
+  const review = (card, isKnown) => {
+    API.reviewCard(set.id, card.term, isKnown).catch(() => {});
   };
 
   const goNext = useCallback(() => {
@@ -126,25 +162,50 @@ export default function FlashcardsRoute() {
   }, [handleKey]);
 
   const markKnown = () => {
-    setKnown(prev => new Set([...prev, cards[index].id]));
+    const card = cards[index];
+    setKnown(prev => new Set([...prev, card.id]));
+    // «Знаю» поднимает карточку в следующую коробку только один раз за заход
+    if (!reported.has(card.id)) {
+      setReported(prev => new Set([...prev, card.id]));
+      review(card, true);
+    }
     goNext();
   };
 
-  const handleRetry = () => {
-    setIndex(0);
-    setFlipped(false);
-    setKnown(new Set());
-    setDone(false);
+  const markUnknown = () => {
+    const card = cards[index];
+    review(card, false);
+    setMissed(prev => new Map(prev).set(card.id, card));
+    setKnown(prev => { const k = new Set(prev); k.delete(card.id); return k; });
+    setReported(prev => { const r = new Set(prev); r.delete(card.id); return r; });
+    const n = repeats.get(card.id) || 0;
+    if (n < MAX_REPEATS) {
+      setRepeats(prev => new Map(prev).set(card.id, n + 1));
+      setCards(prev => {
+        const arr = [...prev];
+        arr.splice(Math.min(index + 1 + REPEAT_GAP, arr.length), 0, card);
+        return arr;
+      });
+      setFlipped(false);
+      setTimeout(() => setIndex(i => i + 1), 160);
+    } else {
+      goNext();
+    }
   };
+
+  const handleRetry = () => startSession(smartOrder(set.cards));
+  const handleRetryMissed = () => startSession([...missed.values()]);
 
   if (!set) return <Spinner />;
 
   if (done) {
     return (
       <FlashcardResults
-        set={{ ...set, cards }}
+        set={{ ...set, cards: [...new Map(cards.map(c => [c.id, c])).values()] }}
         known={known}
+        missed={[...missed.values()].filter(c => !known.has(c.id))}
         onRetry={handleRetry}
+        onRetryMissed={handleRetryMissed}
         onHome={() => navigate("/dashboard")}
         waterEarned={waterEarned}
       />
@@ -180,7 +241,8 @@ export default function FlashcardsRoute() {
           <div style={{ fontFamily: "var(--f-serif)", fontSize: 18, fontWeight: 600 }}>{set.title}</div>
           <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>
             {set.topic && <span>{set.topic} · </span>}
-            {cards.length} карточек
+            {set.cards.length} карточек
+            {set.cards.some(c => c.is_due) && <span> · 🔁 повторить: {set.cards.filter(c => c.is_due).length}</span>}
           </div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -250,6 +312,11 @@ export default function FlashcardsRoute() {
               )}
               <div style={{ fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: frontImage ? 10 : 16, fontWeight: 600, flexShrink: 0 }}>
                 Термин
+                {(missed.has(card.id) || card.is_due) && (
+                  <span style={{ marginLeft: 8, color: "#c0392b", letterSpacing: "0.06em" }}>
+                    · {missed.has(card.id) ? "ещё раз" : "повторение"}
+                  </span>
+                )}
               </div>
               <div className="fc-term pre-line" style={{ fontFamily: "var(--f-serif)", fontSize: 24, fontWeight: 500, textAlign: "center", lineHeight: 1.35 }}>
                 {card.term}
@@ -302,7 +369,7 @@ export default function FlashcardsRoute() {
           pointerEvents: flipped ? "auto" : "none",
         }}>
           <button
-            onClick={(e) => { e.stopPropagation(); goNext(); }}
+            onClick={(e) => { e.stopPropagation(); markUnknown(); }}
             style={{
               padding: "12px 36px", fontSize: 15, fontWeight: 500,
               background: "#fff0f0", color: "#c0392b",

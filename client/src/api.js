@@ -42,6 +42,8 @@ const API = {
   getReport: (token) => req(`/api/report/${encodeURIComponent(token)}`),
   sendLead: (data) => req("/api/leads", { method: "POST", body: data }),
   getCardSet: (id) => req(`/api/flashcard-sets/${id}`),
+  reviewCard: (setId, term, known) =>
+    req(`/api/flashcard-sets/${setId}/review`, { method: "POST", body: { term, known } }),
 
   admin: {
     getTests: () => req("/api/admin/tests"),

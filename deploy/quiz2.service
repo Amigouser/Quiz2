@@ -1,0 +1,19 @@
+# Автозапуск сайта vikokon.ru. Установка (один раз, под root):
+#   cp /opt/quiz2/deploy/quiz2.service /etc/systemd/system/
+#   fuser -k 3001/tcp; systemctl daemon-reload && systemctl enable --now quiz2
+# Лог:     journalctl -u quiz2 -n 100
+# Статус:  systemctl status quiz2
+[Unit]
+Description=Vikokon (Quiz2) Node server
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/quiz2
+ExecStart=/usr/bin/env node server/index.js
+Restart=always
+RestartSec=3
+User=root
+
+[Install]
+WantedBy=multi-user.target

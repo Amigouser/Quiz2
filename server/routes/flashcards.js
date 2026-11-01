@@ -1,4 +1,17 @@
 const { db, run, get, all } = require("../db");
+const { today } = require("../utils/water");
+
+// ── Умное повторение (коробки Лейтнера) ─────────────────────────────────────
+// «Знаю» — карточка переходит в следующую коробку и вернётся через больший срок,
+// «Не знаю» — назад в коробку 0, повторить сегодня же.
+const BOX_DAYS = [0, 1, 3, 7, 14, 30];
+const MAX_BOX = BOX_DAYS.length - 1;
+const LEARNED_BOX = 3; // от недели и дальше считаем «выучено»
+
+function progressMap(userId, setId) {
+  const rows = all("SELECT term, box, due, wrong, seen FROM flashcard_progress WHERE user_id = ? AND set_id = ?", userId, setId);
+  return new Map(rows.map(r => [r.term, r]));
+}
 
 function requireAuth(req, res, next) {
   if (!req.session.user) return res.status(401).json({ error: "Не авторизован" });
@@ -50,7 +63,23 @@ studentRouter.get("/flashcard-sets", requireAuth, (req, res) => {
     GROUP BY s.id
     ORDER BY fsa.assigned_at DESC, s.created_at DESC
   `, userId);
-  res.json(sets.map(s => ({ ...s, is_assigned: s.is_assigned === 1 })));
+  // сколько карточек пора повторить и сколько уже выучено (только по существующим терминам)
+  const stats = all(`
+    SELECT p.set_id,
+           SUM(CASE WHEN p.due <= ? THEN 1 ELSE 0 END) AS due_count,
+           SUM(CASE WHEN p.box >= ? THEN 1 ELSE 0 END) AS learned_count
+    FROM flashcard_progress p
+    JOIN flashcard_cards c ON c.set_id = p.set_id AND c.term = p.term
+    WHERE p.user_id = ?
+    GROUP BY p.set_id
+  `, today(), LEARNED_BOX, userId);
+  const bySet = new Map(stats.map(s => [s.set_id, s]));
+  res.json(sets.map(s => ({
+    ...s,
+    is_assigned: s.is_assigned === 1,
+    due_count: bySet.get(s.id)?.due_count || 0,
+    learned_count: bySet.get(s.id)?.learned_count || 0,
+  })));
 });
 
 // ── Student: get one set with cards ─────────────────────────────────────────
@@ -61,7 +90,36 @@ studentRouter.get("/flashcard-sets/:id", requireAuth, (req, res) => {
     "SELECT * FROM flashcard_cards WHERE set_id = ? ORDER BY order_index",
     set.id
   );
-  res.json({ ...set, cards });
+  const progress = progressMap(req.session.user.id, set.id);
+  const now = today();
+  res.json({
+    ...set,
+    today: now,
+    cards: cards.map(c => {
+      const p = progress.get(c.term);
+      return { ...c, box: p?.box ?? null, due: p?.due ?? null, wrong: p?.wrong || 0, is_due: p ? p.due <= now : false };
+    }),
+  });
+});
+
+// ── Student: ответ «знаю / не знаю» по одной карточке ───────────────────────
+studentRouter.post("/flashcard-sets/:id/review", requireAuth, (req, res) => {
+  const { term, known } = req.body || {};
+  const card = term ? get("SELECT id FROM flashcard_cards WHERE set_id = ? AND term = ?", req.params.id, term) : null;
+  if (!card) return res.status(404).json({ error: "Карточка не найдена" });
+  const userId = req.session.user.id;
+  const setId = Number(req.params.id);
+  const prev = get("SELECT box FROM flashcard_progress WHERE user_id = ? AND set_id = ? AND term = ?", userId, setId, term);
+  const box = known ? Math.min((prev?.box ?? 0) + 1, MAX_BOX) : 0;
+  const due = today(BOX_DAYS[box]);
+  run(`
+    INSERT INTO flashcard_progress (user_id, set_id, term, box, due, wrong, seen, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, 1, datetime('now'))
+    ON CONFLICT (user_id, set_id, term) DO UPDATE SET
+      box = excluded.box, due = excluded.due,
+      wrong = wrong + excluded.wrong, seen = seen + 1, updated_at = excluded.updated_at
+  `, userId, setId, term, box, due, known ? 0 : 1);
+  res.json({ box, due });
 });
 
 // ── Admin: list all sets ─────────────────────────────────────────────────────

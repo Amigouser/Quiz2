@@ -223,6 +223,21 @@ db.exec(`
     UNIQUE(user_id, source, ref_id, day)
   );
 `);
+// Умное повторение карточек (коробки Лейтнера). Карточка опознаётся по тексту
+// термина: при сохранении набора в админке карточки пересоздаются с новыми id.
+db.exec(`
+  CREATE TABLE IF NOT EXISTS flashcard_progress (
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    set_id INTEGER REFERENCES flashcard_sets(id) ON DELETE CASCADE,
+    term TEXT NOT NULL,
+    box INTEGER DEFAULT 0,
+    due TEXT,
+    wrong INTEGER DEFAULT 0,
+    seen INTEGER DEFAULT 0,
+    updated_at TEXT DEFAULT (datetime('now')),
+    PRIMARY KEY (user_id, set_id, term)
+  );
+`);
 // Отправленная попытка (попытка создаётся при открытии теста, отправка — отдельно)
 try {
   db.exec("ALTER TABLE attempts ADD COLUMN submitted INTEGER DEFAULT 0");

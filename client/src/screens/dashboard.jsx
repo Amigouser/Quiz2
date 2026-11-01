@@ -529,9 +529,11 @@ export const StudentDashboard = ({ name = "Аня", quizzes = [], cardSets = [],
                             ? <span className="lib-tag cards">Карточки</span>
                             : (item.category || "").split(", ").filter(Boolean).map(c => <span key={c} className="lib-tag">{c}</span>)}
                           {type === "test" && item.is_assigned && <span className="lib-tag dash-tag-assigned">Назначено</span>}
+                          {type === "cards" && item.due_count > 0 && <span className="lib-tag dash-tag-assigned">🔁 Повторить {item.due_count}</span>}
                           <span>
                             {type === "cards"
                               ? `${item.cards_count ?? 0} ${plural(item.cards_count ?? 0, "карточка", "карточки", "карточек")}`
+                                + (item.learned_count ? ` · выучено ${item.learned_count}` : "")
                               : `${item.questions_count} ${plural(item.questions_count, "вопрос", "вопроса", "вопросов")} · ~${item.est_minutes} мин`}
                           </span>
                         </div>
