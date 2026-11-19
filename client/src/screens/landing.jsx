@@ -2075,7 +2075,7 @@ export function LandingPage() {
                 </div>
                 <div>
                   <div style={{ fontWeight: 700, fontSize: 14, color: "#1a2e1f" }}>{TUTOR.name}</div>
-                  <div style={{ fontSize: 12, color: "rgba(26,46,31,0.55)", marginTop: 2 }}>Репетитор по биологии · ТГУ</div>
+                  <div style={{ fontSize: 12, color: "rgba(26,46,31,0.55)", marginTop: 2 }}>Репетитор по биологии</div>
                 </div>
               </div>
             </div>
