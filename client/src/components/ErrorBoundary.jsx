@@ -19,7 +19,7 @@ export class ErrorBoundary extends React.Component {
       return (
         <div style={{
           minHeight: "100vh", display: "grid", placeItems: "center",
-          background: "var(--bg)", padding: 24, fontFamily: "var(--f-sans)",
+          background: "var(--bg-page)", padding: 24, fontFamily: "var(--f-sans)",
         }}>
           <div style={{ textAlign: "center", maxWidth: 480 }}>
             <div style={{ fontSize: 48, marginBottom: 16 }}>🌿</div>

@@ -370,7 +370,7 @@ export const StudentDashboard = ({ name = "Аня", quizzes = [], cardSets = [],
     : <span className="dash-st">{q.is_assigned ? "Назначено" : "Новый"}</span>;
 
   return (
-    <div style={{ minHeight: "100vh", background: "var(--bg)", fontFamily: "var(--f-sans)" }}>
+    <div style={{ minHeight: "100vh", background: "var(--bg-page)", fontFamily: "var(--f-sans)" }}>
       <style>{LIBRARY_STYLES + GARDEN_STYLES + DASH_STYLES + PROGRESS_STYLES}</style>
 
       {/* Шапка */}

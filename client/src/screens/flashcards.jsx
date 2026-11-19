@@ -5,7 +5,7 @@ import API from "../api";
 
 function Spinner() {
   return (
-    <div style={{ minHeight: "100vh", display: "grid", placeItems: "center", background: "var(--bg)" }}>
+    <div style={{ minHeight: "100vh", display: "grid", placeItems: "center", background: "var(--bg-page)" }}>
       <div style={{ fontFamily: "var(--f-serif)", fontSize: 18, color: "var(--green-800)", opacity: 0.6 }}>
         Загрузка…
       </div>
@@ -32,7 +32,7 @@ function FlashcardResults({ set, known, missed = [], onRetry, onRetryMissed, onH
 
   return (
     <div className="fc-results-wrap" style={{
-      minHeight: "100vh", background: "var(--bg)",
+      minHeight: "100vh", background: "var(--bg-page)",
       display: "flex", flexDirection: "column",
       alignItems: "center", justifyContent: "center",
       padding: 40, position: "relative", overflow: "hidden",
@@ -219,7 +219,7 @@ export default function FlashcardsRoute() {
   const progress = cards.length > 1 ? (index / (cards.length - 1)) * 100 : 100;
 
   return (
-    <div style={{ minHeight: "100vh", background: "var(--bg)", position: "relative", overflow: "hidden" }}>
+    <div style={{ minHeight: "100vh", background: "var(--bg-page)", position: "relative", overflow: "hidden" }}>
       <BotanicalBg intensity={0.35} pattern="ferns" />
       <div style={{ position: "fixed", bottom: -40, right: -40, color: "var(--green-800)", opacity: 0.07, pointerEvents: "none" }}>
         <Fern size={380} />

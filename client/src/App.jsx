@@ -53,7 +53,7 @@ function DeletedScreen() {
   return (
     <div style={{
       minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center",
-      background: "var(--bg)", padding: 24,
+      background: "var(--bg-page)", padding: 24,
     }}>
       <div style={{ textAlign: "center", maxWidth: 480 }}>
         {/* Animated plant garden */}
@@ -135,7 +135,7 @@ function DeletedScreen() {
 
 function Spinner() {
   return (
-    <div style={{ minHeight: "100vh", display: "grid", placeItems: "center", background: "var(--bg)" }}>
+    <div style={{ minHeight: "100vh", display: "grid", placeItems: "center", background: "var(--bg-page)" }}>
       <div style={{ fontFamily: "var(--f-serif)", fontSize: 18, color: "var(--green-800)", opacity: 0.6 }}>
         Загрузка…
       </div>

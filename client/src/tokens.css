@@ -49,7 +49,10 @@
   --accent-soft: var(--amber-soft);
 
   /* ── Surfaces (overridden by [data-theme]) ── */
-  --bg:           var(--cream-50);
+  --bg:           #f9f3e5;
+  /* Фон страниц: бежевый с рисунками (рисунок прозрачный — ложится и на градиенты) */
+  --bg-pattern:   url("/bg-pattern.webp") 0 0 / 512px 512px repeat;
+  --bg-page:      var(--bg-pattern), var(--bg);
   --bg-elev:      #ffffff;
   --bg-muted:     var(--cream-100);
   --surface:      #ffffff;
@@ -119,7 +122,7 @@
 
 /* ── Theme toggles ── */
 [data-theme="light"] {
-  --bg: var(--cream-50);
+  --bg: #f9f3e5;
   --bg-elev: #ffffff;
   --bg-muted: var(--cream-100);
   --surface: #ffffff;
@@ -176,7 +179,7 @@
 * { box-sizing: border-box; }
 html, body {
   margin: 0;
-  background: var(--bg);
+  background: var(--bg-page);
   color: var(--text);
   font-family: var(--f-sans);
   font-size: var(--t-body);

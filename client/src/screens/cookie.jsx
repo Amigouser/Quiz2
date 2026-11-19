@@ -112,7 +112,7 @@ export default function CookiePage() {
   return (
     <div style={{
       minHeight: "100vh",
-      background: "var(--bg)",
+      background: "var(--bg-page)",
       color: "var(--text)",
       fontFamily: "var(--f-sans)",
     }}>

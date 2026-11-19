@@ -445,7 +445,7 @@ export default function TasksPage() {
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: "var(--bg)", fontFamily: "var(--f-sans)" }}>
+    <div style={{ minHeight: "100vh", background: "var(--bg-page)", fontFamily: "var(--f-sans)" }}>
 
       {/* Header */}
       <header className="tasks-header" style={{
@@ -480,7 +480,7 @@ export default function TasksPage() {
 
       <style>{LIBRARY_STYLES + `
         .guest-quiz-layer {
-          position: fixed; inset: 0; z-index: 500; background: var(--bg);
+          position: fixed; inset: 0; z-index: 500; background: var(--bg-page);
           overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
         }
       `}</style>

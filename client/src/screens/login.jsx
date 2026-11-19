@@ -169,7 +169,7 @@ export const LoginCompact = ({ onEnter }) => {
     <div style={{
       position: "relative",
       minHeight: "100vh",
-      background: "radial-gradient(ellipse at top, var(--green-100), var(--bg) 70%)",
+      background: "var(--bg-pattern), radial-gradient(ellipse at top, var(--green-100), var(--bg) 70%)",
       display: "grid", placeItems: "center",
       padding: "48px 24px",
       overflow: "hidden",

@@ -116,6 +116,7 @@ const VK_EVENTS = [
 const RESULTS = [
   {
     exam: "ЕГЭ",
+    max: 100,
     rows: [
       { name: "Диана", prep: "9 месяцев подготовки", score: 74 },
       { name: "Элина", prep: "6 месяцев подготовки", score: 70 },
@@ -123,6 +124,7 @@ const RESULTS = [
   },
   {
     exam: "ОГЭ",
+    max: 47,
     rows: [
       { name: "Максим",    prep: "1 год подготовки",     score: 45 },
       { name: "Ландыш",    prep: "9 месяцев подготовки", score: 45 },
@@ -694,6 +696,10 @@ const STYLES = `
     color: #fff; background: var(--green-800);
     border-radius: 999px; padding: 4px 12px; margin-bottom: 8px;
   }
+  .lf-results-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+  .lf-results-head .lf-results-exam { margin-bottom: 0; }
+  .lf-results-max { font-size: 12px; font-weight: 600; color: var(--text-muted); }
+  .lf-results-score .lf-results-of { font-family: var(--f-serif); font-size: 15px; font-weight: 600; color: var(--text-muted); }
   .lf-results-group ul { list-style: none; margin: 0; padding: 0; }
   .lf-results-group li {
     display: flex; align-items: center; justify-content: space-between; gap: 12px;
@@ -1906,7 +1912,7 @@ export function LandingPage() {
   }, []);
 
   return (
-    <div style={{ background: "var(--bg)", minHeight: "100vh", fontFamily: "var(--f-sans)", overflowX: "clip" }}>
+    <div style={{ background: "var(--bg-page)", minHeight: "100vh", fontFamily: "var(--f-sans)", overflowX: "clip" }}>
       <style>{STYLES + DNA_HERO_STYLES + VIDEO_STYLES + LEAD_STYLES + REVIEWS_STYLES}</style>
 
       {/* ══ SCROLL PROGRESS BAR ═══════════════════════════════════════════════ */}
@@ -2047,7 +2053,7 @@ export function LandingPage() {
         padding: "120px 48px 96px",
         overflow: "visible",
         position: "relative", zIndex: 2,
-        background: "linear-gradient(160deg, #f8f6ef 0%, #f3f0e6 60%, #ece8d9 100%)",
+        background: "var(--bg-page)",
       }}>
         <div style={{ maxWidth: 1280, margin: "0 auto" }}>
 
@@ -2126,7 +2132,10 @@ export function LandingPage() {
               <div className="lf-results">
                 {RESULTS.map((group) => (
                   <div key={group.exam} className="lf-results-group">
-                    <div className="lf-results-exam">{group.exam}</div>
+                    <div className="lf-results-head">
+                      <div className="lf-results-exam">{group.exam}</div>
+                      <span className="lf-results-max">из {group.max} возможных</span>
+                    </div>
                     <ul>
                       {group.rows.map((r, i) => (
                         <li key={i}>
@@ -2135,7 +2144,7 @@ export function LandingPage() {
                             {r.prep && <div className="lf-results-prep">{r.prep}</div>}
                           </div>
                           <div className="lf-results-score">
-                            {r.score}<span> {pointsWord(r.score)}</span>
+                            {r.score}<span className="lf-results-of"> / {group.max}</span><span> {pointsWord(group.max)}</span>
                           </div>
                         </li>
                       ))}
@@ -2508,7 +2517,7 @@ export function LandingPage() {
       {/* ══ ДИПЛОМЫ ════════════════════════════════════════════════════════════ */}
       <section id="diplomas" className="lf-section-pad" style={{
         padding: "96px 48px",
-        background: "linear-gradient(180deg, var(--green-50) 0%, var(--bg) 100%)",
+        background: "var(--bg-pattern), linear-gradient(180deg, var(--green-50) 0%, var(--bg) 100%)",
         position: "relative", overflow: "hidden",
       }}>
         {/* Фоновый ботанический элемент */}
@@ -2664,7 +2673,7 @@ export function LandingPage() {
       {/* ══ ДОСТИЖЕНИЯ ═════════════════════════════════════════════════════════ */}
       <section id="achievements" className="lf-section-pad" style={{
         padding: "96px 48px",
-        background: "var(--bg)",
+        background: "var(--bg-page)",
         position: "relative", overflow: "hidden",
       }}>
         <div style={{ position: "absolute", bottom: -40, left: -40, color: "var(--green-700)", opacity: 0.05, pointerEvents: "none" }}>
@@ -2714,7 +2723,7 @@ export function LandingPage() {
       {/* ══ УСЛУГИ И ЦЕНЫ ══════════════════════════════════════════════════════ */}
       <section id="prices" className="lf-section-pad" style={{
         padding: "96px 48px",
-        background: "linear-gradient(180deg, var(--bg) 0%, var(--green-50) 100%)",
+        background: "var(--bg-pattern), linear-gradient(180deg, var(--bg) 0%, var(--green-50) 100%)",
         position: "relative", overflow: "hidden",
       }}>
         <div style={{ position: "absolute", top: -30, right: -30, color: "var(--green-800)", opacity: 0.05, pointerEvents: "none" }}>

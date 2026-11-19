@@ -115,7 +115,7 @@ export default function ReportPage() {
 }
 
 const STYLES = `
-  .rp-page { min-height: 100vh; background: var(--bg); font-family: var(--f-sans); color: var(--text); }
+  .rp-page { min-height: 100vh; background: var(--bg-page); font-family: var(--f-sans); color: var(--text); }
   .rp-header { display: flex; align-items: center; gap: 10px; padding: 14px 24px; background: var(--green-950, #0f2a1e); color: #fff; font-family: var(--f-serif); font-weight: 600; flex-wrap: wrap; }
   .rp-header img { width: 34px; height: 34px; border-radius: 9px; object-fit: cover; }
   .rp-header-sub { font-family: var(--f-sans); font-weight: 500; font-size: 13px; color: rgba(255,255,255,.65); margin-left: 6px; }

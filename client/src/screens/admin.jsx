@@ -621,6 +621,13 @@ const AdminTestsList = ({ onCreateNew, onImport, onEdit }) => {
   const [loading, setLoading] = React.useState(true);
   const [importing, setImporting] = React.useState(false);
   const [importResult, setImportResult] = React.useState(null);
+  const [group, setGroup] = React.useState(() => {
+    try { return localStorage.getItem("admin:testsGroup") || "all"; } catch { return "all"; }
+  });
+  const pickGroup = (g) => {
+    setGroup(g);
+    try { localStorage.setItem("admin:testsGroup", g); } catch {}
+  };
   const fileRef = React.useRef();
 
   const load = () => {
@@ -737,22 +744,36 @@ const AdminTestsList = ({ onCreateNew, onImport, onEdit }) => {
           Тестов пока нет. <button className="btn btn-primary btn-sm" style={{ marginLeft: 12 }} onClick={onCreateNew}>Создать первый</button>
         </div>
       ) : (
-        <div className="card" style={{ padding: 0, overflow: "hidden" }}>
-          <div style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 70px 70px 100px 230px",
-            padding: "12px 20px",
-            borderBottom: "1px solid var(--border-soft)",
-            background: "var(--bg-muted)",
-            fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-muted)", fontWeight: 600,
-          }}>
-            <div>Тест</div><div>Вопр.</div><div>Попыток</div><div>Ср. балл</div><div style={{ textAlign: "right" }}>Действия</div>
-          </div>
-          {tests.map((t, i) => (
+        (() => {
+          // Группы: пробники, затем разделы биологии по порядку, затем «Без раздела».
+          // Тест с несколькими разделами в общем списке стоит в первом, а в фильтре — во всех своих.
+          const sectionsOf = (t) => (t.section || "").split(", ").filter(Boolean);
+          const groupOf = (t) => t.mock_exam ? "__mock" : (sectionsOf(t)[0] || "__none");
+          const known = new Set(BIO_SECTIONS);
+          const extra = [...new Set(tests.flatMap(sectionsOf).filter(x => !known.has(x)))];
+          const groups = [
+            { key: "__mock", label: "Пробники" },
+            ...[...BIO_SECTIONS, ...extra].map(x => ({ key: x, label: x })),
+            { key: "__none", label: "Без раздела" },
+          ];
+          const inGroup = (t, key) =>
+            key === "__mock" ? !!t.mock_exam
+            : key === "__none" ? !t.mock_exam && sectionsOf(t).length === 0
+            : !t.mock_exam && sectionsOf(t).includes(key);
+          const withCounts = groups
+            .map(g => ({ ...g, count: tests.filter(t => inGroup(t, g.key)).length }))
+            .filter(g => g.count > 0);
+          const active = group === "all" || withCounts.some(g => g.key === group) ? group : "all";
+          const shown = active === "all"
+            ? withCounts.map(g => ({ ...g, items: tests.filter(t => groupOf(t) === g.key) })).filter(g => g.items.length)
+            : withCounts.filter(g => g.key === active).map(g => ({ ...g, items: tests.filter(t => inGroup(t, g.key)) }));
+
+          const cols = "1fr 70px 70px 100px 230px";
+          const row = (t, i, arr) => (
             <div key={t.id} style={{
-              display: "grid", gridTemplateColumns: "1fr 70px 70px 100px 230px",
+              display: "grid", gridTemplateColumns: cols,
               padding: "16px 20px", alignItems: "center",
-              borderBottom: i < tests.length - 1 ? "1px solid var(--border-soft)" : "none",
+              borderBottom: i < arr.length - 1 ? "1px solid var(--border-soft)" : "none",
               opacity: t.is_active ? 1 : 0.55,
             }}>
               <div>
@@ -780,8 +801,49 @@ const AdminTestsList = ({ onCreateNew, onImport, onEdit }) => {
                 <button className="btn btn-ghost btn-sm" style={{ color: "var(--wrong)" }} onClick={() => handleDelete(t.id)}>✕</button>
               </div>
             </div>
-          ))}
-        </div>
+          );
+          const chip = (key, label, count) => (
+            <button key={key} onClick={() => pickGroup(key)} style={{
+              padding: "7px 13px", borderRadius: 999, cursor: "pointer", fontSize: 13, fontFamily: "inherit",
+              border: `1.5px solid ${active === key ? "var(--green-800)" : "var(--border)"}`,
+              background: active === key ? "var(--green-800)" : "var(--surface)",
+              color: active === key ? "#fff" : "var(--text-soft)", fontWeight: active === key ? 600 : 500,
+            }}>
+              {label} <span style={{ opacity: 0.7, marginLeft: 2 }}>{count}</span>
+            </button>
+          );
+
+          return (
+            <>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 20 }}>
+                {chip("all", "Все", tests.length)}
+                {withCounts.map(g => chip(g.key, g.label, g.count))}
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+                {shown.map(g => (
+                  <div key={g.key}>
+                    <div style={{ display: "flex", alignItems: "baseline", gap: 10, margin: "0 4px 10px" }}>
+                      <h3 style={{ margin: 0, fontFamily: "var(--f-serif)", fontSize: 20, fontWeight: 600, color: "var(--text)" }}>{g.label}</h3>
+                      <span style={{ fontSize: 13, color: "var(--text-muted)" }}>{g.items.length}</span>
+                    </div>
+                    <div className="card" style={{ padding: 0, overflow: "hidden" }}>
+                      <div style={{
+                        display: "grid", gridTemplateColumns: cols,
+                        padding: "10px 20px",
+                        borderBottom: "1px solid var(--border-soft)",
+                        background: "var(--bg-muted)",
+                        fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-muted)", fontWeight: 600,
+                      }}>
+                        <div>Тест</div><div>Вопр.</div><div>Попыток</div><div>Ср. балл</div><div style={{ textAlign: "right" }}>Действия</div>
+                      </div>
+                      {g.items.map(row)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          );
+        })()
       )}
     </div>
   );
@@ -3655,7 +3717,7 @@ export const AdminPanel = ({ initialTab = "tests" }) => {
   const goEdit = (id) => { setEditTestId(id); setTab("edit"); };
 
   return (
-    <div className="admin-layout" style={{ display: "grid", gridTemplateColumns: "240px 1fr", minHeight: "100vh", background: "var(--bg)" }}>
+    <div className="admin-layout" style={{ display: "grid", gridTemplateColumns: "240px 1fr", minHeight: "100vh", background: "var(--bg-page)" }}>
       <AdminSidebar active={tab === "edit" ? "tests" : tab} onTab={(t) => { setTab(t); setImportMode(false); setEditTestId(null); }} />
       {tab === "tests" && <AdminTestsList onCreateNew={goCreate} onImport={goImport} onEdit={goEdit} />}
       {tab === "create" && <AdminCreateTest key={String(importMode)} autoImport={importMode} onCreated={goTests} />}
